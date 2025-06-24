@@ -13,6 +13,7 @@ import {
   HelpCircle,
   Sparkles
 } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 
 import {
   Sidebar,
@@ -86,6 +87,8 @@ const menuItems = [
 ];
 
 export function AppSidebar() {
+  const location = useLocation();
+
   return (
     <Sidebar className="border-r border-border/40">
       <SidebarHeader className="p-4">
@@ -112,11 +115,12 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild 
                     className="hover:bg-primary/10 hover:text-primary transition-colors duration-200"
+                    isActive={location.pathname === item.url}
                   >
-                    <a href={item.url} className="flex items-center gap-3 px-3 py-2">
+                    <Link to={item.url} className="flex items-center gap-3 px-3 py-2">
                       <item.icon className="w-4 h-4" />
                       <span className="text-sm font-medium">{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
