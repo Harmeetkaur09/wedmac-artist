@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Share2, Copy, WhatsApp, Mail, Gift, Users, TrendingUp, ExternalLink } from "lucide-react";
+import { Share2, Copy, MessageCircle, Mail, Gift, Users, TrendingUp, ExternalLink } from "lucide-react";
 
 export default function ReferEarn() {
   const referralStats = {
@@ -136,7 +136,7 @@ export default function ReferEarn() {
             
             <div className="flex flex-wrap gap-3">
               <Button onClick={shareWhatsApp} className="bg-green-600 hover:bg-green-700 text-white">
-                <WhatsApp className="w-4 h-4 mr-2" />
+                <MessageCircle className="w-4 h-4 mr-2" />
                 Share on WhatsApp
               </Button>
               <Button variant="outline">
