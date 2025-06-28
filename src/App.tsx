@@ -15,6 +15,9 @@ import WedmacShop from "./pages/WedmacShop";
 import ReferEarn from "./pages/ReferEarn";
 import PaymentsPlan from "./pages/PaymentsPlan";
 import Support from "./pages/Support";
+import Login from "./pages/Login";
+import SignUp from "./pages/SignUp";
+import OTPVerification from "./pages/OTPVerification";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +30,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/otp-verification" element={<OTPVerification />} />
           <Route path="/profile" element={<MyProfile />} />
           <Route path="/services" element={<Services />} />
           <Route path="/leads" element={<UnlockedLeads />} />
