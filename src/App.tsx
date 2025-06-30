@@ -3,7 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import MyProfile from "./pages/MyProfile";
 import Services from "./pages/Services";
@@ -27,25 +29,71 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/otp-verification" element={<OTPVerification />} />
-          <Route path="/profile" element={<MyProfile />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/leads" element={<UnlockedLeads />} />
-          <Route path="/reported-leads" element={<ReportedLeads />} />
-          <Route path="/plans" element={<WedmacPlans />} />
-          <Route path="/credit-history" element={<CreditHistory />} />
-          <Route path="/shop" element={<WedmacShop />} />
-          <Route path="/refer" element={<ReferEarn />} />
-          <Route path="/payments" element={<PaymentsPlan />} />
-          <Route path="/support" element={<Support />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<SignUp />} />
+            <Route path="/otp-verification" element={<OTPVerification />} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <MyProfile />
+              </ProtectedRoute>
+            } />
+            <Route path="/services" element={
+              <ProtectedRoute>
+                <Services />
+              </ProtectedRoute>
+            } />
+            <Route path="/leads" element={
+              <ProtectedRoute>
+                <UnlockedLeads />
+              </ProtectedRoute>
+            } />
+            <Route path="/reported-leads" element={
+              <ProtectedRoute>
+                <ReportedLeads />
+              </ProtectedRoute>
+            } />
+            <Route path="/plans" element={
+              <ProtectedRoute>
+                <WedmacPlans />
+              </ProtectedRoute>
+            } />
+            <Route path="/credit-history" element={
+              <ProtectedRoute>
+                <CreditHistory />
+              </ProtectedRoute>
+            } />
+            <Route path="/shop" element={
+              <ProtectedRoute>
+                <WedmacShop />
+              </ProtectedRoute>
+            } />
+            <Route path="/refer" element={
+              <ProtectedRoute>
+                <ReferEarn />
+              </ProtectedRoute>
+            } />
+            <Route path="/payments" element={
+              <ProtectedRoute>
+                <PaymentsPlan />
+              </ProtectedRoute>
+            } />
+            <Route path="/support" element={
+              <ProtectedRoute>
+                <Support />
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

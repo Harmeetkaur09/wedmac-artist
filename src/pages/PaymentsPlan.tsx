@@ -1,13 +1,19 @@
 
+import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PlanBadge } from "@/components/PlanBadge";
-import { CreditCard, Download, Calendar, AlertCircle, Crown, Receipt } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CreditCard, Download, Calendar, AlertCircle, Crown, Receipt, QrCode, Smartphone } from "lucide-react";
 
 export default function PaymentsPlan() {
+  const [selectedPlan, setSelectedPlan] = useState<string>("");
+  const [showQR, setShowQR] = useState(false);
+
   const currentPlan = {
     name: "Premium" as const,
     price: "₹3,999",
@@ -15,6 +21,13 @@ export default function PaymentsPlan() {
     credits: 30,
     autoRenewal: true
   };
+
+  const availablePlans = [
+    { id: "basic", name: "Basic", price: "₹999", credits: 10 },
+    { id: "standard", name: "Standard", price: "₹1,999", credits: 25 },
+    { id: "premium", name: "Premium", price: "₹3,999", credits: 60 },
+    { id: "pro", name: "Pro", price: "₹6,999", credits: 120 }
+  ];
 
   const paymentHistory = [
     {
@@ -68,6 +81,72 @@ export default function PaymentsPlan() {
     }
   };
 
+  const handlePurchasePlan = () => {
+    if (selectedPlan) {
+      setShowQR(true);
+    }
+  };
+
+  const QRPaymentDialog = () => (
+    <Dialog open={showQR} onOpenChange={setShowQR}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-center">Complete Payment</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="text-center">
+            <p className="text-sm text-gray-600 mb-4">
+              Scan QR code with any UPI app to pay
+            </p>
+            <div className="flex justify-center mb-4">
+              <div className="w-48 h-48 bg-gray-100 flex items-center justify-center rounded-lg">
+                <QrCode className="w-32 h-32 text-gray-400" />
+              </div>
+            </div>
+            <p className="font-semibold text-lg">
+              Amount: {availablePlans.find(p => p.id === selectedPlan)?.price}
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Smartphone className="w-4 h-4" />
+              <span>Open any UPI app (GPay, PhonePe, Paytm, etc.)</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <QrCode className="w-4 h-4" />
+              <span>Scan the QR code above</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <CreditCard className="w-4 h-4" />
+              <span>Enter UPI PIN to complete payment</span>
+            </div>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowQR(false)}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowQR(false);
+                // Simulate successful payment
+                alert("Payment completed successfully!");
+              }}
+              className="flex-1 bg-green-600 hover:bg-green-700"
+            >
+              Payment Done
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <Layout title="Payments & Plan">
       <div className="space-y-6">
@@ -101,18 +180,42 @@ export default function PaymentsPlan() {
                 <p className="text-2xl font-bold">{currentPlan.credits}</p>
               </div>
             </div>
-            
-            <div className="flex flex-wrap gap-3 mt-6">
-              <Button className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white">
-                Upgrade Plan
-              </Button>
-              <Button variant="outline">
-                Renew Plan
-              </Button>
-              <Button variant="outline">
-                Change Plan
-              </Button>
+          </CardContent>
+        </Card>
+
+        {/* Purchase New Plan */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-primary" />
+              Purchase Plan
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Plan</label>
+              <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a plan to purchase" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePlans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      {plan.name} - {plan.price} ({plan.credits} credits)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            
+            <Button 
+              onClick={handlePurchasePlan}
+              disabled={!selectedPlan}
+              className="w-full bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
+            >
+              <QrCode className="w-4 h-4 mr-2" />
+              Pay with UPI/QR Code
+            </Button>
           </CardContent>
         </Card>
 
@@ -230,6 +333,8 @@ export default function PaymentsPlan() {
           </Card>
         </div>
       </div>
+      
+      <QRPaymentDialog />
     </Layout>
   );
 }

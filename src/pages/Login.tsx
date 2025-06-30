@@ -6,10 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -28,11 +30,11 @@ const Login = () => {
     if (otp.length !== 4) return;
     
     setIsLoading(true);
-    // Simulate API call
+    // Simulate API call - for demo, accept any 4-digit OTP
     setTimeout(() => {
       setIsLoading(false);
-      // Navigate to dashboard after successful verification
-      navigate('/');
+      login(); // Set authentication state
+      navigate('/'); // Navigate to dashboard
     }, 1500);
   };
 
