@@ -62,8 +62,12 @@ const SignUp = () => {
         throw new Error(body.message || "Failed to send OTP");
       }
       setStep("otp");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     } finally {
       setLoading(false);
     }
@@ -95,8 +99,12 @@ const SignUp = () => {
       // update context & redirect
       login({ access: body.access, refresh: body.refresh, user: body.user });
       navigate("/", { replace: true });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unexpected error occurred");
+      }
     } finally {
       setLoading(false);
     }
