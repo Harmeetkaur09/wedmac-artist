@@ -1,55 +1,49 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { decodeJwt } from "jwt-decode"; // or any JWT helper
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  login: () => void;
-  logout: () => void;
   user: any;
+  login: (tokens: { access: string; refresh: string; user: any }) => void;
+  logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
+const AuthContext = createContext<AuthContextType | null>(null);
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be within AuthProvider");
+  return ctx;
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const savedAuth = localStorage.getItem('isAuthenticated');
-    const savedUser = localStorage.getItem('user');
-    
-    if (savedAuth === 'true' && savedUser) {
+    const token = sessionStorage.getItem("accessToken");
+    const storedUser = sessionStorage.getItem("user");
+    if (token && storedUser) {
       setIsAuthenticated(true);
-      setUser(JSON.parse(savedUser));
+      setUser(JSON.parse(storedUser));
     }
   }, []);
 
-  const login = () => {
+  const login = (data: { access: string; refresh: string; user: any }) => {
+    sessionStorage.setItem("accessToken", data.access);
+    sessionStorage.setItem("refreshToken", data.refresh);
+    sessionStorage.setItem("user", JSON.stringify(data.user));
+    setUser(data.user);
     setIsAuthenticated(true);
-    const userData = { name: 'John Doe', phone: '9876543210' };
-    setUser(userData);
-    localStorage.setItem('isAuthenticated', 'true');
-    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const logout = () => {
-    setIsAuthenticated(false);
+    sessionStorage.clear();
     setUser(null);
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
+    setIsAuthenticated(false);
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout, user }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

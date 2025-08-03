@@ -74,14 +74,7 @@ export default function Services() {
                     <span className="text-sm text-muted-foreground">Price:</span>
                     <span className="font-semibold text-primary">{service.price}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Duration:</span>
-                    <span className="text-sm">{service.duration}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Travel:</span>
-                    <span className="text-sm">{service.travelCharges}</span>
-                  </div>
+               
                 </div>
                 
                 <div className="flex items-center justify-between pt-2 border-t">
@@ -113,14 +106,7 @@ export default function Services() {
                 <Label htmlFor="price">Price (₹)</Label>
                 <Input id="price" type="number" placeholder="15000" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duration</Label>
-                <Input id="duration" placeholder="e.g., 3-4 hours" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="travel">Travel Charges</Label>
-                <Input id="travel" placeholder="e.g., ₹500/km" />
-              </div>
+          
             </div>
             
             <div className="flex items-center space-x-2">

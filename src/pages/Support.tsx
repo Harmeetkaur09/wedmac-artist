@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { HelpCircle, MessageSquare, Phone, Mail, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import { HelpCircle, MessageSquare, Phone, Mail, Clock, CheckCircle, AlertCircle, Crown, Calendar } from "lucide-react";
+import { PlanBadge } from "@/components/PlanBadge";
 
 export default function Support() {
   const supportTickets = [
@@ -38,6 +39,13 @@ export default function Support() {
       lastUpdate: "2024-01-16"
     }
   ];
+    const currentPlan = {
+    name: "Premium" as const,
+    price: "₹3,999",
+    validUntil: "March 15, 2024",
+    credits: 30,
+    autoRenewal: true
+  };
 
   const faqs = [
     {
@@ -89,50 +97,37 @@ export default function Support() {
       <div className="space-y-6">
         {/* Quick Contact Options */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MessageSquare className="w-6 h-6 text-blue-600" />
+           <Card className="bg-gradient-to-r from-[#FF577F]/10 to-[#E6447A]/10 border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="w-5 h-5 text-primary" />
+              Current Subscription
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Plan</p>
+                <PlanBadge plan={currentPlan.name} />
               </div>
-              <h3 className="font-semibold mb-2">Live Chat</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Get instant help from our support team
-              </p>
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                Start Chat
-              </Button>
-            </CardContent>
-          </Card>
-          
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Phone className="w-6 h-6 text-green-600" />
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Monthly Cost</p>
+                <p className="text-2xl font-bold text-primary">{currentPlan.price}</p>
               </div>
-              <h3 className="font-semibold mb-2">WhatsApp Support</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Connect with us on WhatsApp
-              </p>
-              <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                +91 98765 43210
-              </Button>
-            </CardContent>
-          </Card>
-          
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-6 h-6 text-purple-600" />
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Valid Until</p>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-medium">{currentPlan.validUntil}</span>
+                </div>
               </div>
-              <h3 className="font-semibold mb-2">Email Support</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Send us an email for detailed queries
-              </p>
-              <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-                support@wedmac.in
-              </Button>
-            </CardContent>
-          </Card>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Remaining Credits</p>
+                <p className="text-2xl font-bold">{currentPlan.credits}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         </div>
 
         {/* Raise New Ticket */}

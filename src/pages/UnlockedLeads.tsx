@@ -163,14 +163,7 @@ export default function UnlockedLeads() {
                       <TableCell>
                         <div className="space-y-1">
                           <div className="font-medium">{lead.eventType}</div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            {lead.eventDate}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="w-3 h-3" />
-                            {lead.location}
-                          </div>
+                        
                         </div>
                       </TableCell>
                       <TableCell>
@@ -189,7 +182,7 @@ export default function UnlockedLeads() {
                           </Button>
                           <Button size="sm" variant="outline">
                             <Mail className="w-3 h-3 mr-1" />
-                            Email
+                            WhatsApp
                           </Button>
                         </div>
                       </TableCell>

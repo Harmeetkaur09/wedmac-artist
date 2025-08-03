@@ -13,7 +13,7 @@ export default function CreditHistory() {
     {
       id: 1,
       date: "2024-01-20",
-      type: "Lead Unlock",
+      type: "Extended",
       leadName: "Priya Sharma - Wedding",
       credits: -3,
       balance: 27,

@@ -10,7 +10,13 @@ import {
   Calendar,
   Eye,
   Phone,
-  MapPin
+  MapPin,
+  Plane,
+  Badge,
+  ArrowBigDown,
+  ArrowBigUp,
+  ArrowLeftRightIcon,
+  ClockArrowUp
 } from "lucide-react";
 
 export function Dashboard() {
@@ -21,6 +27,7 @@ export function Dashboard() {
       eventType: "Bridal Makeup",
       eventDate: "2024-07-15",
       location: "Mumbai",
+      plan: "Pro",
       status: "New",
       phone: "+91 98765 43210"
     },
@@ -30,6 +37,7 @@ export function Dashboard() {
       eventType: "Party Makeup",
       eventDate: "2024-07-12",
       location: "Delhi",
+      plan: "Standard",
       status: "Contacted",
       phone: "+91 98765 43211"
     },
@@ -39,6 +47,7 @@ export function Dashboard() {
       eventType: "Engagement",
       eventDate: "2024-07-18",
       location: "Bangalore",
+      plan: "Premium",
       status: "New",
       phone: "+91 98765 43212"
     }
@@ -127,6 +136,10 @@ export function Dashboard() {
                       <Calendar className="w-3 h-3" />
                       <span>{lead.eventDate}</span>
                     </div>
+                     <div className="flex items-center gap-1">
+                      <Badge className="w-3 h-3" />
+                      <span>{lead.plan}</span>
+                    </div>
                     <div className="flex items-center gap-1">
                       <MapPin className="w-3 h-3" />
                       <span>{lead.location}</span>
@@ -135,8 +148,8 @@ export function Dashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
-                    <Phone className="w-4 h-4 mr-1" />
-                    Contact
+                    <ClockArrowUp className="w-4 h-4 mr-1" />
+                    Upgrade
                   </Button>
                 </div>
               </div>

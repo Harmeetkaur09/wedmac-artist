@@ -240,50 +240,7 @@ export default function ReferEarn() {
           </CardContent>
         </Card>
 
-        {/* Rewards Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Reward Structure</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <h3 className="font-semibold">Artist Referrals</h3>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex justify-between">
-                    <span>• Successful signup:</span>
-                    <span className="font-semibold">₹200</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>• First plan purchase:</span>
-                    <span className="font-semibold">₹300</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>• 6-month milestone:</span>
-                    <span className="font-semibold">₹500</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="space-y-3">
-                <h3 className="font-semibold">Client Referrals</h3>
-                <ul className="space-y-2 text-sm">
-                  <li className="flex justify-between">
-                    <span>• Successful signup:</span>
-                    <span className="font-semibold">₹100</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>• First booking:</span>
-                    <span className="font-semibold">₹200</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>• Repeat bookings:</span>
-                    <span className="font-semibold">₹50 each</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+     
       </div>
     </Layout>
   );

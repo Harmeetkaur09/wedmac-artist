@@ -264,7 +264,7 @@ export default function PaymentsPlan() {
                   <TableHead>Amount</TableHead>
                   <TableHead>Payment Method</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Invoice</TableHead>
+
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -281,12 +281,7 @@ export default function PaymentsPlan() {
                         {payment.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm">
-                        <Receipt className="w-3 h-3 mr-1" />
-                        {payment.invoice}
-                      </Button>
-                    </TableCell>
+                
                   </TableRow>
                 ))}
               </TableBody>
@@ -296,41 +291,9 @@ export default function PaymentsPlan() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-6 text-center">
-              <h3 className="font-semibold mb-2">Need More Credits?</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Purchase additional credits without changing your plan
-              </p>
-              <Button variant="outline" className="w-full">
-                Buy Credits
-              </Button>
-            </CardContent>
-          </Card>
+      
           
-          <Card>
-            <CardContent className="p-6 text-center">
-              <h3 className="font-semibold mb-2">Update Payment Method</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Change your default payment method for future transactions
-              </p>
-              <Button variant="outline" className="w-full">
-                Update Payment
-              </Button>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6 text-center">
-              <h3 className="font-semibold mb-2">Billing Address</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Update your billing information and address
-              </p>
-              <Button variant="outline" className="w-full">
-                Update Address
-              </Button>
-            </CardContent>
-          </Card>
+       
         </div>
       </div>
       

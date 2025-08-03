@@ -70,11 +70,7 @@ export default function WedmacShop() {
               </div>
               
               {/* Launch Timeline */}
-              <div className="mt-8 p-4 bg-primary/5 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Expected Launch:</strong> Q2 2024 • Stay tuned for updates!
-                </p>
-              </div>
+           
             </div>
           </CardContent>
         </Card>
