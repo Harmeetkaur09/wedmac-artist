@@ -10,7 +10,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp"
-
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Facebook,
+  Instagram,
+  Twitter,
+} from "lucide-react"
 const SignUp = () => {
   const [formData, setFormData] = useState({
     first_name: "",
@@ -125,7 +133,7 @@ const SignUp = () => {
                   {/* Logo */}
                   <Link to="/" className="block w-[140px] h-auto relative">
                     <img
-                      src="/website_logo.png"
+                      src="/images/website_logo.png"
                       alt="Website Logo"
                       width={140}
                       height={50}
@@ -135,14 +143,14 @@ const SignUp = () => {
     
                   {/* Desktop Menu */}
                   <div className="hidden md:flex items-center space-x-8">
-                    <Link to="/" className="text-gray-700 hover:text-rose-500">Home</Link>
-                    <Link to="/makeup-artist" className="text-gray-700 hover:text-rose-500">
-                      Wedmac Makeup Artist
-                    </Link>
-                    <Link to="/about" className="text-gray-700 hover:text-rose-500">About Us</Link>
-                    <Link to="/blog" className="text-gray-700 hover:text-rose-500">Blog</Link>
-                    <Link to="/faq" className="text-gray-700 hover:text-rose-500">FAQ</Link>
-                    <Link to="/contact" className="text-gray-700 hover:text-rose-500">Contact</Link>
+              <a href="https://wed-mac-qsxz.vercel.app/"className="text-gray-700 hover:text-rose-500">Home</a>
+                        <a href="https://wed-mac-qsxz.vercel.app/makeup-artist" className="text-gray-700 hover:text-rose-500">
+                          Wedmac Makeup Artist
+                        </a>
+                        <a href="https://wed-mac-qsxz.vercel.app/about" className="text-gray-700 hover:text-rose-500">About Us</a>
+                        <a href="https://wed-mac-qsxz.vercel.app/blog" className="text-gray-700 hover:text-rose-500">Blog</a>
+                        <a href="https://wed-mac-qsxz.vercel.app/faq" className="text-gray-700 hover:text-rose-500">FAQ</a>
+                        <a href="https://wed-mac-qsxz.vercel.app/contact" className="text-gray-700 hover:text-rose-500">Contact</a>
     
                     <div className="flex items-center space-x-4">
                       <Link
@@ -173,32 +181,24 @@ const SignUp = () => {
               {/* Mobile Menu Dropdown */}
               {menuOpen && (
                 <div className="md:hidden px-4 pt-4 pb-6 space-y-3 bg-white shadow-lg border-t border-gray-200">
-                  <Link to="/" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-rose-500">
-                    Home
-                  </Link>
-                  <Link
-                    to="/makeup-artist"
-                    onClick={() => setMenuOpen(false)}
-                    className="block text-gray-700 hover:text-rose-500"
-                  >
-                    Wedmac Makeup Artist
-                  </Link>
-                  <Link to="/about" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-rose-500">
-                    About Us
-                  </Link>
-                  <Link to="/blog" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-rose-500">
-                    Blog
-                  </Link>
-                  <Link to="/faq" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-rose-500">
-                    FAQ
-                  </Link>
-                  <Link
-                    to="/contact"
-                    onClick={() => setMenuOpen(false)}
-                    className="block text-gray-700 hover:text-rose-500"
-                  >
-                    Contact
-                  </Link>
+                 <a href="https://wed-mac-qsxz.vercel.app/" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-rose-500">
+      Home
+    </a>
+    <a href="/makeup-artist" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-rose-500">
+      Wedmac Makeup Artist
+    </a>
+    <a href="https://wed-mac-qsxz.vercel.app/about" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-rose-500">
+      About Us
+    </a>
+    <a href="https://wed-mac-qsxz.vercel.app/blog" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-rose-500">
+      Blog
+    </a>
+    <a href="https://wed-mac-qsxz.vercel.app/faq" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-rose-500">
+      FAQ
+    </a>
+    <a href="https://wed-mac-qsxz.vercel.app/contact" onClick={() => setMenuOpen(false)} className="block text-gray-700 hover:text-rose-500">
+      Contact
+    </a>
     
                   <div className="pt-4 flex flex-col space-y-2">
                     <Link to="/login" onClick={() => setMenuOpen(false)}>
@@ -218,18 +218,18 @@ const SignUp = () => {
           </header>
 
       {/* Main Content */}
-<div className="container mx-auto pt-32 pb-10 min-h-[calc(100vh-100px)]">
+<div className="container mx-auto px-12 lg:px-24 pt-32 pb-10 min-h-[calc(100vh-100px)]">
 
   <div className="flex  border border-[#D5D5D5] rounded-lg  overflow-hidden">
         {/* Left Side - Images */}
-       <div className="hidden lg:flex lg:w-1/2 bg-gray-50 relative overflow-hidden">
+       <div className="hidden lg:flex lg:w-[60%] bg-gray-50 relative overflow-hidden">
           <div className="absolute inset-0 grid grid-cols-1 gap-4 p-8">
           
 
             {/* Column 3 */}
-          <div className="h-[500px] space-y-4 mt-4">
+          <div className="h-[350px] space-y-4 mt-4">
     <img
-      src="/signup.png"
+      src="/images/signup.png"
       alt="Makeup Tools"
       className="w-full h-full object-cover"
     />
@@ -241,7 +241,7 @@ const SignUp = () => {
 
         {/* Right Side - Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-          <div className="w-full h-[500px] max-w-md">
+          <div className="w-full h-[430px] max-w-md">
             {/* Tab Navigation */}
             <div className="flex mb-8 bg-gray-100 rounded-lg p-1">
               <button
@@ -270,36 +270,33 @@ const SignUp = () => {
  <form onSubmit={sendOTP} className="space-y-4">
   <div className="grid grid-cols-2 gap-4">
     <div>
-      <Label htmlFor="first_name" className="text-gray-700">First Name</Label>
       <input
         id="first_name"
         placeholder="Enter your first name"
         value={formData.first_name}
         onChange={(e) => handleInputChange("first_name", e.target.value)}
-        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm placeholder-[#FF577F] focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
         required
       />
     </div>
     <div>
-      <Label htmlFor="last_name" className="text-gray-700">Last Name</Label>
       <input
         id="last_name"
         placeholder="Enter your last name"
         value={formData.last_name}
         onChange={(e) => handleInputChange("last_name", e.target.value)}
-        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm placeholder-[#FF577F] focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
         required
       />
     </div>
   </div>
 
   <div>
-    <Label className="text-gray-700">Gender</Label>
   <Select onValueChange={(value) => handleInputChange("gender", value)} required>
   <SelectTrigger
     className={`mt-1 px-3 py-2 rounded-md border border-[#00000033] text-sm
                 focus:outline-none focus:ring-2 focus:ring-[#FF577F]
-                ${!formData.gender ? "text-[#FF577F]" : "text-black"}`}
+                ${!formData.gender ? "text-gray-400" : "text-black"}`}
   >
     <SelectValue placeholder="Select gender" />
   </SelectTrigger>
@@ -315,26 +312,24 @@ const SignUp = () => {
   <div className="grid grid-cols-2 gap-4">
 
   <div>
-    <Label htmlFor="email" className="text-gray-700">Email</Label>
     <input
       id="email"
       type="email"
       placeholder="Enter your email address"
       value={formData.email}
       onChange={(e) => handleInputChange("email", e.target.value)}
-      className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm placeholder-[#FF577F] focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+      className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
       required
     />
   </div>
   <div>
-    <Label htmlFor="phone" className="text-gray-700">Phone Number</Label>
     <input
       id="phone"
       type="tel"
       placeholder="10-digit mobile number"
       value={formData.phone}
       onChange={(e) => handleInputChange("phone", e.target.value)}
-      className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm placeholder-[#FF577F] focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+      className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
       required
     />
   </div>
@@ -342,28 +337,52 @@ const SignUp = () => {
 
   <div className="grid grid-cols-2 gap-4">
     <div>
-      <Label htmlFor="city" className="text-gray-700">City</Label>
       <input
         id="city"
         placeholder="Enter your city"
         value={formData.city}
         onChange={(e) => handleInputChange("city", e.target.value)}
-        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm placeholder-[#FF577F] focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
         required
       />
     </div>
     <div>
-      <Label htmlFor="state" className="text-gray-700">State</Label>
       <input
         id="state"
         placeholder="Enter your state"
         value={formData.state}
         onChange={(e) => handleInputChange("state", e.target.value)}
-        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm placeholder-[#FF577F] focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
         required
       />
     </div>
   </div>
+  <div className="flex items-start space-x-2">
+  <Checkbox
+    id="terms"
+    required
+    className="mt-1"
+  />
+  <label htmlFor="terms" className="text-sm text-black">
+    I Accept the{" "}
+    <a
+      href="https://wed-mac-qsxz.vercel.app/terms"
+      target="_blank"
+      className="text-[#FF577F] hover:underline"
+    >
+      Terms of Use
+    </a>{" "}
+    &{" "}
+    <a
+      href="https://wed-mac-qsxz.vercel.app/privacy"
+      target="_blank"
+      className="text-[#FF577F] hover:underline"
+    >
+      Privacy Policy
+    </a>
+  </label>
+</div>
+
 
   <Button
     type="submit"
@@ -403,7 +422,7 @@ const SignUp = () => {
         </div>
       )}
 
-      <div className="text-center mt-6">
+      <div className="text-center mt-6 text-sm ">
         Already have an account?{" "}
         <Link to="/login" className="text-[#FF577F] hover:underline">
           Log in
@@ -420,53 +439,88 @@ const SignUp = () => {
       </div>
 
       {/* Footer */}
-      <footer className="bg-[#FF577F] text-white">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Contact */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Contact</h3>
-              <div className="space-y-2 text-sm">
-                <p>619-393-4981 Ext. 101</p>
-                <p>Invest@AtlasLPS.Com</p>
-                <p>
-                  501 West Broadway, Suite 800,
-                  <br />
-                  San Diego, CA 92101
-                </p>
-              </div>
+<footer className="bg-[#FF577F] text-white">
+    <div className="container mx-auto px-12 py-12">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        {/* Contact Section */}
+        <div>
+          <h3 className="text-xl font-semibold mb-6">Contact</h3>
+          <div className="space-y-4 mb-6">
+            <div className="flex items-center space-x-3">
+              <Phone className="w-5 h-5" />
+              <span>+91 9669426549</span>
             </div>
-
-            {/* Links */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Links</h3>
-              <div className="space-y-2 text-sm">
-                <p>FAQs</p>
-                <p>Disclosures</p>
-                <p>Terms And Conditions</p>
-                <p>Privacy Policy</p>
-                <p>Submit Deals</p>
-                <p>Media Kit</p>
-              </div>
+            <div className="flex items-center space-x-3">
+              <Mail className="w-5 h-5" />
+              <span>wedmacofficial@gmail.com</span>
             </div>
-
-            {/* Investment Disclosure */}
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Investment Disclosure</h3>
-              <p className="text-sm">
-                When you invest with Atlas, you are more than a number; you are a partner. As a partner with us, you can
-                access opportunities usually reserved only for the largest institutional investors. You can access a
-                team driven only by excellence and results. You can access real estate investment opportunities designed
-                with you in mind.
-              </p>
+            <div className="flex items-center space-x-3">
+              <MapPin className="w-5 h-5" />
+              <span>27 Vaishali Enclave Phase 2, Baltana Zirakpur, Punjab 140604</span>
             </div>
           </div>
 
-          <div className="border-t border-pink-400 mt-8 pt-8 text-center">
-            <p className="text-sm">ATLAS 2022 © All Right Reserved</p>
+          <div className="flex space-x-8 mb-6">
+            <a
+              href="https://www.facebook.com/people/WedMac-India/61564828839583"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Facebook className="w-6 h-6 hover:text-gray-200" />
+            </a>
+            <a
+              href="https://www.instagram.com/wedmac.india"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Instagram className="w-6 h-6 hover:text-gray-200" />
+            </a>
+            <a
+              href="https://x.com/wedmacindia?s=21"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Twitter className="w-6 h-6 hover:text-gray-200" />
+            </a>
           </div>
         </div>
-      </footer>
+
+        {/* Links Section */}
+        <div>
+          <h3 className="text-xl font-semibold mb-6">Links</h3>
+          <div className="space-y-3">
+            <a href="https://wed-mac-qsxz.vercel.app/faq" className="block hover:underline">FAQs</a>
+            <a href="https://wed-mac-qsxz.vercel.app/blog" className="block hover:underline">Blog</a>
+            <a href="https://wed-mac-qsxz.vercel.app/privacy" className="block hover:underline">Privacy Policy</a>
+            <a href="https://wed-mac-qsxz.vercel.app/terms" className="block hover:underline">Terms &amp; Conditions</a>
+          </div>
+        </div>
+
+        {/* Investment Disclosure Section */}
+        <div>
+          <h3 className="text-xl font-semibold mb-6">Investment Disclosure</h3>
+          <p className="text-sm leading-relaxed">
+            We offer bespoke makeup services designed to complement your unique beauty and style, ensuring you look and feel confident, radiant, and unforgettable on your special day.
+          </p>
+        </div>
+
+        {/* Payment Partners */}
+        <div>
+          <h3 className="text-lg font-semibold mb-3">100% Secure Payment</h3>
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <img src="/images/master.png" alt="Mastercard" width={80} height={30} />
+            <img src="/images/paytm.png" alt="Paytm" width={60} height={30} />
+            <img src="/images/visa.png" alt="Visa" width={60} height={30} />
+            <img src="/images/rupay.png" alt="RuPay" width={60} height={30} />
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-pink-400 mt-8 pt-8 text-center">
+        <p className="text-sm">Wedmac India 2022 © All Rights Reserved</p>
+      </div>
+    </div>
+  </footer>
     </div>
   )
 }
