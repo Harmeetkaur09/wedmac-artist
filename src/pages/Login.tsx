@@ -105,7 +105,7 @@ const handleVerifyOTP = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen ">
       {/* Header */}
       <div className="bg-[#FF577F] fixed left-0 right-0 z-50 text-white text-center py-2 text-sm">
                 Get $20 Off Your First Purchase - Shop Now & Save!
@@ -204,12 +204,35 @@ const handleVerifyOTP = async () => {
               </header>
 
       {/* Main Content */}
-<div className="container mx-auto px-12 lg:px-24 pt-32 pb-10 min-h-[calc(100vh-100px)]">
-    <div className="flex  border border-[#D5D5D5] rounded-lg  overflow-hidden">
+      <section className="relative h-[50vh] pt-32 text-center text-white block md:hidden">
+  <div className="absolute inset-0">
+    <img
+      src="/images/hero.jpg"
+      alt="Hero Background"
+      className="object-cover object-top -z-10 w-full h-full absolute"
+    />
+    <div className="absolute inset-0 bg-gradient-to-r from-black/0 via-black/30 to-black/0" />
+  </div>
+
+  <div className="relative z-10 max-w-4xl mx-auto px-4 flex flex-col items-center justify-center h-full">
+    <h1 className="text-5xl md:text-7xl font-gilroy-bold mb-6">
+      Style That Turns Heads <br />
+      Every Special Day
+    </h1>
+    <p className="text-md md:text-xl font-gilroy font-400 opacity-90">
+      Make your presence unforgettable with premium beauty and fashion services
+      <br />
+      designed for life’s most special moments
+    </p>
+  </div>
+</section>
+
+<div className="md:container mx-auto md:px-12 lg:px-24 md:pt-32 pt-6 md:pb-10 min-h-[30vh] md:min-h-[calc(100vh-100px)]">
+    <div className="flex  md:border md:border-[#D5D5D5] rounded-lg  overflow-hidden">
 
         {/* Left Side - Images */}
         <div className="hidden lg:flex lg:w-[60%] bg-gray-50 relative overflow-hidden">
-          <div className="absolute inset-0 grid grid-cols-1 gap-4 p-8">
+          <div className="absolute inset-0 grid grid-cols-1 gap-4 md:p-8">
           
 
             {/* Column 3 */}
@@ -226,7 +249,7 @@ const handleVerifyOTP = async () => {
         </div>
 
         {/* Right Side - Form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div className="w-full lg:w-1/2 flex items-center justify-center md:p-8 p-4">
           <div className="w-full h-[350px] max-w-md">
             {/* Tab Navigation */}
             <div className="flex mb-8 bg-gray-100 rounded-lg p-1">
@@ -252,8 +275,11 @@ const handleVerifyOTP = async () => {
                   Back to phone
                 </button>
               )}
-
-            
+              <p className="text-sm text-gray-600">
+                {step === "phone"
+                  ? "Enter your phone number to receive an OTP."
+                  : "Enter the OTP sent to your phone via call."}
+              </p>
 
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-md p-3">

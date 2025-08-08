@@ -119,7 +119,7 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen ">
       {/* Header */}
      <div className="bg-[#FF577F] fixed left-0 right-0 z-50 text-white text-center py-2 text-sm">
             Get $20 Off Your First Purchase - Shop Now & Save!
@@ -216,14 +216,36 @@ const SignUp = () => {
               )}
             </nav>
           </header>
+              <section className="relative h-[50vh] pt-32 text-center text-white block md:hidden">
+  <div className="absolute inset-0">
+    <img
+      src="/images/hero.jpg"
+      alt="Hero Background"
+      className="object-cover object-top -z-10 w-full h-full absolute"
+    />
+    <div className="absolute inset-0 bg-gradient-to-r from-black/0 via-black/30 to-black/0" />
+  </div>
+
+  <div className="relative z-10 max-w-4xl mx-auto px-4 flex flex-col items-center justify-center h-full">
+    <h1 className="text-5xl md:text-7xl font-gilroy-bold mb-6">
+      Style That Turns Heads <br />
+      Every Special Day
+    </h1>
+    <p className="text-md md:text-xl font-gilroy font-400 opacity-90">
+      Make your presence unforgettable with premium beauty and fashion services
+      <br />
+      designed for life’s most special moments
+    </p>
+  </div>
+</section>
 
       {/* Main Content */}
-<div className="container mx-auto px-12 lg:px-24 pt-32 pb-10 min-h-[calc(100vh-100px)]">
+<div className="md:container mx-auto md:px-12 lg:px-24 md:pt-32 pt-6 md:pb-10 min-h-[40vh] pb-8 md:min-h-[calc(100vh-100px)]">
 
-  <div className="flex  border border-[#D5D5D5] rounded-lg  overflow-hidden">
+  <div className="flex md:border md:border-[#D5D5D5] rounded-lg  overflow-hidden">
         {/* Left Side - Images */}
        <div className="hidden lg:flex lg:w-[60%] bg-gray-50 relative overflow-hidden">
-          <div className="absolute inset-0 grid grid-cols-1 gap-4 p-8">
+          <div className="absolute inset-0 grid grid-cols-1 gap-4 md:p-8">
           
 
             {/* Column 3 */}
@@ -240,7 +262,7 @@ const SignUp = () => {
         </div>
 
         {/* Right Side - Form */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div className="w-full lg:w-1/2 flex items-center justify-center md:p-8 p-4">
           <div className="w-full h-[430px] max-w-md">
             {/* Tab Navigation */}
             <div className="flex mb-8 bg-gray-100 rounded-lg p-1">
@@ -254,6 +276,11 @@ const SignUp = () => {
                 Sign in
               </button>
             </div>
+                <p className="text-sm text-gray-600">
+                {step === "phone"
+                  ? "Enter your phone number to receive an OTP."
+                  : "Enter the OTP sent to your phone via call."}
+              </p>
 
             {/* Form Content */}
             <div className="space-y-6">
@@ -266,16 +293,15 @@ const SignUp = () => {
               )}
 
       {step === "phone" ? (
-    
- <form onSubmit={sendOTP} className="space-y-4">
-  <div className="grid grid-cols-2 gap-4">
+     <form onSubmit={sendOTP} className="space-y-4">
+  <div className="grid md:grid-cols-2  gap-4">
     <div>
       <input
         id="first_name"
         placeholder="Enter your first name"
         value={formData.first_name}
         onChange={(e) => handleInputChange("first_name", e.target.value)}
-        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F] w-full md:w-auto"
         required
       />
     </div>
@@ -285,7 +311,7 @@ const SignUp = () => {
         placeholder="Enter your last name"
         value={formData.last_name}
         onChange={(e) => handleInputChange("last_name", e.target.value)}
-        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F] w-full md:w-auto"
         required
       />
     </div>
@@ -309,7 +335,7 @@ const SignUp = () => {
 </Select>
 
   </div>
-  <div className="grid grid-cols-2 gap-4">
+  <div className="grid md:grid-cols-2 gap-4">
 
   <div>
     <input
@@ -318,7 +344,7 @@ const SignUp = () => {
       placeholder="Enter your email address"
       value={formData.email}
       onChange={(e) => handleInputChange("email", e.target.value)}
-      className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+      className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F] w-full md:w-auto"
       required
     />
   </div>
@@ -329,20 +355,20 @@ const SignUp = () => {
       placeholder="10-digit mobile number"
       value={formData.phone}
       onChange={(e) => handleInputChange("phone", e.target.value)}
-      className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+      className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F] w-full md:w-auto"
       required
     />
   </div>
   </div>
 
-  <div className="grid grid-cols-2 gap-4">
+  <div className="grid md:grid-cols-2 gap-4">
     <div>
       <input
         id="city"
         placeholder="Enter your city"
         value={formData.city}
         onChange={(e) => handleInputChange("city", e.target.value)}
-        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F] w-full md:w-auto"
         required
       />
     </div>
@@ -352,7 +378,7 @@ const SignUp = () => {
         placeholder="Enter your state"
         value={formData.state}
         onChange={(e) => handleInputChange("state", e.target.value)}
-        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F]"
+        className="mt-1 px-3 py-2 rounded border border-[#00000033] placeholder:text-sm  focus:outline-none focus:ring-2 focus:ring-[#FF577F] w-full md:w-auto"
         required
       />
     </div>
