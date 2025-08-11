@@ -219,12 +219,14 @@ const SignUp = () => {
               <section className="relative h-[50vh] pt-32 text-center text-white block md:hidden">
   <div className="absolute inset-0">
     <img
-      src="/images/hero.jpg"
+      src="/images/hero2.JPG"
       alt="Hero Background"
-      className="object-cover object-top -z-10 w-full h-full absolute"
+      className="object-cover object-[center_bottom_20%] -z-10 w-full h-full absolute"
     />
-    <div className="absolute inset-0 bg-gradient-to-r from-black/0 via-black/30 to-black/0" />
   </div>
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+
+    <div className="absolute inset-0 bg-gradient-to-r from-black/0 via-black/30 to-black/0" />
 
   <div className="relative z-10 max-w-4xl mx-auto px-4 flex flex-col items-center justify-center h-full">
     <h1 className="text-5xl md:text-7xl font-gilroy-bold mb-6">
