@@ -242,7 +242,7 @@ const SignUp = () => {
 </section>
 
       {/* Main Content */}
-<div className="md:container mx-auto md:px-12 lg:px-24 md:pt-32 pt-6 md:pb-10 min-h-[40vh] pb-8 md:min-h-[calc(100vh-100px)]">
+<div className="md:container mx-auto md:px-12 lg:px-24 md:pt-32 pt-6 md:pb-10 pb-8 md:min-h-[calc(100vh-100px)]">
 
   <div className="flex md:border md:border-[#D5D5D5] rounded-lg  overflow-hidden">
         {/* Left Side - Images */}
@@ -265,7 +265,7 @@ const SignUp = () => {
 
         {/* Right Side - Form */}
         <div className="w-full lg:w-1/2 flex items-center justify-center md:p-8 p-4">
-          <div className="w-full h-[430px] max-w-md">
+          <div className="w-full max-w-md">
             {/* Tab Navigation */}
             <div className="flex mb-8 bg-gray-100 rounded-lg p-1">
               <button
