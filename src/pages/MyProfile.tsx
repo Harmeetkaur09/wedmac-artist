@@ -30,9 +30,12 @@ import { useEffect, useState } from "react";
 import {
   uploadDocument,
   completeProfile,
-  CompleteProfilePayload,getMyProfile, DocumentData 
+  CompleteProfilePayload,
+  getMyProfile,
+  DocumentData,
 } from "@/api/profile";
 import type { MyProfile } from "@/api/profile";
+import { set } from "date-fns";
 
 export default function MyProfile() {
   // — basic info
@@ -45,118 +48,168 @@ export default function MyProfile() {
   const [referralCode, setReferralCode] = useState("");
   const [chosenOffer, setChosenOffer] = useState("");
   const [bio, setBio] = useState("");
-const [idDocs, setIdDocs] = useState<DocumentData[]>([]);
-// below your other state hooks
-const [productOptions, setProductOptions] = useState<{ id: number; name: string }[]>([]);
-const [paymentOptions, setPaymentOptions] = useState<{ id: number; name: string }[]>([]);
-const [makeupTypesApi, setMakeupTypesApi] = useState<{ id: number; name: string }[]>([]);
+  const [idDocs, setIdDocs] = useState<DocumentData[]>([]);
+  // below your other state hooks
+  const [productOptions, setProductOptions] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [paymentOptions, setPaymentOptions] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [makeupTypesApi, setMakeupTypesApi] = useState<
+    { id: number; name: string }[]
+  >([]);
 
   // — makeup, products, services
   const [typeOfMakeup, setTypeOfMakeup] = useState("");
-const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
-const [selectedPaymentIds, setSelectedPaymentIds] = useState<number[]>([]);
-const [selectedMakeupIds, setSelectedMakeupIds] = useState<number[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<number[]>([]);
+  const [selectedPaymentIds, setSelectedPaymentIds] = useState<number[]>([]);
+  const [selectedMakeupIds, setSelectedMakeupIds] = useState<number[]>([]);
+  const [services, setServices] = useState<string[]>([]);
 
   // — pricing & experience
   const [priceRange, setPriceRange] = useState("");
   const [experienceYears, setExperienceYears] = useState<number>(0);
 
   // — travel & trial
-  const [travelChargesBoolean, setTravelChargesBoolean] = useState<boolean>(
-    false
-  );
-  const [trialAvailableBoolean, setTrialAvailableBoolean] = useState<boolean>(
-    false
-  );
+  const [travelChargesBoolean, setTravelChargesBoolean] =
+    useState<boolean>(false);
+  const [trialAvailableBoolean, setTrialAvailableBoolean] =
+    useState<boolean>(false);
 
   // — social
   const [instagramLink, setInstagramLink] = useState("");
   const [facebookLink, setFacebookLink] = useState("");
 
   // — payment methods (UI only)
- 
 
   // — document uploads
-// — document uploads
-const [profile_picture_data, setProfilePhoto] = useState<DocumentData | null>(null);
-const [portfolioDocs, setPortfolioDocs] = useState<DocumentData[]>([]);
-const [certDocs, setCertDocs] = useState<DocumentData[]>([]);
-const [travelPolicy, setTravelPolicy] = useState("local");
+  // — document uploads
+  const [profile_picture_data, setProfilePhoto] = useState<DocumentData | null>(
+    null
+  );
+  const [portfolioDocs, setPortfolioDocs] = useState<DocumentData[]>([]);
+  const [certDocs, setCertDocs] = useState<DocumentData[]>([]);
+  const [travelPolicy, setTravelPolicy] = useState("local");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
-  Promise.all([
-    fetch("https://wedmac-services.onrender.com/api/admin/master/list/?type=makeup_types").then(r => r.json()),
-    fetch("https://wedmac-services.onrender.com/api/admin/master/list/?type=products").then(r => r.json()),
-    fetch("https://wedmac-services.onrender.com/api/admin/master/list/?type=payment_methods").then(r => r.json()),
-  ])
-  .then(([makeups, products, payments]) => {
-    setMakeupTypesApi(makeups);
-    setProductOptions(products);
-    setPaymentOptions(payments);
-  })
-  .catch(err => console.error("Master‐list load error:", err));
-}, []);
+    Promise.all([
+      fetch(
+        "https://wedmac-be.onrender.com/api/admin/master/list/?type=makeup_types"
+      ).then((r) => r.json()),
+      fetch(
+        "https://wedmac-be.onrender.com/api/admin/master/list/?type=products"
+      ).then((r) => r.json()),
+      fetch(
+        "https://wedmac-be.onrender.com/api/admin/master/list/?type=payment_methods"
+      ).then((r) => r.json()),
+    ])
+      .then(([makeups, products, payments]) => {
+        setMakeupTypesApi(makeups);
+        setProductOptions(products);
+        setPaymentOptions(payments);
+      })
+      .catch((err) => console.error("Master‐list load error:", err));
+  }, []);
 
-// fetch and prefill
+  // safe helper: accepts unknown shapes (numbers | strings | {id: number|string})
+  function extractIds(raw: unknown): number[] {
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((el) => {
+        if (typeof el === "number") return el;
+        if (typeof el === "string" && /^\d+$/.test(el)) return Number(el);
+        if (el && typeof el === "object" && "id" in el) {
+          const id = (el as { id: number | string }).id;
+          return typeof id === "number" ? id : Number(id);
+        }
+        return NaN;
+      })
+      .filter((n): n is number => Number.isFinite(n));
+  }
+
+  // fetch and prefill
   useEffect(() => {
     setLoading(true);
     getMyProfile()
       .then((data: MyProfile) => {
+        // basic fields (keep your existing lines)
         setFirstName(data.first_name);
+
         setLastName(data.last_name);
-        setPhoneNumber(data.phone);
         setEmail(data.email);
+        setPhoneNumber(data.phone);
         setGender(data.gender);
-        if (data.date_of_birth) setDob(data.date_of_birth);
+        setDob(data.date_of_birth);
         setReferralCode(data.referel_code);
         setChosenOffer(data.offer_chosen);
         setBio(data.bio);
-
         setSelectedMakeupIds((data.type_of_makeup || []).map(Number));
         setSelectedProductIds((data.products_used || []).map(Number));
-        setSelectedServices(data.services || []);
+        setServices(data.services || []);
         setPriceRange(data.price_range);
         setExperienceYears(data.experience_years);
-        setTravelChargesBoolean(data.travel_charges);
-        setTrialAvailableBoolean(data.trial_available);
-        setInstagramLink(data.social_links.instagram);
-        setFacebookLink(data.social_links.facebook||"");
+        setTravelChargesBoolean(Boolean(data.travel_charges));
+        setTrialAvailableBoolean(Boolean(data.trial_available));
+        setInstagramLink(data.social_links?.instagram || "");
+        setFacebookLink(data.social_links?.facebook || "");
+        const raw = data as unknown as Record<string, unknown>;
+        // type_of_makeup might be: [1,2] or [{id:1,name:""}] or under type_of_makeup_data
+        const makeupRaw =
+          raw["type_of_makeup"] ?? raw["type_of_makeup_data"] ?? [];
+        setSelectedMakeupIds(extractIds(makeupRaw));
 
-        // documents
-        data.id_documents_data.forEach(doc => {
-          if (doc.tag === "profile-photo")  setProfilePhoto(doc);
-          if (doc.tag === "portfolio")      setPortfolioDocs(d=>[...d,doc]);
-          if (doc.tag === "certificate")    setCertDocs(d=>[...d,doc]);
-        });
+        // products: backend returns products_used_data (array of objects) or products_used
+        const productsRaw =
+          raw["products_used_data"] ?? raw["products_used"] ?? [];
+        setSelectedProductIds(extractIds(productsRaw));
+
+        // payments: backend returns payment_methods_data or payment_methods
+        const paymentsRaw =
+          raw["payment_methods_data"] ?? raw["payment_methods"] ?? [];
+        setSelectedPaymentIds(extractIds(paymentsRaw));
+
+        // documents - use the dedicated fields
+        if (data.profile_picture_data) {
+          setProfilePhoto(data.profile_picture_data);
+        }
+        if (Array.isArray(data.supporting_images_data)) {
+          setPortfolioDocs(data.supporting_images_data);
+        }
+        if (Array.isArray(data.certifications_data)) {
+          setCertDocs(data.certifications_data);
+        }
+        if (Array.isArray(data.id_documents_data)) {
+          setIdDocs(data.id_documents_data);
+        }
       })
-      .catch(err => {
+
+      .catch((err) => {
         console.error(err);
         setError("Could not load your profile");
       })
       .finally(() => setLoading(false));
   }, []);
 
-
-const handleFileUpload = async (
-  files: FileList | null,
-  tag: 'profile-photo' | 'portfolio' | 'certificate' | 'id-document'
-) => {
+  const handleFileUpload = async (
+    files: FileList | null,
+    tag: "profile-photo" | "portfolio" | "certificate" | "id-document"
+  ) => {
     if (!files?.length) return;
     setLoading(true);
     try {
       const file = files[0];
       const newDoc = await uploadDocument(
         file,
-        file.type.startsWith('image') ? 'image' : 'pdf',
+        file.type.startsWith("image") ? "image" : "pdf",
         tag
       );
-      if (newDoc.tag === 'profile-photo')  setProfilePhoto(newDoc);
-      if (newDoc.tag === 'portfolio')      setPortfolioDocs(d=>[...d,newDoc]);
-      if (newDoc.tag === 'certificate')    setCertDocs(d=>[...d,newDoc]);
-      if (newDoc.tag === 'id-document') setIdDocs(d => [...d, newDoc]);
-
+      if (newDoc.tag === "profile-photo") setProfilePhoto(newDoc);
+      if (newDoc.tag === "portfolio") setPortfolioDocs((d) => [...d, newDoc]);
+      if (newDoc.tag === "certificate") setCertDocs((d) => [...d, newDoc]);
+      if (newDoc.tag === "id-document") setIdDocs((d) => [...d, newDoc]);
     } catch (e: unknown) {
       if (e instanceof Error) {
         setError(e.message);
@@ -169,7 +222,7 @@ const handleFileUpload = async (
   };
 
   const handleSave = async () => {
-    if (!setProfilePhoto) {
+    if (!profile_picture_data) {
       setError("Please upload your profile photo");
       return;
     }
@@ -182,37 +235,35 @@ const handleFileUpload = async (
         phone: phoneNumber,
         email,
         gender,
-        date_of_birth: dob,
+        date_of_birth: dob || "",
         referel_code: referralCode,
         offer_chosen: chosenOffer,
         bio,
-        type_of_makeup: selectedMakeupIds, // [1,2,…]
+        type_of_makeup: selectedMakeupIds, // numbers
         products_used: selectedProductIds,
         payment_methods: selectedPaymentIds,
         price_range: priceRange,
         experience_years: experienceYears,
+        services: services,
         travel_charges: travelChargesBoolean ? "yes" : "no",
-        // travel_policy:    travelPolicy,         // "local" or "anywhere"
+        profile_picture: profile_picture_data!.id,
+        certifications: certDocs.map((d) => d.id),
         trial_available: trialAvailableBoolean,
-        social_links: { instagram: instagramLink, facebook: facebookLink },
-        profile_picture: profile_picture_data?.id,
-        id_documents: [
-          profile_picture_data?.id,
-          ...portfolioDocs.map(d => d.id),
-          ...certDocs.map(d => d.id),
-          ...idDocs.map(d => d.id),
-        ],
-        services: [],
-        certifications: []
+        social_links: {
+          instagram: instagramLink,
+          facebook: facebookLink || undefined,
+        },
+        id_documents: idDocs.map((d) => d.id),
+        supporting_images: portfolioDocs.map((d) => d.id),
       };
+
       await completeProfile(payload);
+      console.log("completeProfile payload", payload);
+
       alert("Profile completed!");
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred");
-      }
+      if (err instanceof Error) setError(err.message);
+      else setError("An unknown error occurred");
     } finally {
       setLoading(false);
     }
@@ -267,7 +318,11 @@ const handleFileUpload = async (
     list: string[],
     setter: (v: string[]) => void
   ) =>
-    setter(list.includes(item) ? list.filter((i) => i !== item) : [...list, item]);
+    setter(
+      list.includes(item) ? list.filter((i) => i !== item) : [...list, item]
+    );
+  console.log("type_of_makeup->", selectedMakeupIds);
+  console.log("type_of_product->", selectedProductIds);
 
   return (
     <Layout title="My Profile">
@@ -282,16 +337,21 @@ const handleFileUpload = async (
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
-             <Avatar className="w-24 h-24">
-                {profile_picture_data
-                  ? <AvatarImage src={profile_picture_data.file_url} />
-                  : <AvatarFallback><Camera/></AvatarFallback>
-                }
+              <Avatar className="w-24 h-24">
+                {profile_picture_data ? (
+                  <AvatarImage src={profile_picture_data.file_url} />
+                ) : (
+                  <AvatarFallback>
+                    <Camera />
+                  </AvatarFallback>
+                )}
               </Avatar>
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => handleFileUpload(e.target.files, "profile-photo")}
+                onChange={(e) =>
+                  handleFileUpload(e.target.files, "profile-photo")
+                }
                 disabled={loading}
               />
             </div>
@@ -330,7 +390,9 @@ const handleFileUpload = async (
                 <Label>Gender</Label>
                 <RadioGroup
                   value={gender}
-                  onValueChange={(v: "male" | "female" | "other") => setGender(v)}
+                  onValueChange={(v: "male" | "female" | "other") =>
+                    setGender(v)
+                  }
                 >
                   <div className="flex space-x-4">
                     <div>
@@ -384,32 +446,36 @@ const handleFileUpload = async (
         </Card>
 
         {/* Payment Methods */}
-      <Card>
-  <CardHeader><CardTitle><CreditCard /></CardTitle></CardHeader>
-  <CardContent>
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-    {paymentOptions.map((pm) => (
-  <Badge
-    key={pm.id}
-    onClick={() =>
-      setSelectedPaymentIds(ids =>
-        ids.includes(pm.id)
-          ? ids.filter(x => x !== pm.id)
-          : [...ids, pm.id]
-      )
-    }
-    className={
-      selectedPaymentIds.includes(pm.id)
-        ? "bg-primary/10 text-primary"
-        : "bg-gray-100 text-black"
-    }
-  >
-    {pm.name}
-  </Badge>
-))}
-    </div>
-  </CardContent>
-</Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <CreditCard />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {paymentOptions.map((pm) => (
+                <Badge
+                  key={pm.id}
+                  onClick={() =>
+                    setSelectedPaymentIds((ids) =>
+                      ids.includes(pm.id)
+                        ? ids.filter((x) => x !== pm.id)
+                        : [...ids, pm.id]
+                    )
+                  }
+                  className={
+                    selectedPaymentIds.includes(pm.id)
+                      ? "bg-primary/10 text-primary"
+                      : "bg-gray-100 text-black"
+                  }
+                >
+                  {pm.name}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Travel & Trial */}
         <Card>
@@ -420,21 +486,21 @@ const handleFileUpload = async (
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-          <div>
-  <Label>Travel Policy</Label>
-  <Select
-    value={travelPolicy}
-    onValueChange={(v) => setTravelPolicy(v)}
-  >
-    <SelectTrigger className="w-[200px]">
-      <SelectValue placeholder="Select Policy" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="local">Local</SelectItem>
-      <SelectItem value="anywhere">Anywhere</SelectItem>
-    </SelectContent>
-  </Select>
-</div>
+            <div>
+              <Label>Travel Policy</Label>
+              <Select
+                value={travelPolicy}
+                onValueChange={(v) => setTravelPolicy(v)}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select Policy" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="local">Local</SelectItem>
+                  <SelectItem value="anywhere">Anywhere</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <div>
               <Label>Trial Available?</Label>
@@ -459,55 +525,70 @@ const handleFileUpload = async (
 
         {/* Makeup Types & Products */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-         <Card>
-  <CardHeader><CardTitle><Palette /></CardTitle></CardHeader>
-  <CardContent>
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-   {makeupTypesApi.map((m) => (
-  <Badge
-    key={m.id}
-    onClick={() => setSelectedMakeupIds(ids =>
-      ids.includes(m.id) ? ids.filter(x => x !== m.id) : [...ids, m.id]
-    )}
-    className={selectedMakeupIds.includes(m.id)
-      ? "bg-primary/10 text-primary cursor-pointer" 
-      : "bg-gray-100 text-black cursor-pointer"}
-  >
-    {m.name}
-  </Badge>
-))}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Palette />
+                Makeup Type
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {makeupTypesApi.map((m) => (
+                  <Badge
+                    key={m.id}
+                    onClick={() =>
+                      setSelectedMakeupIds((ids) =>
+                        ids.includes(m.id)
+                          ? ids.filter((x) => x !== m.id)
+                          : [...ids, m.id]
+                      )
+                    }
+                    className={
+                      selectedMakeupIds.includes(m.id)
+                        ? "bg-primary/10 text-primary cursor-pointer"
+                        : "bg-gray-100 text-black cursor-pointer"
+                    }
+                  >
+                    {m.name}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-    </div>
-  </CardContent>
-</Card>
-
-        <Card>
-  <CardHeader><CardTitle><Package /></CardTitle></CardHeader>
-  <CardContent>
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-     {/* Products */}
-{productOptions.map((p) => (
-  <Badge
-    key={p.id}
-    onClick={() =>
-      setSelectedProductIds(ids =>
-        ids.includes(p.id)
-          ? ids.filter(x => x !== p.id)
-          : [...ids, p.id]
-      )
-    }
-    className={
-      selectedProductIds.includes(p.id)
-        ? "bg-primary/10 text-primary cursor-pointer"
-        : "bg-gray-100 text-black cursor-pointer"
-    }
-  >
-    {p.name}
-  </Badge>
-))}
-    </div>
-  </CardContent>
-</Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package />
+                Product Use
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {/* Products */}
+                {productOptions.map((p) => (
+                  <Badge
+                    key={p.id}
+                    onClick={() =>
+                      setSelectedProductIds((ids) =>
+                        ids.includes(p.id)
+                          ? ids.filter((x) => x !== p.id)
+                          : [...ids, p.id]
+                      )
+                    }
+                    className={
+                      selectedProductIds.includes(p.id)
+                        ? "bg-primary/10 text-primary cursor-pointer"
+                        : "bg-gray-100 text-black cursor-pointer"
+                    }
+                  >
+                    {p.name}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Work Portfolio */}
@@ -520,26 +601,35 @@ const handleFileUpload = async (
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {portfolioDocs.map(doc => (
+              {portfolioDocs.map((doc) => (
                 <div key={doc.id} className="relative group">
-                  <img src={doc.file_url} alt={doc.file_name}
-                       className="h-24 w-24 object-cover rounded-lg"/>
+                  <img
+                    src={doc.file_url}
+                    alt={doc.file_name}
+                    className="h-24 w-24 object-cover rounded-lg"
+                  />
                   <Button
                     variant="destructive"
                     size="sm"
                     className="absolute top-1 right-1 p-1"
-                    onClick={()=>setPortfolioDocs(d=>d.filter(x=>x.id!==doc.id))}
-                  ><X className="w-3 h-3"/></Button>
+                    onClick={() =>
+                      setPortfolioDocs((d) => d.filter((x) => x.id !== doc.id))
+                    }
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
                 </div>
               ))}
               {portfolioDocs.length < 8 && (
                 <label className="h-24 w-24 border-dashed flex items-center justify-center cursor-pointer rounded-lg">
-                  <Upload/>
+                  <Upload />
                   <input
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={e=>handleFileUpload(e.target.files,'portfolio')}
+                    onChange={(e) =>
+                      handleFileUpload(e.target.files, "portfolio")
+                    }
                     disabled={loading}
                   />
                 </label>
@@ -549,92 +639,100 @@ const handleFileUpload = async (
         </Card>
 
         {/* Certifications */}
-     {/* Certifications */}
-<Card>
-  <CardHeader>
-    <CardTitle className="flex items-center gap-2">
-      <Award className="w-5 h-5 text-primary" />
-      Certifications
-    </CardTitle>
-  </CardHeader>
-  <CardContent className="space-y-4">
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {certDocs.map(doc => (
-        <div key={doc.id} className="relative group">
-          <img
-            src={doc.file_url}
-            alt={doc.file_name}
-            className="h-24 w-24 object-cover rounded-lg"
-          />
-          <Button
-            variant="destructive"
-            size="sm"
-            className="absolute top-1 right-1 p-1"
-            onClick={() => 
-              setCertDocs(current => current.filter(d => d.id !== doc.id))
-            }
-          >
-            <X className="w-3 h-3" />
-          </Button>
-        </div>
-      ))}
+        {/* Certifications */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="w-5 h-5 text-primary" />
+              Certifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {certDocs.map((doc) => (
+                <div key={doc.id} className="relative group">
+                  <img
+                    src={doc.file_url}
+                    alt={doc.file_name}
+                    className="h-24 w-24 object-cover rounded-lg"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-1 right-1 p-1"
+                    onClick={() =>
+                      setCertDocs((current) =>
+                        current.filter((d) => d.id !== doc.id)
+                      )
+                    }
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ))}
 
-      {certDocs.length < 8 && (
-        <label className="h-24 w-24 border-dashed rounded-lg flex items-center justify-center cursor-pointer">
-          <Upload />
-          <input
-            type="file"
-            accept="image/*,application/pdf"
-            className="hidden"
-            onChange={e =>
-              handleFileUpload(e.target.files, "certificate")
-            }
-            disabled={loading}
-          />
-        </label>
-      )}
-    </div>
-  </CardContent>
-</Card>
-<Card>
-  <CardHeader>
-    <CardTitle className="flex items-center gap-2">
-      <Award className="w-5 h-5 text-primary" />
-      ID Documents (Aadhaar, PAN)
-    </CardTitle>
-  </CardHeader>
-  <CardContent className="space-y-4">
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {idDocs.map(doc => (
-        <div key={doc.id} className="relative group">
-          <img src={doc.file_url} alt={doc.file_name} className="h-24 w-24 object-cover rounded-lg" />
-          <Button
-            variant="destructive"
-            size="sm"
-            className="absolute top-1 right-1 p-1"
-            onClick={() => setIdDocs(d => d.filter(x => x.id !== doc.id))}
-          >
-            <X className="w-3 h-3" />
-          </Button>
-        </div>
-      ))}
-      {idDocs.length < 4 && (
-        <label className="h-24 w-24 border-dashed rounded-lg flex items-center justify-center cursor-pointer">
-          <Upload />
-          <input
-            type="file"
-            accept="image/*,application/pdf"
-            className="hidden"
-            onChange={e => handleFileUpload(e.target.files, "id-document")}
-            disabled={loading}
-          />
-        </label>
-      )}
-    </div>
-  </CardContent>
-</Card>
-
-
+              {certDocs.length < 8 && (
+                <label className="h-24 w-24 border-dashed rounded-lg flex items-center justify-center cursor-pointer">
+                  <Upload />
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    onChange={(e) =>
+                      handleFileUpload(e.target.files, "certificate")
+                    }
+                    disabled={loading}
+                  />
+                </label>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="w-5 h-5 text-primary" />
+              ID Documents (Aadhaar, PAN)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {idDocs.map((doc) => (
+                <div key={doc.id} className="relative group">
+                  <img
+                    src={doc.file_url}
+                    alt={doc.file_name}
+                    className="h-24 w-24 object-cover rounded-lg"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-1 right-1 p-1"
+                    onClick={() =>
+                      setIdDocs((d) => d.filter((x) => x.id !== doc.id))
+                    }
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ))}
+              {idDocs.length < 4 && (
+                <label className="h-24 w-24 border-dashed rounded-lg flex items-center justify-center cursor-pointer">
+                  <Upload />
+                  <input
+                    type="file"
+                    accept="image/*,application/pdf"
+                    className="hidden"
+                    onChange={(e) =>
+                      handleFileUpload(e.target.files, "id-document")
+                    }
+                    disabled={loading}
+                  />
+                </label>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Social Links */}
         <Card>
@@ -676,4 +774,3 @@ const handleFileUpload = async (
 function setSelectedServices(arg0: string[]) {
   throw new Error("Function not implemented.");
 }
-

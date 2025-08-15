@@ -38,7 +38,7 @@ const Login = () => {
     }
     try {
       setIsLoading(true)
-      const res = await fetch("https://wedmac-services.onrender.com/api/users/login/request-otp/", {
+      const res = await fetch("https://wedmac-be.onrender.com/api/users/login/request-otp/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone }),
@@ -65,7 +65,7 @@ const handleVerifyOTP = async () => {
   try {
     setIsLoading(true);
     const res = await fetch(
-      "https://wedmac-services.onrender.com/api/users/login-otp/",
+      "https://wedmac-be.onrender.com/api/users/login-otp/",
       { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone, otp }) }
     );
     const body = await res.json();
