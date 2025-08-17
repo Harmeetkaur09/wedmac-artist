@@ -36,6 +36,8 @@ export function Layout({ children, title }: LayoutProps) {
                     <span className="font-medium text-foreground">{user.name}</span>
                     <span className="text-muted-foreground">({user.phone})</span>
                   </div>
+                </div>
+              )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -45,8 +47,6 @@ export function Layout({ children, title }: LayoutProps) {
                     <LogOut className="h-4 w-4" />
                     Logout
                   </Button>
-                </div>
-              )}
             </div>
           </header>
           <div className="flex-1 p-6 overflow-auto">
