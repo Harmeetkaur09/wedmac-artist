@@ -58,6 +58,7 @@ export interface CompleteProfilePayload {
   referel_code: string;
   offer_chosen: string;
   bio: string;
+  travel_policy: string;
   type_of_makeup: number[];
   price_range: string;
   products_used: number[];
@@ -85,6 +86,7 @@ export interface MyProfile {
   referel_code: string;
   offer_chosen: string;
   bio: string;
+  travel_policy: string;
   type_of_makeup: string[];
   price_range: string;
   products_used: string[];
@@ -158,30 +160,33 @@ export async function uploadDocument(
   };
 }
 
-export async function completeProfile(
-  payload: CompleteProfilePayload
-): Promise<void> {
+export async function completeProfile(payload: CompleteProfilePayload): Promise<void> {
   const headers = {
     "Content-Type": "application/json",
     ...(await authHeaders()),
   };
+
   const res = await fetch(
     "https://wedmac-be.onrender.com/api/artists/complete-profile/",
     { method: "POST", headers, body: JSON.stringify(payload) }
   );
 
   const text = await res.text().catch(() => null);
-  let json = null;
+  let body: unknown = null;
   try {
-    json = text ? JSON.parse(text) : null;
-  } catch (e) {
-    json = text;
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = text;
   }
 
   console.log("POST status:", res.status);
-  console.log("POST response body:", json);
+  console.log("POST response body:", body);
+
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || "Complete profile failed");
+    // throw the parsed body (object) so the UI can render structured validation messages
+    throw body ?? { status: res.status, message: "Complete profile failed" };
   }
+
+  // success: nothing to return
+  return;
 }

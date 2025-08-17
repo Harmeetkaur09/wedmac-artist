@@ -65,7 +65,7 @@ export function Dashboard() {
           <PlanBadge plan="Premium" />
           <div className="text-right">
             <p className="text-sm font-medium text-foreground">Credits Available</p>
-            <p className="text-2xl font-bold text-primary">42</p>
+            <p className="text-2xl font-bold text-primary">-</p>
           </div>
         </div>
       </div>
@@ -73,7 +73,7 @@ export function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="New Leads Today"
+          title="New Leads This Week"
           value={8}
           subtitle="Since midnight"
           icon={TrendingUp}

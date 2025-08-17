@@ -83,6 +83,7 @@ const handleVerifyOTP = async () => {
         name: body.name,
         phone: body.phone,
         role: body.role,
+        email: ""
       },
     });
     // Client-side redirect:

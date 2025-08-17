@@ -36,6 +36,75 @@ import {
 } from "@/api/profile";
 import type { MyProfile } from "@/api/profile";
 import { set } from "date-fns";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+function LoadingOverlay({
+  show,
+  message,
+}: {
+  show: boolean;
+  message?: string;
+}) {
+  if (!show) return null;
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto"
+    >
+      {/* backdrop */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+      {/* content */}
+      <div className="relative z-10 flex flex-col items-center gap-4 p-6 rounded-xl">
+        <div className="flex items-center justify-center">
+          {/* spinner */}
+          <div className="h-12 w-12 border-4 border-t-transparent rounded-full animate-spin" />
+        </div>
+        <div className="text-white text-sm">{message ?? "Loading..."}</div>
+      </div>
+    </div>
+  );
+}
+
+// --------------------
+// helper to parse thrown errors (Response or Error)
+// --------------------
+async function parseErrorMessage(err: unknown): Promise<string> {
+  try {
+    if (err instanceof Error) return err.message;
+
+    // Type-guard: detect objects that look like a Response (have a .json() method)
+    function isResponseLike(
+      obj: unknown
+    ): obj is { json: () => Promise<unknown> } {
+      return (
+        typeof obj === "object" &&
+        obj !== null &&
+        typeof (obj as { json?: unknown }).json === "function"
+      );
+    }
+
+    if (isResponseLike(err)) {
+      try {
+        const data = await err.json();
+        if (!data) return "An error occurred";
+        if (typeof data === "object" && data !== null) {
+          const d = data as Record<string, unknown>;
+          if (typeof d.message === "string") return d.message;
+          if (typeof d.detail === "string") return d.detail;
+          if (typeof d.error === "string") return d.error;
+        }
+        return JSON.stringify(data);
+      } catch {
+        // fallthrough
+      }
+    }
+
+    return typeof err === "string" ? err : JSON.stringify(err);
+  } catch (e) {
+    return "An unknown error occurred";
+  }
+}
 
 export default function MyProfile() {
   // — basic info
@@ -76,6 +145,7 @@ export default function MyProfile() {
     useState<boolean>(false);
   const [trialAvailableBoolean, setTrialAvailableBoolean] =
     useState<boolean>(false);
+  const [trialType, setTrialType] = useState<"free" | "paid">("free");
 
   // — social
   const [instagramLink, setInstagramLink] = useState("");
@@ -132,12 +202,15 @@ export default function MyProfile() {
 
   // fetch and prefill
   useEffect(() => {
-    setLoading(true);
-    getMyProfile()
-      .then((data: MyProfile) => {
-        // basic fields (keep your existing lines)
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data: MyProfile = await getMyProfile();
+        if (!mounted) return;
+        // basic fields
         setFirstName(data.first_name);
-
         setLastName(data.last_name);
         setEmail(data.email);
         setPhoneNumber(data.phone);
@@ -155,23 +228,44 @@ export default function MyProfile() {
         setTrialAvailableBoolean(Boolean(data.trial_available));
         setInstagramLink(data.social_links?.instagram || "");
         setFacebookLink(data.social_links?.facebook || "");
+        setTravelPolicy(data.travel_policy || "local");
         const raw = data as unknown as Record<string, unknown>;
-        // type_of_makeup might be: [1,2] or [{id:1,name:""}] or under type_of_makeup_data
         const makeupRaw =
           raw["type_of_makeup"] ?? raw["type_of_makeup_data"] ?? [];
         setSelectedMakeupIds(extractIds(makeupRaw));
-
-        // products: backend returns products_used_data (array of objects) or products_used
         const productsRaw =
           raw["products_used_data"] ?? raw["products_used"] ?? [];
         setSelectedProductIds(extractIds(productsRaw));
-
-        // payments: backend returns payment_methods_data or payment_methods
         const paymentsRaw =
           raw["payment_methods_data"] ?? raw["payment_methods"] ?? [];
         setSelectedPaymentIds(extractIds(paymentsRaw));
 
-        // documents - use the dedicated fields
+        const socialRaw = raw["social_links_data"] ?? raw["social_links"] ?? [];
+        if (Array.isArray(socialRaw)) {
+          (socialRaw as unknown[]).forEach((s) => {
+            if (s && typeof s === "object") {
+              const item = s as Record<string, unknown>;
+              const platform = item["platform"];
+              const url = item["url"];
+              if (platform === "instagram" && typeof url === "string") {
+                setInstagramLink(url);
+              }
+              if (platform === "facebook" && typeof url === "string") {
+                setFacebookLink(url);
+              }
+            }
+          });
+        } else if (
+          typeof raw["social_links"] === "object" &&
+          raw["social_links"] !== null
+        ) {
+          const sl = raw["social_links"] as Record<string, unknown>;
+          if (typeof sl["instagram"] === "string")
+            setInstagramLink(sl["instagram"] as string);
+          if (typeof sl["facebook"] === "string")
+            setFacebookLink(sl["facebook"] as string);
+        }
+
         if (data.profile_picture_data) {
           setProfilePhoto(data.profile_picture_data);
         }
@@ -184,13 +278,18 @@ export default function MyProfile() {
         if (Array.isArray(data.id_documents_data)) {
           setIdDocs(data.id_documents_data);
         }
-      })
-
-      .catch((err) => {
+      } catch (err) {
+        const msg = await parseErrorMessage(err);
         console.error(err);
-        setError("Could not load your profile");
-      })
-      .finally(() => setLoading(false));
+        setError(msg || "Could not load your profile");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleFileUpload = async (
@@ -239,6 +338,7 @@ export default function MyProfile() {
         referel_code: referralCode,
         offer_chosen: chosenOffer,
         bio,
+        travel_policy: travelPolicy,
         type_of_makeup: selectedMakeupIds, // numbers
         products_used: selectedProductIds,
         payment_methods: selectedPaymentIds,
@@ -256,62 +356,25 @@ export default function MyProfile() {
         id_documents: idDocs.map((d) => d.id),
         supporting_images: portfolioDocs.map((d) => d.id),
       };
+      const finalPayload = payload as CompleteProfilePayload & {
+        trial_type?: "free" | "paid";
+      };
+      if (trialAvailableBoolean) {
+        finalPayload.trial_type = trialType;
+      }
 
       await completeProfile(payload);
       console.log("completeProfile payload", payload);
-
-      alert("Profile completed!");
+      alert(
+        "Your profile has been sent to the admin. You will receive a response within 1-2 working hours"
+      );
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-      else setError("An unknown error occurred");
+      const msg = await parseErrorMessage(err);
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
-
-  // — static options
-  const makeupTypes = [
-    "Natural Makeup",
-    "Party Makeup",
-    "Bridal Makeup",
-    "Haldi Makeup",
-    "Mehendi Makeup",
-    "Reception Makeup",
-    "Engagement Makeup",
-    "Traditional Makeup",
-    "HD Makeup",
-    "Airbrush Makeup",
-    "Editorial Makeup",
-    "Fashion Makeup",
-  ];
-  const productBrands = [
-    "MAC",
-    "Huda Beauty",
-    "Nykaa",
-    "Lakme",
-    "Maybelline",
-    "L'Oreal",
-    "Urban Decay",
-    "Too Faced",
-    "Charlotte Tilbury",
-    "Fenty Beauty",
-    "Rare Beauty",
-    "Morphe",
-    "Anastasia Beverly Hills",
-    "Other",
-  ];
-  const paymentMethods = [
-    "Cash",
-    "Credit Card",
-    "Debit Card",
-    "UPI",
-    "Net Banking",
-    "PayPal",
-    "Paytm",
-    "PhonePe",
-    "Google Pay",
-    "Bank Transfer",
-  ];
 
   const toggleSelection = (
     item: string,
@@ -325,7 +388,13 @@ export default function MyProfile() {
   console.log("type_of_product->", selectedProductIds);
 
   return (
-    <Layout title="My Profile">
+    <ProtectedRoute>
+      <Layout title="My Profile">
+        <LoadingOverlay
+          show={loading}
+          message={loading ? "Please wait..." : undefined}
+        />
+
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Profile Header */}
         <Card>
@@ -478,6 +547,7 @@ export default function MyProfile() {
         </Card>
 
         {/* Travel & Trial */}
+        {/* Travel & Trial */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -520,6 +590,28 @@ export default function MyProfile() {
                 </div>
               </RadioGroup>
             </div>
+
+            {/* SHOW trial-type ONLY when trialAvailableBoolean === true */}
+            {trialAvailableBoolean && (
+              <div>
+                <Label>Trial Type</Label>
+                <RadioGroup
+                  value={trialType}
+                  onValueChange={(v) => setTrialType(v as "free" | "paid")}
+                >
+                  <div className="flex gap-4 items-center">
+                    <div>
+                      <RadioGroupItem value="free" id="trial-free" />
+                      <Label htmlFor="trial-free">Free</Label>
+                    </div>
+                    <div>
+                      <RadioGroupItem value="paid" id="trial-paid" />
+                      <Label htmlFor="trial-paid">Paid</Label>
+                    </div>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -769,6 +861,7 @@ export default function MyProfile() {
         </div>
       </div>
     </Layout>
+    </ProtectedRoute>
   );
 }
 function setSelectedServices(arg0: string[]) {

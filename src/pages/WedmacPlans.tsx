@@ -1,4 +1,3 @@
-
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,9 +18,9 @@ export default function WedmacPlans() {
         "10 Lead Credits per month",
         "Basic profile listing",
         "Email support",
-        "Mobile app access"
+        "Mobile app access",
       ],
-      popular: false
+      popular: false,
     },
     {
       name: "Standard" as const,
@@ -33,9 +32,9 @@ export default function WedmacPlans() {
         "Priority profile listing",
         "Phone & Email support",
         "Advanced analytics",
-        "Custom portfolio gallery"
+        "Custom portfolio gallery",
       ],
-      popular: true
+      popular: true,
     },
     {
       name: "Premium" as const,
@@ -48,9 +47,9 @@ export default function WedmacPlans() {
         "24/7 Priority support",
         "Advanced lead filters",
         "Custom branding",
-        "Marketing tools"
+        "Marketing tools",
       ],
-      popular: false
+      popular: false,
     },
     {
       name: "Pro" as const,
@@ -64,10 +63,10 @@ export default function WedmacPlans() {
         "Custom lead matching",
         "White-label solutions",
         "API access",
-        "Exclusive events"
+        "Exclusive events",
       ],
-      popular: false
-    }
+      popular: false,
+    },
   ];
 
   return (
@@ -82,29 +81,19 @@ export default function WedmacPlans() {
                   <Crown className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold">Current Plan: Premium</h3>
-                  <p className="text-muted-foreground">Valid until March 15, 2024</p>
+                  <h3 className="text-lg font-semibold">
+                    Current Plan: Premium
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Valid until March 15, 2024
+                  </p>
                 </div>
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-primary">30</div>
-                <p className="text-sm text-muted-foreground">Credits remaining</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Auto-renewal Toggle */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold">Auto-Renewal</h3>
-                <p className="text-sm text-muted-foreground">Automatically renew your plan to avoid interruption</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="auto-renewal" />
-                <Label htmlFor="auto-renewal" className="sr-only">Auto-renewal</Label>
+                <p className="text-sm text-muted-foreground">
+                  Credits remaining
+                </p>
               </div>
             </div>
           </CardContent>
@@ -113,7 +102,12 @@ export default function WedmacPlans() {
         {/* Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map((plan) => (
-            <Card key={plan.name} className={`relative ${plan.popular ? 'ring-2 ring-primary shadow-lg' : ''}`}>
+            <Card
+              key={plan.name}
+              className={`relative ${
+                plan.popular ? "ring-2 ring-primary shadow-lg" : ""
+              }`}
+            >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                   <Badge className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white px-3 py-1">
@@ -121,7 +115,7 @@ export default function WedmacPlans() {
                   </Badge>
                 </div>
               )}
-              
+
               <CardHeader className="text-center pb-4">
                 <div className="flex justify-center mb-2">
                   <PlanBadge plan={plan.name} />
@@ -135,7 +129,7 @@ export default function WedmacPlans() {
                   <span className="font-semibold">{plan.credits} Credits</span>
                 </div>
               </CardHeader>
-              
+
               <CardContent className="space-y-4">
                 <ul className="space-y-2">
                   {plan.features.map((feature, index) => (
@@ -145,15 +139,16 @@ export default function WedmacPlans() {
                     </li>
                   ))}
                 </ul>
-                
-                <Button 
-                  className={`w-full ${plan.name === 'Premium' 
-                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white hover:shadow-lg'
+
+                <Button
+                  className={`w-full ${
+                    plan.name === "Premium"
+                      ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+                      : "bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white hover:shadow-lg"
                   }`}
-                  disabled={plan.name === 'Premium'}
+                  disabled={plan.name === "Premium"}
                 >
-                  {plan.name === 'Premium' ? 'Current Plan' : 'Upgrade Now'}
+                  {plan.name === "Premium" ? "Current Plan" : "Upgrade Now"}
                 </Button>
               </CardContent>
             </Card>
