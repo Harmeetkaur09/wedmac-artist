@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,22 @@ import { PlanBadge } from "@/components/PlanBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreditCard, Download, Calendar, AlertCircle, Crown, Receipt, QrCode, Smartphone } from "lucide-react";
-
+interface Plan {
+  id: string;
+  name: string;
+  total_leads: number;
+  price: string;
+  duration_days: number;
+  description: string;
+  features: string[];
+}
 export default function PaymentsPlan() {
   const [selectedPlan, setSelectedPlan] = useState<string>("");
   const [showQR, setShowQR] = useState(false);
+    const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>("");
+
 
   const currentPlan = {
     name: "Premium" as const,
@@ -22,12 +34,28 @@ export default function PaymentsPlan() {
     autoRenewal: true
   };
 
-  const availablePlans = [
-    { id: "basic", name: "Basic", price: "₹999", credits: 10 },
-    { id: "standard", name: "Standard", price: "₹1,999", credits: 25 },
-    { id: "premium", name: "Premium", price: "₹3,999", credits: 60 },
-    { id: "pro", name: "Pro", price: "₹6,999", credits: 120 }
-  ];
+
+useEffect(() => {
+  const fetchPlans = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("https://wedmac-be.onrender.com/api/masterdata/list/?type=subscriptions_plan");
+      if (!res.ok) throw new Error("Failed to fetch plans");
+      const data: Plan[] = await res.json();
+      setAvailablePlans(data);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Something went wrong");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchPlans();
+}, []);
+
 
   const paymentHistory = [
     {
@@ -183,8 +211,7 @@ export default function PaymentsPlan() {
           </CardContent>
         </Card>
 
-        {/* Purchase New Plan */}
-        <Card>
+           <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="w-5 h-5 text-primary" />
@@ -192,23 +219,29 @@ export default function PaymentsPlan() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select Plan</label>
-              <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a plan to purchase" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availablePlans.map((plan) => (
-                    <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name} - {plan.price} ({plan.credits} credits)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <Button 
+            {loading ? (
+              <p>Loading plans...</p>
+            ) : error ? (
+              <p className="text-red-500">{error}</p>
+            ) : (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Select Plan</label>
+                <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a plan to purchase" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availablePlans.map(plan => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name} - ₹{plan.price} ({plan.total_leads} leads)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <Button
               onClick={handlePurchasePlan}
               disabled={!selectedPlan}
               className="w-full bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
@@ -219,27 +252,7 @@ export default function PaymentsPlan() {
           </CardContent>
         </Card>
 
-        {/* Auto-renewal Status */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">Auto-Renewal Active</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Your plan will automatically renew on {currentPlan.validUntil}
-                  </p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                Manage Auto-Renewal
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        
 
         {/* Payment History */}
         <Card>

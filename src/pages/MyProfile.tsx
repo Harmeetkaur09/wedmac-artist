@@ -501,6 +501,13 @@ export default function MyProfile() {
                   onChange={(e) => setChosenOffer(e.target.value)}
                 />
               </div>
+                <div className="space-y-2">
+                <Label>Price Range</Label>
+                <Input
+                  value={priceRange}
+                  onChange={(e) => setPriceRange(e.target.value)}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

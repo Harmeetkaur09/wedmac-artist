@@ -29,15 +29,12 @@ export function Layout({ children, title }: LayoutProps) {
                 <h1 className="text-xl font-semibold text-foreground">{title}</h1>
               </div>
               
-              {user && (
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2 text-sm">
                     <User className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium text-foreground">{user.name}</span>
                     <span className="text-muted-foreground">({user.phone})</span>
                   </div>
-                </div>
-              )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -47,6 +44,7 @@ export function Layout({ children, title }: LayoutProps) {
                     <LogOut className="h-4 w-4" />
                     Logout
                   </Button>
+                </div>
             </div>
           </header>
           <div className="flex-1 p-6 overflow-auto">

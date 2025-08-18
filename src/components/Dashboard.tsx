@@ -23,6 +23,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getMyProfile, MyProfile } from "@/api/profile";
 import { useNavigate } from "react-router-dom";
 interface Lead {
+  budget_range: string;
+  requirements: string;
   id: number;
   client_name: string;
   status: string;
@@ -36,7 +38,7 @@ interface Summary {
   total_this_month: number;
 }
 
-export function Dashboard() {
+export function Dashboard({ phoneNumber }) {
   const [showAll, setShowAll] = useState(false);
   const { user } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -44,6 +46,7 @@ export function Dashboard() {
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const navigate = useNavigate();
     const [loading, setLoading] = useState(true); // 👈 new state
+  const [showNumber, setShowNumber] = useState(false);
 
 
   useEffect(() => {
@@ -107,7 +110,7 @@ export function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="New Leads This Week"
+          title="Week New Leads"
           value={summary?.new_this_week || 0}
           subtitle="Since midnight"
           icon={TrendingUp}
@@ -194,12 +197,16 @@ export function Dashboard() {
                       </div>
                       <div className="flex items-center gap-1">
                         <IndianRupee className="w-3 h-3" />
-                        <span>30,000 - 35,000</span>
+                        <span>{lead.budget_range}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
                         <span>{lead.location}</span>
                       </div>
+                    </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>{lead.requirements}</span>
+
                     </div>
                   </div>
 
@@ -214,14 +221,20 @@ export function Dashboard() {
                       </Button>
                     ) : (
                       <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="hover:bg-primary/10 hover:text-primary"
-                        >
-                          <Phone className="w-4 h-4 mr-1" />
-                          Contact
-                        </Button>
+                         <Button
+        variant="outline"
+        size="sm"
+        className="hover:bg-primary/10 hover:text-primary"
+        onClick={() => setShowNumber((prev) => !prev)}
+      >
+        <Phone className="w-4 h-4 mr-1" />
+        Contact
+      </Button>
+      {showNumber && (
+        <div className="absolute left-0 mt-2 w-max bg-white border text-black rounded shadow px-4 py-2 z-20">
+          {phoneNumber}
+        </div>
+      )}
                         <Button
                           variant="outline"
                           size="sm"

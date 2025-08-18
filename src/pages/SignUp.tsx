@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,13 @@ const SignUp = () => {
     city: "",
     state: "",
   });
+  const sliderImages = [
+  "/images/hero1.JPG",
+  "/images/hero2.JPG",
+  "/images/hero3.JPG",
+  "/images/hero4.JPG",
+  "/images/hero5.JPG",
+];
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const { login } = useAuth();
@@ -46,6 +53,14 @@ const SignUp = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+    const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % sliderImages.length);
+    }, 4000); // Change image every 4 seconds
+    return () => clearInterval(interval);
+  }, []);
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -143,7 +158,7 @@ const SignUp = () => {
               {/* Logo */}
               <Link to="/" className="block w-[140px] h-auto relative">
                 <img
-                  src="/images/website_logo.png"
+            src={sliderImages[current]}
                   alt="Website Logo"
                   width={140}
                   height={50}

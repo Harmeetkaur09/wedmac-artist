@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,6 +19,13 @@ import {
   Twitter,
 } from "lucide-react"
 
+const sliderImages = [
+  "/images/hero1.JPG",
+  "/images/hero2.JPG",
+  "/images/hero3.JPG",
+  "/images/hero4.JPG",
+  "/images/hero5.JPG",
+];
 const Login = () => {
   const [step, setStep] = useState<"phone" | "otp">("phone")
   const [phone, setPhone] = useState("")
@@ -28,6 +35,14 @@ const Login = () => {
    const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();  
   const { login } = useAuth();
+    const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % sliderImages.length);
+    }, 4000); // Change image every 4 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -208,7 +223,7 @@ const handleVerifyOTP = async () => {
       <section className="relative h-[50vh] pt-32 text-center text-white block md:hidden">
   <div className="absolute inset-0">
     <img
-      src="/images/hero2.JPG"
+            src={sliderImages[current]}
       alt="Hero Background"
       className="object-cover object-top -z-10 w-full h-full absolute"
     />
