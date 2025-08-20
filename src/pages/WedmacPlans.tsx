@@ -6,8 +6,11 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { PlanBadge } from "@/components/PlanBadge";
 import { Crown, Check, Zap, Star, Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function WedmacPlans() {
+    const navigate = useNavigate();
+  
   const plans = [
     {
       name: "Basic" as const,
@@ -34,7 +37,7 @@ export default function WedmacPlans() {
         "Advanced analytics",
         "Custom portfolio gallery",
       ],
-      popular: true,
+      popular: false,
     },
     {
       name: "Premium" as const,
@@ -73,7 +76,7 @@ export default function WedmacPlans() {
     <Layout title="Wedmac Plans">
       <div className="space-y-6">
         {/* Current Plan Status */}
-        <Card className="bg-gradient-to-r from-[#FF577F]/10 to-[#E6447A]/10 border-primary/20">
+        {/* <Card className="bg-gradient-to-r from-[#FF577F]/10 to-[#E6447A]/10 border-primary/20">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -97,7 +100,7 @@ export default function WedmacPlans() {
               </div>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -140,16 +143,16 @@ export default function WedmacPlans() {
                   ))}
                 </ul>
 
-                <Button
-                  className={`w-full ${
-                    plan.name === "Premium"
-                      ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                      : "bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white hover:shadow-lg"
-                  }`}
-                  disabled={plan.name === "Premium"}
-                >
-                  {plan.name === "Premium" ? "Current Plan" : "Upgrade Now"}
-                </Button>
+<Button
+  className={`w-full ${
+    plan.name === "Premium"
+      ? "bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white hover:shadow-lg"
+      : "bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white hover:shadow-lg"
+  }`}
+  onClick={() => navigate("/payments")}
+>
+  {plan.name === "Premium" ? "Purchase plan" : "Purchase plan"}
+</Button>
               </CardContent>
             </Card>
           ))}

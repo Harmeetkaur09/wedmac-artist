@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   BarChart3,
   User,
@@ -11,7 +11,7 @@ import {
   Share2,
   CreditCard,
   HelpCircle,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -28,51 +28,88 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 
+import { useToast } from "@/components/ui/use-toast"; // 👈 shadcn toast hook
 import { getMyProfile } from "@/api/profile";
 
-const menuItems = [
-  { title: "Dashboard",       url: "/",               icon: BarChart3 },
-  { title: "My Profile",      url: "/profile",        icon: User },
-  { title: "Services",        url: "/services",       icon: Scissors },
-  { title: "Unlocked Leads",  url: "/leads",          icon: Unlock },
-  { title: "Reported Leads",  url: "/reported-leads", icon: Flag },
-  { title: "Wedmac Plans",    url: "/plans",          icon: Crown },
-  { title: "Credit History",  url: "/credit-history", icon: Clock },
-  { title: "Wedmac Shop",     url: "/shop",           icon: ShoppingBag },
-  { title: "Refer & Earn",    url: "/refer",          icon: Share2 },
-  { title: "Payments / Plan", url: "/payments",       icon: CreditCard },
-  { title: "Support / Help",  url: "/support",        icon: HelpCircle },
+const allMenuItems = [
+  { title: "Dashboard", url: "/", icon: BarChart3 },
+  { title: "My Profile", url: "/profile", icon: User },
+  { title: "Services", url: "/services", icon: Scissors },
+  { title: "Unlocked Leads", url: "/leads", icon: Unlock },
+  { title: "Reported Leads", url: "/reported-leads", icon: Flag },
+  { title: "Wedmac Plans", url: "/plans", icon: Crown },
+  { title: "Credit History", url: "/credit-history", icon: Clock },
+  { title: "Wedmac Shop", url: "/shop", icon: ShoppingBag },
+  { title: "Refer & Earn", url: "/refer", icon: Share2 },
+  { title: "Payments / Plan", url: "/payments", icon: CreditCard },
+  { title: "Support / Help", url: "/support", icon: HelpCircle },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
-  const [profileComplete, setProfileComplete] = useState<boolean>(false);
+  const { toast } = useToast(); // 👈 initialize toast
+  const [profileComplete, setProfileComplete] = useState(false);
+  const [paymentApproved, setPaymentApproved] = useState(false);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
-  // on mount, fetch profile and decide completeness
   useEffect(() => {
     getMyProfile()
-      .then(profile => {
-        // here we decide “complete” by date_of_birth not null
-        setProfileComplete(profile.date_of_birth !== null);
+      .then((profile) => {
+        const dob = profile?.date_of_birth;
+        const paymentStatus = profile?.status;
+
+        setProfileComplete(!!dob);
+        setPaymentApproved(paymentStatus === "approved");
       })
-      .catch(err => {
-        console.error('Could not load profile:', err);
-        // if you want to be stricter, you could treat failure as “incomplete”
+      .catch(() => {
         setProfileComplete(false);
-      });
+        setPaymentApproved(false);
+      })
+      .finally(() => setLoadingProfile(false));
   }, []);
 
   const handleClick = (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
     url: string
   ) => {
-    // always allow Dashboard & My Profile
-    if (url === '/' || url === '/profile') return;
+    if (loadingProfile) {
+      e.preventDefault();
+      toast({
+        title: "Loading Profile",
+        description: "Please wait, loading your profile...",
+        variant: "default",
+      });
+      return;
+    }
 
-    // if profile incomplete, block and show message
+    const alwaysAllowed = [
+      "/",
+      "/profile",
+      "/services",
+      "/plans",
+      "/shop",
+      "/payments",
+    ];
+    if (alwaysAllowed.includes(url)) return;
+
     if (!profileComplete) {
       e.preventDefault();
-      alert('Please complete your profile first to continue.');
+      toast({
+        title: "Profile Incomplete",
+        description: "Please complete your profile first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!paymentApproved) {
+      e.preventDefault();
+      toast({
+        title: "Payment Required",
+        description: "Please complete your payment first.",
+        variant: "destructive",
+      });
+      return;
     }
   };
 
@@ -97,7 +134,7 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
+              {allMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild

@@ -23,6 +23,7 @@ export interface SocialLinks {
 }
 
 export interface MyProfile {
+  status: any;
   payment_status: string;
   first_name: string;
   last_name: string;

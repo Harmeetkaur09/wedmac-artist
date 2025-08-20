@@ -158,7 +158,7 @@ const SignUp = () => {
               {/* Logo */}
               <Link to="/" className="block w-[140px] h-auto relative">
                 <img
-            src={sliderImages[current]}
+            src="/images/website_logo.png"
                   alt="Website Logo"
                   width={140}
                   height={50}
@@ -297,10 +297,10 @@ const SignUp = () => {
           )}
         </nav>
       </header>
-      <section className="relative h-[50vh] pt-32 text-center text-white block md:hidden">
+      <section className="relative h-[60vh] pt-32 text-center text-white block md:hidden">
         <div className="absolute inset-0">
           <img
-            src="/images/hero2.JPG"
+            src={sliderImages[current]}
             alt="Hero Background"
             className="object-cover object-[center_bottom_20%] -z-10 w-full h-full absolute"
           />

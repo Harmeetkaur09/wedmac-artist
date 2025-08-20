@@ -11,17 +11,13 @@ import {
   Eye,
   Phone,
   MapPin,
-  Plane,
-  Badge,
-  ArrowBigDown,
-  ArrowBigUp,
-  ArrowLeftRightIcon,
   ClockArrowUp,
   IndianRupee,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMyProfile, MyProfile } from "@/api/profile";
 import { useNavigate } from "react-router-dom";
+
 interface Lead {
   budget_range: string;
   requirements: string;
@@ -31,6 +27,7 @@ interface Lead {
   service: string;
   booking_date: string;
   location: string;
+  phone: string;
 }
 
 interface Summary {
@@ -38,26 +35,42 @@ interface Summary {
   total_this_month: number;
 }
 
-export function Dashboard({ phoneNumber }) {
+export function Dashboard({ phone }: { phone?: string }) {
   const [showAll, setShowAll] = useState(false);
   const { user } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const navigate = useNavigate();
-    const [loading, setLoading] = useState(true); // 👈 new state
-  const [showNumber, setShowNumber] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  // per-lead UI state
+  const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
+  const [remarkingLeadId, setRemarkingLeadId] = useState<number | null>(null);
+  const [remarkText, setRemarkText] = useState("");
 
+  // remarks mapping: leadId -> remark text (persisted in localStorage)
+  const [remarks, setRemarks] = useState<{ [key: number]: string }>({});
+
+  // load saved remarks from localStorage once
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("leadRemarks");
+      if (stored) setRemarks(JSON.parse(stored));
+    } catch (err) {
+      console.error("Failed to load remarks from localStorage:", err);
+    }
+  }, []);
+
+  // fetch profile + leads
   useEffect(() => {
     const fetchAll = async () => {
       try {
         setLoading(true);
-        // profile
+
         const profileData = await getMyProfile();
         setProfile(profileData);
 
-        // leads
         const token = sessionStorage.getItem("accessToken");
         const res = await fetch(
           "https://wedmac-be.onrender.com/api/leads/artist/recent-leads/",
@@ -70,21 +83,46 @@ export function Dashboard({ phoneNumber }) {
         );
 
         if (!res.ok) throw new Error("Failed to fetch leads");
-
         const data = await res.json();
         setSummary(data.summary);
         setLeads(data.leads);
       } catch (err) {
         console.error(err);
-      }
-       finally {
-        setLoading(false); // stop loading
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchAll();
   }, []);
+
   const visibleLeads = showAll ? leads : leads.slice(0, 3);
+
+  // Save remark locally (localStorage)
+  const submitRemark = (leadId: number) => {
+    try {
+      const trimmed = remarkText.trim();
+      const updated = { ...remarks };
+
+      if (trimmed === "") {
+        // remove remark if empty
+        delete updated[leadId];
+      } else {
+        updated[leadId] = trimmed;
+      }
+
+      setRemarks(updated);
+      localStorage.setItem("leadRemarks", JSON.stringify(updated));
+      // small non-blocking feedback
+      // you can replace alert with toast if you have one
+      alert("Remark saved locally ✅");
+      setRemarkText("");
+      setRemarkingLeadId(null);
+    } catch (err) {
+      console.error("Error saving remark:", err);
+      alert("Error saving remark ❌");
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -97,11 +135,8 @@ export function Dashboard({ phoneNumber }) {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* <PlanBadge plan="Premium" /> */}
           <div className="text-right">
-            <p className="text-sm font-medium text-foreground">
-              Credits Available
-            </p>
+            <p className="text-sm font-medium text-foreground">Credits Available</p>
             <p className="text-2xl font-bold text-primary">-</p>
           </div>
         </div>
@@ -123,12 +158,7 @@ export function Dashboard({ phoneNumber }) {
           icon={Users}
           trend={{ value: "+8%", isPositive: true }}
         />
-        <StatCard
-          title="Credits Used"
-          value={0}
-          subtitle="This week"
-          icon={Coins}
-        />
+        <StatCard title="Credits Used" value={0} subtitle="This week" icon={Coins} />
         <StatCard
           title="Bookings"
           value={0}
@@ -139,12 +169,10 @@ export function Dashboard({ phoneNumber }) {
       </div>
 
       {/* Recent Leads */}
-            <Card className="shadow-sm">
+      <Card className="shadow-sm">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-semibold">
-              Recent Leads
-            </CardTitle>
+            <CardTitle className="text-xl font-semibold">Recent Leads</CardTitle>
             {!loading && leads.length > 0 && (
               <Button
                 variant="outline"
@@ -158,37 +186,31 @@ export function Dashboard({ phoneNumber }) {
             )}
           </div>
         </CardHeader>
+
         <CardContent>
           {loading ? (
-            <p className="text-center text-muted-foreground py-6">
-              ⏳ Loading leads...
-            </p>
+            <p className="text-center text-muted-foreground py-6">⏳ Loading leads...</p>
           ) : leads.length === 0 ? (
-            <p className="text-center text-muted-foreground py-6">
-              No leads available.
-            </p>
+            <p className="text-center text-muted-foreground py-6">No leads available.</p>
           ) : (
             <div className="space-y-4">
               {visibleLeads.map((lead) => (
                 <div
                   key={lead.id}
-                  className="flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
+                  className="relative flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
                 >
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
-                      <h3 className="font-medium text-foreground">
-                        {lead.client_name}
-                      </h3>
+                      <h3 className="font-medium text-foreground">{lead.client_name}</h3>
                       <span
                         className={`px-2 py-1 text-xs rounded-full font-medium ${
-                          lead.status === "new"
-                            ? "bg-primary/20 text-primary"
-                            : "bg-blue-100 text-blue-700"
+                          lead.status === "new" ? "bg-primary/20 text-primary" : "bg-blue-100 text-blue-700"
                         }`}
                       >
                         {lead.status}
                       </span>
                     </div>
+
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span>{lead.service}</span>
                       <div className="flex items-center gap-1">
@@ -204,52 +226,89 @@ export function Dashboard({ phoneNumber }) {
                         <span>{lead.location}</span>
                       </div>
                     </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{lead.requirements}</span>
 
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>{lead.requirements}</span>
                     </div>
+
+                    {/* Show saved remark if exists */}
+                    {remarks[lead.id] && (
+                      <div className="mt-2 text-sm text-muted-foreground italic">
+                        <strong>Remark:</strong> {remarks[lead.id]}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 relative">
                     {profile?.payment_status === "pending" ? (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => navigate("/payments")}
-                      >
+                      <Button variant="default" size="sm" onClick={() => navigate("/payments")}>
                         Unlock
                       </Button>
                     ) : (
                       <>
-                         <Button
-        variant="outline"
-        size="sm"
-        className="hover:bg-primary/10 hover:text-primary"
-        onClick={() => setShowNumber((prev) => !prev)}
-      >
-        <Phone className="w-4 h-4 mr-1" />
-        Contact
-      </Button>
-      {showNumber && (
-        <div className="absolute left-0 mt-2 w-max bg-white border text-black rounded shadow px-4 py-2 z-20">
-          {phoneNumber}
-        </div>
-      )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="hover:bg-primary/10 hover:text-primary"
+                        {/* Contact Number - toggle */}
+                        <div
+                          className="px-3 py-1 border rounded text-sm cursor-pointer hover:bg-primary/10 hover:text-primary"
+                          onClick={() => setSelectedContactId(selectedContactId === lead.id ? null : lead.id)}
                         >
+                          <Phone className="w-4 h-4 inline mr-1" />
+                          {selectedContactId === lead.id ? lead.phone : "Contact"}
+                        </div>
+
+                        {/* Upgrade */}
+                        <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
                           <ClockArrowUp className="w-4 h-4 mr-1" />
                           Upgrade
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="hover:bg-primary/10 hover:text-primary"
-                        >
-                          Remark
-                        </Button>
+
+                        {/* Remark toggle */}
+                       {/* Remark toggle */}
+<Button
+  variant="outline"
+  size="sm"
+  className="hover:bg-primary/10 hover:text-primary"
+  onClick={() => {
+    // open remark for this lead and prefill existing saved remark
+    const next = remarkingLeadId === lead.id ? null : lead.id;
+    setRemarkingLeadId(next);
+    setRemarkText(next ? remarks[lead.id] || "" : "");
+    // IMPORTANT: don't call submitRemark here — that was causing the alert
+  }}
+>
+  Remark
+</Button>
+
+{/* Remark Input popup */}
+{remarkingLeadId === lead.id && (
+  <div className="absolute top-full right-0 mt-2 w-72 bg-white border rounded shadow px-3 py-3 z-20">
+    <input
+      type="text"
+      value={remarkText}
+      onChange={(e) => setRemarkText(e.target.value)}
+      placeholder="Enter remark..."
+      className="w-full border px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+    />
+    <div className="flex justify-end gap-2 mt-3">
+      <Button
+        size="sm"
+        onClick={() => submitRemark(lead.id)} // call submit only on Save
+      >
+        Save
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          setRemarkingLeadId(null);
+          setRemarkText("");
+        }}
+      >
+        Cancel
+      </Button>
+    </div>
+  </div>
+)}
+
                       </>
                     )}
                   </div>
@@ -268,9 +327,7 @@ export function Dashboard({ phoneNumber }) {
               <Users className="w-6 h-6 text-primary" />
             </div>
             <h3 className="font-semibold text-foreground">Update Profile</h3>
-            <p className="text-sm text-muted-foreground">
-              Keep your portfolio fresh
-            </p>
+            <p className="text-sm text-muted-foreground">Keep your portfolio fresh</p>
           </div>
         </Card>
 
@@ -290,9 +347,7 @@ export function Dashboard({ phoneNumber }) {
               <TrendingUp className="w-6 h-6 text-primary" />
             </div>
             <h3 className="font-semibold text-foreground">View Analytics</h3>
-            <p className="text-sm text-muted-foreground">
-              Track your performance
-            </p>
+            <p className="text-sm text-muted-foreground">Track your performance</p>
           </div>
         </Card>
       </div>

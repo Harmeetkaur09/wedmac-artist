@@ -220,7 +220,7 @@ const handleVerifyOTP = async () => {
               </header>
 
       {/* Main Content */}
-      <section className="relative h-[50vh] pt-32 text-center text-white block md:hidden">
+      <section className="relative h-[60vh] pt-32 text-center text-white block md:hidden">
   <div className="absolute inset-0">
     <img
             src={sliderImages[current]}

@@ -109,11 +109,79 @@ useEffect(() => {
     }
   };
 
-  const handlePurchasePlan = () => {
-    if (selectedPlan) {
-      setShowQR(true);
+const handlePurchasePlan = async () => {
+  if (!selectedPlan) return;
+
+  try {
+    const token = sessionStorage.getItem("accessToken"); // from your auth context
+
+    const res = await fetch(
+      `https://wedmac-be.onrender.com/api/artists/plans/${selectedPlan}/purchase/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await res.json(); // <-- response ko hamesha parse karo
+
+    if (!res.ok) {
+      // agar error aaya to API ka error message show karo
+      alert(`❌ Please wait for admin approval ${data.error || "Payment initiation failed!"}`);
+      return;
     }
-  };
+
+    // Load Razorpay script dynamically
+    const rzpScript = document.createElement("script");
+    rzpScript.src = "https://checkout.razorpay.com/v1/checkout.js";
+    rzpScript.async = true;
+    document.body.appendChild(rzpScript);
+
+    rzpScript.onload = () => {
+      const options = {
+        key: data.key, // from backend
+        amount: data.amount, // amount in paise
+        currency: data.currency,
+        name: "Wedmac",
+        description: data.plan,
+        order_id: data.razorpay_order_id,
+        handler: async function (response: any) {
+          await fetch("https://wedmac-be.onrender.com/api/artists/payment/verify/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
+          });
+
+          alert("✅ Payment Successful!");
+        },
+        prefill: {
+          name: "Your User Name",
+          email: "user@example.com",
+          contact: "9999999999",
+        },
+        theme: { color: "#E6447A" },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    };
+  } catch (err) {
+    console.error(err);
+    alert("❌ Payment initiation failed!");
+  }
+};
+
+
 
   const QRPaymentDialog = () => (
     <Dialog open={showQR} onOpenChange={setShowQR}>
