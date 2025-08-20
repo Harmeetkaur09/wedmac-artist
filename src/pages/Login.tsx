@@ -133,7 +133,7 @@ const handleVerifyOTP = async () => {
                   <div className="max-w-7xl mx-auto px-4">
                     <div className="flex items-center justify-between h-16">
                       {/* Logo */}
-                      <Link to="/" className="block w-[140px] h-auto relative">
+                      <a href="https://wed-mac-qsxz.vercel.app/" className="block w-[140px] h-auto relative">
                         <img
                           src="/images/website_logo.png"
                           alt="Website Logo"
@@ -141,7 +141,7 @@ const handleVerifyOTP = async () => {
                           height={50}
                           className="object-contain"
                         />
-                      </Link>
+                      </a>
         
                       {/* Desktop Menu */}
                       <div className="hidden md:flex items-center space-x-8">
