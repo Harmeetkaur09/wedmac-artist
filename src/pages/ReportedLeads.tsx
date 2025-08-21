@@ -332,7 +332,7 @@ setToast({ message: "Report submitted successfully.", type: "success" });
                   <Flag className="w-5 h-5 text-red-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{reportedLeads.length}</div>
+                  <div className="text-2xl font-bold">-</div>
                   <p className="text-sm text-muted-foreground">Total Reports</p>
                 </div>
               </div>
@@ -345,7 +345,7 @@ setToast({ message: "Report submitted successfully.", type: "success" });
                   <Clock className="w-5 h-5 text-yellow-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">3</div>
+                  <div className="text-2xl font-bold">-</div>
                   <p className="text-sm text-muted-foreground">Under Review</p>
                 </div>
               </div>
@@ -358,7 +358,7 @@ setToast({ message: "Report submitted successfully.", type: "success" });
                   <CheckCircle className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">9</div>
+                  <div className="text-2xl font-bold">-</div>
                   <p className="text-sm text-muted-foreground">Resolved</p>
                 </div>
               </div>
