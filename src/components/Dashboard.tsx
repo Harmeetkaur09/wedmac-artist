@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "./StatCard";
@@ -35,6 +35,13 @@ interface Summary {
   total_this_month: number;
 }
 
+type ToastType = "success" | "error" | "info";
+interface Toast {
+  id: number;
+  message: string;
+  type: ToastType;
+}
+
 export function Dashboard({ phone }: { phone?: string }) {
   const [showAll, setShowAll] = useState(false);
   const { user } = useAuth();
@@ -49,8 +56,26 @@ export function Dashboard({ phone }: { phone?: string }) {
   const [remarkingLeadId, setRemarkingLeadId] = useState<number | null>(null);
   const [remarkText, setRemarkText] = useState("");
 
+  // claim state: currently claiming which lead (id) and per-lead errors
+  const [claimingLeadId, setClaimingLeadId] = useState<number | null>(null);
+  const [claimErrors, setClaimErrors] = useState<Record<number, string>>({});
+
   // remarks mapping: leadId -> remark text (persisted in localStorage)
   const [remarks, setRemarks] = useState<{ [key: number]: string }>({});
+
+  // Toast state
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastId = useRef(1);
+
+  // Adds a toast and auto-removes after 3s
+  const addToast = (message: string, type: ToastType = "success") => {
+    const id = toastId.current++;
+    const t: Toast = { id, message, type };
+    setToasts((s) => [t, ...s]);
+    window.setTimeout(() => {
+      setToasts((s) => s.filter((x) => x.id !== id));
+    }, 3000);
+  };
 
   // load saved remarks from localStorage once
   useEffect(() => {
@@ -67,7 +92,6 @@ export function Dashboard({ phone }: { phone?: string }) {
     const fetchAll = async () => {
       try {
         setLoading(true);
-
         const profileData = await getMyProfile();
         setProfile(profileData);
 
@@ -113,26 +137,102 @@ export function Dashboard({ phone }: { phone?: string }) {
 
       setRemarks(updated);
       localStorage.setItem("leadRemarks", JSON.stringify(updated));
-      // small non-blocking feedback
-      // you can replace alert with toast if you have one
-      alert("Remark saved locally ✅");
+      addToast("Remark saved locally", "success");
       setRemarkText("");
       setRemarkingLeadId(null);
     } catch (err) {
       console.error("Error saving remark:", err);
-      alert("Error saving remark ❌");
+      addToast("Error saving remark", "error");
+    }
+  };
+
+  // ----- claimLead: POST to /api/leads/{id}/claim/ -----
+  const claimLead = async (leadId: number) => {
+    // clear previous error for this lead
+    setClaimErrors((prev) => ({ ...prev, [leadId]: "" }));
+    setClaimingLeadId(leadId);
+
+    try {
+      const token = sessionStorage.getItem("accessToken");
+      const res = await fetch(
+        `https://wedmac-be.onrender.com/api/leads/${leadId}/claim/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // If not ok, read server message (JSON or text) and show inline error + toast
+      if (!res.ok) {
+        const text = await res.text();
+        let errMsg = `Claim failed (status ${res.status})`;
+        try {
+          const json = JSON.parse(text);
+          errMsg = json.detail || json.message || JSON.stringify(json);
+        } catch {
+          if (text) errMsg = text;
+        }
+        setClaimErrors((prev) => ({ ...prev, [leadId]: errMsg }));
+        addToast(errMsg, "error");
+        return;
+      }
+
+      // success: response may include data — optional parse
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        data = null;
+      }
+
+      // mark this lead as selected (reveal phone)
+      setSelectedContactId(leadId);
+
+      // update lead locally if backend returned new fields
+      if (data && typeof data === "object") {
+        setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...(data as Partial<Lead>) } : l)));
+      }
+
+      // ✅ show success toast
+      addToast("Lead contact successfully", "success");
+    } catch (err: any) {
+      console.error("Claim error:", err);
+      const message = err?.message || "Claim failed";
+      setClaimErrors((prev) => ({ ...prev, [leadId]: message }));
+      addToast(message, "error");
+    } finally {
+      setClaimingLeadId(null);
     }
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Toast container */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 items-end">
+        {toasts.map((t) => (
+          <div
+            key={t.id}
+            className={`max-w-xs px-3 py-2 rounded shadow ${
+              t.type === "success"
+                ? "bg-green-600 text-white"
+                : t.type === "error"
+                ? "bg-red-600 text-white"
+                : "bg-gray-800 text-white"
+            }`}
+          >
+            {t.message}
+          </div>
+        ))}
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Welcome back! Here's your overview
-          </p>
+          <p className="text-muted-foreground mt-1">Welcome back! Here's your overview</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
@@ -144,28 +244,10 @@ export function Dashboard({ phone }: { phone?: string }) {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Week New Leads"
-          value={summary?.new_this_week || 0}
-          subtitle="Since midnight"
-          icon={TrendingUp}
-          trend={{ value: "+12%", isPositive: true }}
-        />
-        <StatCard
-          title="Total Leads"
-          value={summary?.total_this_month || 0}
-          subtitle="This month"
-          icon={Users}
-          trend={{ value: "+8%", isPositive: true }}
-        />
+        <StatCard title="Week New Leads" value={summary?.new_this_week || 0} subtitle="Since midnight" icon={TrendingUp} trend={{ value: "+12%", isPositive: true }} />
+        <StatCard title="Total Leads" value={summary?.total_this_month || 0} subtitle="This month" icon={Users} trend={{ value: "+8%", isPositive: true }} />
         <StatCard title="Credits Used" value={0} subtitle="This week" icon={Coins} />
-        <StatCard
-          title="Bookings"
-          value={0}
-          subtitle="Confirmed this month"
-          icon={Calendar}
-          trend={{ value: "+15%", isPositive: true }}
-        />
+        <StatCard title="Bookings" value={0} subtitle="Confirmed this month" icon={Calendar} trend={{ value: "+15%", isPositive: true }} />
       </div>
 
       {/* Recent Leads */}
@@ -174,12 +256,7 @@ export function Dashboard({ phone }: { phone?: string }) {
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-semibold">Recent Leads</CardTitle>
             {!loading && leads.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="hover:bg-primary/10 hover:text-primary"
-                onClick={() => setShowAll((prev) => !prev)}
-              >
+              <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary" onClick={() => setShowAll((prev) => !prev)}>
                 <Eye className="w-4 h-4 mr-2" />
                 {showAll ? "Show Less" : "View All"}
               </Button>
@@ -195,18 +272,11 @@ export function Dashboard({ phone }: { phone?: string }) {
           ) : (
             <div className="space-y-4">
               {visibleLeads.map((lead) => (
-                <div
-                  key={lead.id}
-                  className="relative flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
-                >
+                <div key={lead.id} className="relative flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200">
                   <div className="space-y-2">
                     <div className="flex items-center gap-3">
                       <h3 className="font-medium text-foreground">{lead.client_name}</h3>
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full font-medium ${
-                          lead.status === "new" ? "bg-primary/20 text-primary" : "bg-blue-100 text-blue-700"
-                        }`}
-                      >
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${lead.status === "new" ? "bg-primary/20 text-primary" : "bg-blue-100 text-blue-700"}`}>
                         {lead.status}
                       </span>
                     </div>
@@ -246,14 +316,23 @@ export function Dashboard({ phone }: { phone?: string }) {
                       </Button>
                     ) : (
                       <>
-                        {/* Contact Number - toggle */}
+                        {/* Contact Number - triggers claim */}
                         <div
-                          className="px-3 py-1 border rounded text-sm cursor-pointer hover:bg-primary/10 hover:text-primary"
-                          onClick={() => setSelectedContactId(selectedContactId === lead.id ? null : lead.id)}
+                          className={`px-3 py-1 border rounded text-sm cursor-pointer flex items-center gap-2 ${claimingLeadId === lead.id ? "opacity-70 pointer-events-none" : "hover:bg-primary/10 hover:text-primary"}`}
+                          onClick={() => {
+                            if (selectedContactId === lead.id) {
+                              setSelectedContactId(null);
+                              return;
+                            }
+                            claimLead(lead.id);
+                          }}
                         >
-                          <Phone className="w-4 h-4 inline mr-1" />
-                          {selectedContactId === lead.id ? lead.phone : "Contact"}
+                          <Phone className="w-4 h-4 inline" />
+                          {claimingLeadId === lead.id ? "Claiming..." : selectedContactId === lead.id ? lead.phone : "Contact"}
                         </div>
+
+                        {/* show inline claim error if any */}
+                        {claimErrors[lead.id] && <div className="text-xs text-red-400 mt-1 max-w-xs">{claimErrors[lead.id]}</div>}
 
                         {/* Upgrade */}
                         <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
@@ -261,54 +340,33 @@ export function Dashboard({ phone }: { phone?: string }) {
                           Upgrade
                         </Button>
 
-                        {/* Remark toggle */}
-                       {/* Remark toggle */}
-<Button
-  variant="outline"
-  size="sm"
-  className="hover:bg-primary/10 hover:text-primary"
-  onClick={() => {
-    // open remark for this lead and prefill existing saved remark
-    const next = remarkingLeadId === lead.id ? null : lead.id;
-    setRemarkingLeadId(next);
-    setRemarkText(next ? remarks[lead.id] || "" : "");
-    // IMPORTANT: don't call submitRemark here — that was causing the alert
-  }}
->
-  Remark
-</Button>
+                        {/* Remark toggle & popup */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="hover:bg-primary/10 hover:text-primary"
+                          onClick={() => {
+                            const next = remarkingLeadId === lead.id ? null : lead.id;
+                            setRemarkingLeadId(next);
+                            setRemarkText(next ? remarks[lead.id] || "" : "");
+                          }}
+                        >
+                          Remark
+                        </Button>
 
-{/* Remark Input popup */}
-{remarkingLeadId === lead.id && (
-  <div className="absolute top-full right-0 mt-2 w-72 bg-white border rounded shadow px-3 py-3 z-20">
-    <input
-      type="text"
-      value={remarkText}
-      onChange={(e) => setRemarkText(e.target.value)}
-      placeholder="Enter remark..."
-      className="w-full border px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-    />
-    <div className="flex justify-end gap-2 mt-3">
-      <Button
-        size="sm"
-        onClick={() => submitRemark(lead.id)} // call submit only on Save
-      >
-        Save
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => {
-          setRemarkingLeadId(null);
-          setRemarkText("");
-        }}
-      >
-        Cancel
-      </Button>
-    </div>
-  </div>
-)}
-
+                        {remarkingLeadId === lead.id && (
+                          <div className="absolute top-full right-0 mt-2 w-72 bg-white border rounded shadow px-3 py-3 z-20">
+                            <input type="text" value={remarkText} onChange={(e) => setRemarkText(e.target.value)} placeholder="Enter remark..." className="w-full border px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+                            <div className="flex justify-end gap-2 mt-3">
+                              <Button size="sm" onClick={() => submitRemark(lead.id)}>
+                                Save
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => { setRemarkingLeadId(null); setRemarkText(""); }}>
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>

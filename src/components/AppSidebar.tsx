@@ -56,7 +56,7 @@ export function AppSidebar() {
     getMyProfile()
       .then((profile) => {
         const dob = profile?.date_of_birth;
-        const paymentStatus = profile?.status;
+        const paymentStatus = profile?.payment_status;
 
         setProfileComplete(!!dob);
         setPaymentApproved(paymentStatus === "approved");

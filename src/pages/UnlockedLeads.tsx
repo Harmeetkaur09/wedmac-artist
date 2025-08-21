@@ -1,4 +1,4 @@
-
+import React, { useEffect, useMemo, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,57 +8,114 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Unlock, Search, Phone, Mail, Calendar, MapPin } from "lucide-react";
 
-export default function UnlockedLeads() {
-  const leads = [
-    {
-      id: 1,
-      clientName: "Priya Sharma",
-      phone: "+91 9876543210",
-      email: "priya@email.com",
-      eventDate: "2024-02-15",
-      eventType: "Wedding",
-      location: "Mumbai",
-      budget: "₹20,000",
-      status: "Contacted",
-      unlockedDate: "2024-01-15"
-    },
-    {
-      id: 2,
-      clientName: "Ankita Patel",
-      phone: "+91 9876543211",
-      email: "ankita@email.com",
-      eventDate: "2024-03-20",
-      eventType: "Engagement",
-      location: "Delhi",
-      budget: "₹15,000",
-      status: "Booked",
-      unlockedDate: "2024-01-16"
-    },
-    {
-      id: 3,
-      clientName: "Ritu Singh",
-      phone: "+91 9876543212",
-      email: "ritu@email.com",
-      eventDate: "2024-04-10",
-      eventType: "Party",
-      location: "Bangalore",
-      budget: "₹8,000",
-      status: "Pending",
-      unlockedDate: "2024-01-17"
-    }
-  ];
+type ApiLead = {
+  id: number;
+  makeup_types?: { id: number; name: string }[];
+  first_name: string;
+  last_name?: string;
+  phone?: string | null;
+  email?: string | null;
+  event_type?: string | null;
+  requirements?: string | null;
+  booking_date?: string | null;
+  source?: string | null;
+  status?: string | null;
+  last_contact?: string | null;
+  notes?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  service?: string | null;
+  budget_range?: string | null;
+  location?: string | null;
+  assigned_to?: string | null;
+  requested_artist?: string | null;
+};
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Booked":
+export default function UnlockedLeads() {
+  const [leads, setLeads] = useState<ApiLead[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // filters / UI state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [eventFilter, setEventFilter] = useState<string>("all");
+// fixed options
+const statusOptions = ["pending", "contacted", "booked"];
+const eventOptions = ["wedding", "engagement", "party"];
+
+  // fetch claimed/unlocked leads
+  useEffect(() => {
+    const fetchLeads = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const token = sessionStorage.getItem("accessToken");
+        const res = await fetch("https://wedmac-be.onrender.com/api/leads/artist/my-claimed-leads/", {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(text || `Failed to fetch leads (status ${res.status})`);
+        }
+
+        const data: ApiLead[] = await res.json();
+        setLeads(data || []);
+      } catch (err: any) {
+        console.error("Failed to load unlocked leads:", err);
+        setError(err?.message || "Failed to fetch unlocked leads");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLeads();
+  }, []);
+
+  const getStatusColor = (status?: string) => {
+    if (!status) return "bg-gray-100 text-gray-800";
+    switch (status.toLowerCase()) {
+      case "booked":
         return "bg-green-100 text-green-800";
-      case "Contacted":
+      case "contacted":
         return "bg-blue-100 text-blue-800";
-      case "Pending":
+      case "pending":
         return "bg-yellow-100 text-yellow-800";
+      case "contact_success":
+        return "bg-green-100 text-green-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+
+  // filtered leads
+  const filteredLeads = useMemo(() => {
+    return leads.filter((l) => {
+      const q = searchQuery.trim().toLowerCase();
+      if (q) {
+        const hay = `${l.first_name ?? ""} ${l.last_name ?? ""} ${l.email ?? ""} ${l.phone ?? ""} ${l.service ?? ""} ${l.requirements ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (statusFilter !== "all" && (l.status ?? "").toLowerCase() !== statusFilter.toLowerCase()) return false;
+      if (eventFilter !== "all" && (l.event_type ?? "").toLowerCase() !== eventFilter.toLowerCase()) return false;
+      return true;
+    });
+  }, [leads, searchQuery, statusFilter, eventFilter]);
+
+  // safe WhatsApp number builder - strips non digits and leading + if present
+  const buildWhatsAppUrl = (phone?: string | null) => {
+    if (!phone) return "";
+    // remove non-digit characters
+    let digits = phone.replace(/\D+/g, "");
+    // if number is 10 digits (India), prefix with 91
+    if (digits.length === 10) digits = `91${digits}`;
+    return `https://wa.me/${digits}`;
   };
 
   return (
@@ -68,25 +125,25 @@ export default function UnlockedLeads() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-primary">24</div>
+              <div className="text-2xl font-bold text-primary">{leads.length}</div>
               <p className="text-sm text-muted-foreground">Total Unlocked</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-green-600">8</div>
+              <div className="text-2xl font-bold text-green-600">{leads.filter(l => (l.status ?? "").toLowerCase() === "booked").length}</div>
               <p className="text-sm text-muted-foreground">Booked</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-blue-600">12</div>
+              <div className="text-2xl font-bold text-blue-600">{leads.filter(l => (l.status ?? "").toLowerCase() === "contacted").length}</div>
               <p className="text-sm text-muted-foreground">Contacted</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-yellow-600">4</div>
+              <div className="text-2xl font-bold text-yellow-600">{leads.filter(l => (l.status ?? "").toLowerCase() === "pending").length}</div>
               <p className="text-sm text-muted-foreground">Pending</p>
             </CardContent>
           </Card>
@@ -100,96 +157,165 @@ export default function UnlockedLeads() {
               Your Unlocked Leads
             </CardTitle>
           </CardHeader>
+
           <CardContent>
-            <div className="flex flex-wrap gap-4 mb-6">
+            <div className="flex flex-wrap gap-4 mb-6 items-center">
               <div className="flex-1 min-w-[200px]">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input placeholder="Search leads..." className="pl-10" />
+                  <Input
+                    placeholder="Search leads (name, phone, email, service)..."
+                    className="pl-10"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </div>
               </div>
-              <Select>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="contacted">Contacted</SelectItem>
-                  <SelectItem value="booked">Booked</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select>
-                <SelectTrigger className="w-[150px]">
-                  <SelectValue placeholder="Event Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Events</SelectItem>
-                  <SelectItem value="wedding">Wedding</SelectItem>
-                  <SelectItem value="engagement">Engagement</SelectItem>
-                  <SelectItem value="party">Party</SelectItem>
-                </SelectContent>
-              </Select>
+
+              <div>
+   <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val)}>
+  <SelectTrigger className="w-[150px]">
+    <SelectValue placeholder="Status" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">All Status</SelectItem>
+    {statusOptions.map((s) => (
+      <SelectItem key={s} value={s}>
+        {s.charAt(0).toUpperCase() + s.slice(1)}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
+              </div>
+
+              <div>
+   <Select value={eventFilter} onValueChange={(val) => setEventFilter(val)}>
+  <SelectTrigger className="w-[150px]">
+    <SelectValue placeholder="Event Type" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all" >All Events</SelectItem>
+    {eventOptions.map((e) => (
+      <SelectItem key={e} value={e} >
+        {e.charAt(0).toUpperCase() + e.slice(1)}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+              </div>
+
+              <div>
+                <Button size="sm" variant="outline" onClick={() => { setSearchQuery(""); setStatusFilter("all"); setEventFilter("all"); }}>
+                  Clear
+                </Button>
+              </div>
             </div>
 
             {/* Leads Table */}
             <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Client Details</TableHead>
-                    <TableHead>Event Info</TableHead>
-                    <TableHead>Budget</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {leads.map((lead) => (
-                    <TableRow key={lead.id}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium">{lead.clientName}</div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="w-3 h-3" />
-                            {lead.phone}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="w-3 h-3" />
-                            {lead.email}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium">{lead.eventType}</div>
-                        
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-semibold text-primary">{lead.budget}</span>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(lead.status)}>
-                          {lead.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
-                            <Phone className="w-3 h-3 mr-1" />
-                            Call
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Mail className="w-3 h-3 mr-1" />
-                            WhatsApp
-                          </Button>
-                        </div>
-                      </TableCell>
+              {loading ? (
+                <div className="p-6 text-center text-muted-foreground">⏳ Loading unlocked leads…</div>
+              ) : error ? (
+                <div className="p-6 text-center text-red-400">{error}</div>
+              ) : filteredLeads.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground">No leads found.</div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client Details</TableHead>
+                      <TableHead>Event Info</TableHead>
+                      <TableHead>Budget</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+
+                  <TableBody>
+                    {filteredLeads.map((lead) => {
+                      const clientName = `${lead.first_name ?? ""}${lead.last_name ? " " + lead.last_name : ""}`;
+                      const phone = lead.phone ?? "-";
+                      const email = lead.email ?? "-";
+                      const eventType = lead.event_type ?? lead.service ?? "-";
+                      const bookingDate = lead.booking_date ? new Date(lead.booking_date).toLocaleDateString() : "-";
+                      const budget = lead.budget_range ?? "-";
+                      const location = lead.location ?? "-";
+
+                      return (
+                        <TableRow key={lead.id}>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium">{clientName}</div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Phone className="w-3 h-3" />
+                                {phone}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Mail className="w-3 h-3" />
+                                {email}
+                              </div>
+                              {lead.notes && <div className="text-xs text-muted-foreground italic mt-1">{lead.notes}</div>}
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium">{eventType}</div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Calendar className="w-3 h-3" />
+                                {bookingDate}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <MapPin className="w-3 h-3" />
+                                {location}
+                              </div>
+                            </div>
+                          </TableCell>
+
+                          <TableCell>
+                            <span className="font-semibold text-primary">{budget}</span>
+                          </TableCell>
+
+                          <TableCell>
+                            <Badge className={getStatusColor(lead.status)}>{lead.status ?? "-"}</Badge>
+                          </TableCell>
+
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  if (!lead.phone) return;
+                                  // open dialer
+                                  window.location.href = `tel:${(lead.phone ?? "").replace(/\s+/g, "")}`;
+                                }}
+                              >
+                                <Phone className="w-3 h-3 mr-1" />
+                                Call
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  const url = buildWhatsAppUrl(lead.phone);
+                                  if (!url) return;
+                                  window.open(url, "_blank");
+                                }}
+                              >
+                                <Mail className="w-3 h-3 mr-1" />
+                                WhatsApp
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </div>
           </CardContent>
         </Card>

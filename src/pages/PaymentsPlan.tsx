@@ -18,21 +18,84 @@ interface Plan {
   description: string;
   features: string[];
 }
+interface Payment {
+  id: number;
+  date: string;
+  description: string;
+  amount: string;
+  status: string;
+  invoice?: string;
+  method?: string;
+}
+
 export default function PaymentsPlan() {
   const [selectedPlan, setSelectedPlan] = useState<string>("");
   const [showQR, setShowQR] = useState(false);
     const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+const [paymentHistory, setPaymentHistory] = useState<Payment[]>([]);
+const [loadingPayments, setLoadingPayments] = useState(true);
+const [errorPayments, setErrorPayments] = useState<string | null>(null);
+const [currentPlan, setCurrentPlan] = useState<any>(null);
 
 
-  const currentPlan = {
-    name: "Premium" as const,
-    price: "₹3,999",
-    validUntil: "March 15, 2024",
-    credits: 30,
-    autoRenewal: true
+
+useEffect(() => {
+  const fetchPayments = async () => {
+    try {
+      setLoadingPayments(true);
+      const token = sessionStorage.getItem("accessToken");
+
+      const res = await fetch("https://wedmac-be.onrender.com/api/artists/payments/history/", {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch payment history");
+      const data = await res.json();
+      console.log("📌 Payment API response:", data);
+
+      // ✅ Transform Payment History (for table)
+      const transformed = (data.results || []).map((item: any) => ({
+        id: item.id,
+        date: item.dates?.created_at,
+        description: item.plan?.name ?? "N/A",
+        amount: item.plan?.price ? `₹${item.plan.price}` : "-",
+        status: item.payment?.status === "success" ? "Completed" : "Pending",
+        method: "Razorpay",
+      }));
+      setPaymentHistory(transformed);
+
+      // ✅ Find latest completed subscription
+      const completed = (data.results || [])
+        .filter((p: any) => p.payment?.status === "success")
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.dates?.created_at).getTime() -
+            new Date(a.dates?.created_at).getTime()
+        )[0];
+
+      if (completed) {
+        setCurrentPlan({
+          name: completed.plan?.name,
+          price: `₹${completed.plan?.price}`,
+          validUntil: new Date(completed.dates?.end_date).toLocaleDateString(),
+          credits: completed.usage?.remaining_leads ?? 0,
+        });
+      }
+    } catch (err: any) {
+      setErrorPayments(err.message || "Error fetching payments");
+    } finally {
+      setLoadingPayments(false);
+    }
   };
+
+  fetchPayments();
+}, []);
+
 
 
 useEffect(() => {
@@ -57,44 +120,7 @@ useEffect(() => {
 }, []);
 
 
-  const paymentHistory = [
-    {
-      id: 1,
-      date: "2024-01-15",
-      description: "Premium Plan - Monthly",
-      amount: "₹3,999",
-      status: "Completed",
-      invoice: "INV-2024-001",
-      method: "UPI"
-    },
-    {
-      id: 2,
-      date: "2023-12-15",
-      description: "Premium Plan - Monthly",
-      amount: "₹3,999",
-      status: "Completed",
-      invoice: "INV-2023-012",
-      method: "Credit Card"
-    },
-    {
-      id: 3,
-      date: "2023-11-15",
-      description: "Standard Plan - Monthly",
-      amount: "₹1,999",
-      status: "Completed",
-      invoice: "INV-2023-011",
-      method: "UPI"
-    },
-    {
-      id: 4,
-      date: "2023-10-15",
-      description: "Additional Credits",
-      amount: "₹500",
-      status: "Completed",
-      invoice: "INV-2023-010",
-      method: "Net Banking"
-    }
-  ];
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -247,37 +273,42 @@ const handlePurchasePlan = async () => {
     <Layout title="Payments & Plan">
       <div className="space-y-6">
         {/* Current Plan Status */}
-        <Card className="bg-gradient-to-r from-[#FF577F]/10 to-[#E6447A]/10 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Crown className="w-5 h-5 text-primary" />
-              Current Subscription
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Plan</p>
-                <PlanBadge plan={currentPlan.name} />
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Monthly Cost</p>
-                <p className="text-2xl font-bold text-primary">{currentPlan.price}</p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Valid Until</p>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">{currentPlan.validUntil}</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Remaining Credits</p>
-                <p className="text-2xl font-bold">{currentPlan.credits}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  <Card className="bg-gradient-to-r from-[#FF577F]/10 to-[#E6447A]/10 border-primary/20">
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <Crown className="w-5 h-5 text-primary" />
+      Current Subscription
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    {currentPlan ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Plan</p>
+          <PlanBadge plan={currentPlan.name} />
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Monthly Cost</p>
+          <p className="text-2xl font-bold text-primary">{currentPlan.price}</p>
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Valid Until</p>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-muted-foreground" />
+            <span className="font-medium">{currentPlan.validUntil}</span>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Remaining Credits</p>
+          <p className="text-2xl font-bold">{currentPlan.credits}</p>
+        </div>
+      </div>
+    ) : (
+      <p className="text-gray-500">No active subscription found</p>
+    )}
+  </CardContent>
+</Card>
+
 
            <Card>
           <CardHeader>
@@ -330,44 +361,49 @@ const handlePurchasePlan = async () => {
                 <CreditCard className="w-5 h-5 text-primary" />
                 Payment History
               </CardTitle>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Export All
-              </Button>
+             
             </div>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Payment Method</TableHead>
-                  <TableHead>Status</TableHead>
+       <CardContent>
+  {loadingPayments ? (
+    <p className="text-center text-gray-500">⏳ Loading payments...</p>
+  ) : errorPayments ? (
+    <p className="text-center text-red-500">{errorPayments}</p>
+  ) : paymentHistory.length === 0 ? (
+    <p className="text-center text-gray-500">No payment history found.</p>
+  ) : (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Date</TableHead>
+          <TableHead>Description</TableHead>
+          <TableHead>Amount</TableHead>
+          <TableHead>Payment Method</TableHead>
+          <TableHead>Status</TableHead>
+        </TableRow>
+      </TableHeader>
+    <TableBody>
+  {paymentHistory.map((payment) => (
+    <TableRow key={payment.id}>
+      <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
+      <TableCell>{payment.description}</TableCell>
+      <TableCell>
+        <span className="font-semibold text-primary">{payment.amount}</span>
+      </TableCell>
+      <TableCell>{payment.method}</TableCell>
+      <TableCell>
+        <Badge className={getStatusColor(payment.status)}>
+          {payment.status}
+        </Badge>
+      </TableCell>
+    </TableRow>
+  ))}
+</TableBody>
 
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paymentHistory.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell>{payment.date}</TableCell>
-                    <TableCell>{payment.description}</TableCell>
-                    <TableCell>
-                      <span className="font-semibold text-primary">{payment.amount}</span>
-                    </TableCell>
-                    <TableCell>{payment.method}</TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(payment.status)}>
-                        {payment.status}
-                      </Badge>
-                    </TableCell>
-                
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
+    </Table>
+  )}
+</CardContent>
+
         </Card>
 
         {/* Quick Actions */}
