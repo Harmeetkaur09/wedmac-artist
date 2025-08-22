@@ -160,12 +160,12 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
+      {/* <SidebarFooter className="p-4">
         <div className="bg-gradient-to-r from-[#FF577F]/10 to-[#E6447A]/10 rounded-lg p-3 border border-primary/20">
           <p className="text-xs font-medium text-primary mb-1">Premium Plan</p>
           <p className="text-xs text-muted-foreground">30 days remaining</p>
         </div>
-      </SidebarFooter>
+      </SidebarFooter> */}
     </Sidebar>
   );
 }

@@ -346,10 +346,15 @@ export function Dashboard({ phone }: { phone?: string }) {
                         {claimErrors[lead.id] && <div className="text-xs text-red-400 mt-1 max-w-xs">{claimErrors[lead.id]}</div>}
 
                         {/* Upgrade */}
-                        <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary">
-                          <ClockArrowUp className="w-4 h-4 mr-1" />
-                          Upgrade
-                        </Button>
+                     <Button
+  variant="outline"
+  size="sm"
+  className="hover:bg-primary/10 hover:text-primary"
+  onClick={() => navigate("/payments")}
+>
+  <ClockArrowUp className="w-4 h-4 mr-1" />
+  Upgrade
+</Button>
 
                         {/* Remark toggle & popup */}
                         <Button

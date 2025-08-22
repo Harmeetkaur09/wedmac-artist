@@ -11,66 +11,81 @@ import { useNavigate } from "react-router-dom";
 export default function WedmacPlans() {
     const navigate = useNavigate();
   
-  const plans = [
-    {
-      name: "Basic" as const,
-      price: "₹999",
-      period: "/month",
-      credits: 10,
-      features: [
-        "10 Lead Credits per month",
-        "Basic profile listing",
-        "Email support",
-        "Mobile app access",
-      ],
-      popular: false,
-    },
-    {
-      name: "Standard" as const,
-      price: "₹1,999",
-      period: "/month",
-      credits: 25,
-      features: [
-        "25 Lead Credits per month",
-        "Priority profile listing",
-        "Phone & Email support",
-        "Advanced analytics",
-        "Custom portfolio gallery",
-      ],
-      popular: false,
-    },
-    {
-      name: "Premium" as const,
-      price: "₹3,999",
-      period: "/month",
-      credits: 60,
-      features: [
-        "60 Lead Credits per month",
-        "Top profile ranking",
-        "24/7 Priority support",
-        "Advanced lead filters",
-        "Custom branding",
-        "Marketing tools",
-      ],
-      popular: false,
-    },
-    {
-      name: "Pro" as const,
-      price: "₹6,999",
-      period: "/month",
-      credits: 120,
-      features: [
-        "120 Lead Credits per month",
-        "VIP profile status",
-        "Dedicated account manager",
-        "Custom lead matching",
-        "White-label solutions",
-        "API access",
-        "Exclusive events",
-      ],
-      popular: false,
-    },
-  ];
+ const plans = [
+  {
+    name: "Basic" as const,
+    price: "₹6,999",
+    period: "/2 months",
+    credits: 30, // Verified Leads count in PDF
+    features: [
+      "For MUA with 1 or 1.5 years of experience with normal portfolio",
+      "Access in 2 cities",
+      "Leads with budget below ₹15,000",
+      "Leads reversal and extension available",
+      "Email support",
+      "2 Story features on profile",
+    ],
+    popular: false,
+  },
+  {
+    name: "Standard" as const,
+    price: "₹12,999",
+    period: "/3 months",
+    credits: 70,
+    features: [
+      "For MUA with 3 to 5 years of experience with average portfolio",
+      "Access in 5 cities",
+      "Leads with budget below ₹40,000",
+      "Leads reversal and extension available",
+      "Email support with guidance for your social media",
+      "2 Story & Post features on profile",
+      "1 webinar with expert",
+      "Dedicated relationship manager",
+    ],
+    popular: false,
+  },
+  {
+    name: "Premium" as const,
+    price: "₹18,999",
+    period: "/3 months",
+    credits: 70,
+    features: [
+      "For confident MUA looking for bookings across India with higher budget clients",
+      "Access in 5 cities",
+      "Leads with higher budget",
+      "Leads reversal and extension available",
+      "Email support and guidance for your social media",
+      "2 Story & Post features on profile",
+      "1 webinar with expert",
+      "Relationship manager assigned",
+    ],
+    popular: true,
+  },
+  {
+    name: "Pro" as const,
+    price: "₹32,999",
+    period: "/6 months",
+    credits: 150,
+    features: [
+      "For professional MUA seeking best returns on seasonal bookings",
+      "Unlimited city access across India",
+      "Higher leads budget",
+      "Leads reversal and extension policies",
+      "5 Story, Post & 6 Reel features on profile",
+      "Special guidance for your profile",
+      "Inbound leads: 25 (1 lead per artist)",
+      "Dedicated relationship manager and profile recommendations",
+      "Wedmac follow-up assistance",
+      "Lead details via Google Sheets",
+      "Pin best review to top of your profile",
+      "Dedicated profile & management support",
+      "Email support",
+      "Your profile featured in top list",
+    ],
+    popular: false,
+  },
+];
+
 
   return (
     <Layout title="Wedmac Plans">
@@ -167,42 +182,58 @@ export default function WedmacPlans() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2">Features</th>
-                    <th className="text-center py-2">Basic</th>
-                    <th className="text-center py-2">Standard</th>
-                    <th className="text-center py-2">Premium</th>
-                    <th className="text-center py-2">Pro</th>
-                  </tr>
-                </thead>
-                <tbody className="space-y-2">
-                  <tr className="border-b">
-                    <td className="py-2">Monthly Credits</td>
-                    <td className="text-center">10</td>
-                    <td className="text-center">25</td>
-                    <td className="text-center">60</td>
-                    <td className="text-center">120</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2">Profile Priority</td>
-                    <td className="text-center">Basic</td>
-                    <td className="text-center">High</td>
-                    <td className="text-center">Top</td>
-                    <td className="text-center">VIP</td>
-                  </tr>
-                  <tr className="border-b">
-                    <td className="py-2">Support</td>
-                    <td className="text-center">Email</td>
-                    <td className="text-center">Phone + Email</td>
-                    <td className="text-center">24/7 Priority</td>
-                    <td className="text-center">Dedicated Manager</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+         <div className="overflow-x-auto">
+  <table className="w-full text-sm border-collapse border border-gray-200">
+    <thead>
+      <tr className="bg-gray-100 border-b border-gray-300">
+        <th className="text-left py-3 px-4 border-r border-gray-300">Features</th>
+        <th className="text-center py-3 px-4 border-r border-gray-300">Basic</th>
+        <th className="text-center py-3 px-4 border-r border-gray-300">Standard</th>
+        <th className="text-center py-3 px-4 border-r border-gray-300">Premium</th>
+        <th className="text-center py-3 px-4">Pro</th>
+      </tr>
+    </thead>
+    <tbody>
+      {[
+        ["Validity Period", "2 Months", "3 Months", "3 Months", "6 Months"],
+        ["Verified Leads", "30", "70", "70", "150"],
+        ["City Access", "2 Cities", "5 Cities", "5 Cities", "Unlimited"],
+        ["Leads Budget Range", "Below ₹15k", "Below ₹40k", "Higher Budget", "Higher Budget"],
+        ["Leads Reversal", "Yes", "Yes", "Yes", "Policy Applies"],
+        ["Leads Extension", "Yes", "Yes", "Yes", "Policy Applies"],
+        ["Support", "Email", "Email + Social Media Guidance", "Email + Social Media + Relationship Manager", "Email + Dedicated Manager & Profile Support"],
+        ["Story/Post Features", "2 Stories", "2 Stories & Post", "2 Stories & Post", "5 Stories, Posts & 6 Reels"],
+        ["Webinars", "-", "1 Webinar with Expert", "1 Webinar with Expert", "Special Profile Guidance"],
+        [
+          "Additional Benefits", 
+          "-",
+          "Relationship Manager",
+          "Relationship Manager",
+          <ul className="list-disc list-inside text-left text-xs space-y-0.5">
+            <li>Inbound Leads: 25 (1 Lead / Artist)</li>
+            <li>Wedmac Follow-up Assistance</li>
+            <li>Lead Details on Google Sheets</li>
+            <li>Pin Best Review to Top of Profile</li>
+            <li>Profile Recommendations & Partner</li>
+            <li>Your Profile Featured in Top List</li>
+          </ul>
+        ],
+      ].map(([feature, basic, standard, premium, pro], i) => (
+        <tr
+          key={feature.toString()}
+          className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
+        >
+          <td className="py-3 px-4 font-medium border-r border-gray-300">{feature}</td>
+          <td className="text-center py-3 px-4 border-r border-gray-300 align-top">{basic}</td>
+          <td className="text-center py-3 px-4 border-r border-gray-300 align-top">{standard}</td>
+          <td className="text-center py-3 px-4 border-r border-gray-300 align-top">{premium}</td>
+          <td className="text-center py-3 px-4 align-top">{pro}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
           </CardContent>
         </Card>
       </div>
