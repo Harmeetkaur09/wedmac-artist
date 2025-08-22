@@ -4,7 +4,8 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
-
+import React, { useEffect, useState } from "react";
+import { getMyProfile, MyProfile } from "@/api/profile";
 interface LayoutProps {
   children: React.ReactNode;
   title: string;
@@ -12,7 +13,33 @@ interface LayoutProps {
 
 export function Layout({ children, title }: LayoutProps) {
   const { user, logout } = useAuth();
+  const [profile, setProfile] = useState<MyProfile | null>(null);
+const [loadingProfile, setLoadingProfile] = useState(true);
+useEffect(() => {
+  let mounted = true;
+  (async () => {
+    try {
+      setLoadingProfile(true);
+      const p = await getMyProfile();
+      if (mounted) setProfile(p);
+    } catch (err) {
+      console.error("Failed to load profile:", err);
+    } finally {
+      if (mounted) setLoadingProfile(false);
+    }
+  })();
+  return () => { mounted = false; };
+}, []);
 
+const displayName =
+  profile?.first_name || profile?.last_name
+    ? `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim()
+    : user?.name ?? "User";
+
+const avatarUrl =
+  profile?.profile_picture_data?.file_url ??
+  profile?.id_documents_data?.[0]?.file_url ??
+  "/images/avatar-placeholder.png";
   const handleLogout = () => {
     logout();
   };
@@ -30,11 +57,18 @@ export function Layout({ children, title }: LayoutProps) {
               </div>
               
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium text-foreground">{user.name}</span>
-                    <span className="text-muted-foreground">({user.phone})</span>
-                  </div>
+                    <img
+    src={avatarUrl}
+    alt="avatar"
+    className="w-9 h-9 rounded-full object-cover border"
+    onError={(e) => {
+      (e.currentTarget as HTMLImageElement).src = "/images/avatar-placeholder.png";
+    }}
+  />
+                  <div className="text-sm">
+    <div className="font-medium text-foreground">{displayName}</div>
+    <div className="text-muted-foreground text-xs">{profile?.phone ?? user?.phone ?? ""}</div>
+  </div>
                   <Button
                     variant="outline"
                     size="sm"

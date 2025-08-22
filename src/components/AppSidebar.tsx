@@ -117,12 +117,15 @@ export function AppSidebar() {
     <Sidebar className="border-r border-border/40">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-[#FF577F] to-[#E6447A] rounded-lg flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-foreground">Wedmac</h2>
-            <p className="text-xs text-muted-foreground">Artist Hub</p>
+       
+          <div className="item-center">
+  <img
+                          src="/images/website_logo.png"
+                          alt="Website Logo"
+                          width={140}
+                          height={50}
+                          className="object-contain"
+                        />              <p className="text-xs text-muted-foreground">Artist Hub</p>
           </div>
         </div>
       </SidebarHeader>
