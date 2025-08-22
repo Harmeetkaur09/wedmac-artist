@@ -19,7 +19,7 @@ import { getMyProfile, MyProfile } from "@/api/profile";
 import { useNavigate } from "react-router-dom";
 
 interface Lead {
-  budget_range: string;
+    budget_range: BudgetRange;
   requirements: string;
   id: number;
   client_name: string;
@@ -28,6 +28,7 @@ interface Lead {
   booking_date: string;
   location: string;
   phone: string;
+
 }
 
 interface Summary {
@@ -41,6 +42,13 @@ interface Toast {
   message: string;
   type: ToastType;
 }
+type BudgetRange = {
+  id: number;
+  label: string;
+  min_value: number;
+  max_value: number;
+} | null;
+
 
 export function Dashboard({ phone }: { phone?: string }) {
   const [showAll, setShowAll] = useState(false);
@@ -287,10 +295,13 @@ export function Dashboard({ phone }: { phone?: string }) {
                         <Calendar className="w-3 h-3" />
                         <span>{lead.booking_date}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <IndianRupee className="w-3 h-3" />
-                        <span>{lead.budget_range}</span>
-                      </div>
+                    <div className="flex items-center gap-1">
+  <IndianRupee className="w-3 h-3" />
+<span>{lead.budget_range?.label ?? "N/A"}</span>
+
+
+</div>
+
                       <div className="flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
                         <span>{lead.location}</span>
