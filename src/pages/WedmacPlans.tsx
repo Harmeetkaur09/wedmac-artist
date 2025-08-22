@@ -59,7 +59,7 @@ export default function WedmacPlans() {
       "1 webinar with expert",
       "Relationship manager assigned",
     ],
-    popular: true,
+    popular: false,
   },
   {
     name: "Pro" as const,
