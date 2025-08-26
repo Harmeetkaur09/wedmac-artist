@@ -38,8 +38,8 @@ const displayName =
 
 const avatarUrl =
   profile?.profile_picture_data?.file_url ??
-  profile?.id_documents_data?.[0]?.file_url ??
-  "/images/avatar-placeholder.png";
+  profile?.id_documents_data?.[0]?.file_url 
+ 
   const handleLogout = () => {
     logout();
   };

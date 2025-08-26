@@ -38,7 +38,7 @@ const allMenuItems = [
   { title: "Unlocked Leads", url: "/leads", icon: Unlock },
   { title: "Reported Leads", url: "/reported-leads", icon: Flag },
   { title: "Wedmac Plans", url: "/plans", icon: Crown },
-  { title: "Credit History", url: "/credit-history", icon: Clock },
+  // { title: "Credit History", url: "/credit-history", icon: Clock },
   { title: "Wedmac Shop", url: "/shop", icon: ShoppingBag },
   { title: "Refer & Earn", url: "/refer", icon: Share2 },
   { title: "Payments / Plan", url: "/payments", icon: CreditCard },

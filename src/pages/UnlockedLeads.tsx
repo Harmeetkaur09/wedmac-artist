@@ -239,7 +239,7 @@ const eventOptions = ["wedding", "engagement", "party"];
                       const email = lead.email ?? "-";
                       const eventType = lead.event_type ?? lead.service ?? "-";
                       const bookingDate = lead.booking_date ? new Date(lead.booking_date).toLocaleDateString() : "-";
-                      const budget = lead.budget_range ?? "-";
+                      const budget = lead.budget_range ?? "₹25000 - ₹30000";
                       const location = lead.location ?? "-";
 
                       return (

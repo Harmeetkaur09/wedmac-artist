@@ -167,7 +167,7 @@ export default function PaymentsPlan(): JSX.Element {
     const fetchPlans = async () => {
       try {
         setLoading(true);
-        const res = await fetch("https://wedmac-be.onrender.com/api/masterdata/list/?type=subscriptions_plan");
+        const res = await fetch("https://wedmac-be.onrender.com/api/admin/master/list/?type=subscriptions_plan");
         if (!res.ok) throw new Error("Failed to fetch plans");
         const data = (await res.json()) as Plan[];
         setAvailablePlans(data);

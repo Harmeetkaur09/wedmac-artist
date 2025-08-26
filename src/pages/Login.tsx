@@ -60,7 +60,7 @@ const Login = () => {
       })
       const body = await res.json()
       if (!res.ok) {
-        throw new Error(body.message || "Failed to send OTP")
+        throw new Error(body.message || "Failed to send OTP, Please Sign In First")
       }
       setStep("otp")
     } catch (err: unknown) {

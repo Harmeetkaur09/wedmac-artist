@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "./StatCard";
-import { PlanBadge } from "./PlanBadge";
 import {
   TrendingUp,
   Users,
@@ -19,7 +18,7 @@ import { getMyProfile, MyProfile } from "@/api/profile";
 import { useNavigate } from "react-router-dom";
 
 interface Lead {
-    budget_range: BudgetRange;
+  budget_range: BudgetRange;
   requirements: string;
   id: number;
   client_name: string;
@@ -28,7 +27,6 @@ interface Lead {
   booking_date: string;
   location: string;
   phone: string;
-
 }
 
 interface Summary {
@@ -49,6 +47,8 @@ type BudgetRange = {
   max_value: number;
 } | null;
 
+const CONTACTED_STORAGE_KEY = "contactedLeads";
+const CONTACT_VISIBLE_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
 
 export function Dashboard({ phone }: { phone?: string }) {
   const [showAll, setShowAll] = useState(false);
@@ -64,12 +64,15 @@ export function Dashboard({ phone }: { phone?: string }) {
   const [remarkingLeadId, setRemarkingLeadId] = useState<number | null>(null);
   const [remarkText, setRemarkText] = useState("");
 
-  // claim state: currently claiming which lead (id) and per-lead errors
+  // claim state
   const [claimingLeadId, setClaimingLeadId] = useState<number | null>(null);
   const [claimErrors, setClaimErrors] = useState<Record<number, string>>({});
 
   // remarks mapping: leadId -> remark text (persisted in localStorage)
   const [remarks, setRemarks] = useState<{ [key: number]: string }>({});
+
+  // contacted map: { "<leadId>": timestampMs }  (kept for legacy 24h-visibility if needed)
+  const [contactedMap, setContactedMap] = useState<Record<string, number>>({});
 
   // Toast state
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -94,6 +97,28 @@ export function Dashboard({ phone }: { phone?: string }) {
       console.error("Failed to load remarks from localStorage:", err);
     }
   }, []);
+
+  // load contactedMap from localStorage once (kept - optional)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(CONTACTED_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Record<string, number>;
+        setContactedMap(parsed || {});
+      }
+    } catch (err) {
+      console.error("Failed to load contactedMap:", err);
+    }
+  }, []);
+
+  // helper to persist contactedMap
+  const persistContactedMap = (map: Record<string, number>) => {
+    try {
+      localStorage.setItem(CONTACTED_STORAGE_KEY, JSON.stringify(map));
+    } catch (err) {
+      console.error("Failed to save contactedMap:", err);
+    }
+  };
 
   // fetch profile + leads
   useEffect(() => {
@@ -199,9 +224,17 @@ export function Dashboard({ phone }: { phone?: string }) {
       // mark this lead as selected (reveal phone)
       setSelectedContactId(leadId);
 
+      // Save contact timestamp (kept for local visibility fallback)
+      const now = Date.now();
+      const updatedMap = { ...contactedMap, [String(leadId)]: now };
+      setContactedMap(updatedMap);
+      persistContactedMap(updatedMap);
+
       // update lead locally if backend returned new fields
       if (data && typeof data === "object") {
-        setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, ...(data as Partial<Lead>) } : l)));
+        setLeads((prev) =>
+          prev.map((l) => (l.id === leadId ? { ...l, ...(data as Partial<Lead>) } : l))
+        );
       }
 
       // ✅ show success toast
@@ -215,6 +248,30 @@ export function Dashboard({ phone }: { phone?: string }) {
       setClaimingLeadId(null);
     }
   };
+
+  // helper: whether contact for a lead should be visible (selected OR contacted within last 24h)
+  const isContactVisible = (lead: Lead) => {
+    // if currently selected (just clicked) show
+    if (selectedContactId === lead.id) return true;
+    const ts = contactedMap[String(lead.id)];
+    if (!ts) return false;
+    return Date.now() - ts < CONTACT_VISIBLE_TTL;
+  };
+
+  // ----------------- NEW: disable based on API status -----------------
+  // check API status first (case-insensitive). If API says "contacted", disable claim button.
+  const isLeadContactDisabled = (lead: Lead) => {
+    const status = lead.status ? String(lead.status).toLowerCase() : "";
+    if (status === "contacted") return true;
+    // fallback: still allow local TTL disabling if you want (uncomment next lines)
+    // const ts = contactedMap[String(lead.id)];
+    // return !!ts && (Date.now() - ts < CONTACT_VISIBLE_TTL);
+    return false;
+  };
+  // -------------------------------------------------------------------
+
+  // compute totals from API 'leads' (count status === 'contacted')
+  const contactedFromApiCount = leads.filter((l) => String(l.status || "").toLowerCase() === "contacted").length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -242,20 +299,38 @@ export function Dashboard({ phone }: { phone?: string }) {
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Welcome back! Here's your overview</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="text-right">
-            <p className="text-sm font-medium text-foreground">Credits Available</p>
-            <p className="text-2xl font-bold text-primary">-</p>
-          </div>
-        </div>
+        <div className="flex items-center gap-3"></div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Week New Leads" value={summary?.new_this_week || 0} subtitle="Since midnight" icon={TrendingUp} trend={{ value: "+12%", isPositive: true }} />
-        <StatCard title="Total Leads" value={summary?.total_this_month || 0} subtitle="This month" icon={Users} trend={{ value: "+8%", isPositive: true }} />
-        <StatCard title="Credits Used" value={0} subtitle="This week" icon={Coins} />
-        <StatCard title="Bookings" value={0} subtitle="Confirmed this month" icon={Calendar} trend={{ value: "+15%", isPositive: true }} />
+        <StatCard
+          title="Week New Leads"
+          value={summary?.new_this_week || 0}
+          subtitle="Since midnight"
+          icon={TrendingUp}
+          trend={{ value: "+12%", isPositive: true }}
+        />
+        <StatCard
+          title="Total Leads"
+          value={summary?.total_this_month || 0}
+          subtitle="This month"
+          icon={Users}
+          trend={{ value: "+8%", isPositive: true }}
+        />
+        <StatCard
+          title="Contacted Leads"
+          value={contactedFromApiCount}
+          subtitle="From API (status: contacted)"
+          icon={Coins}
+        />
+        <StatCard
+          title="Bookings"
+          value={0}
+          subtitle="Confirmed this month"
+          icon={Calendar}
+          trend={{ value: "+15%", isPositive: true }}
+        />
       </div>
 
       {/* Recent Leads */}
@@ -264,7 +339,12 @@ export function Dashboard({ phone }: { phone?: string }) {
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl font-semibold">Recent Leads</CardTitle>
             {!loading && leads.length > 0 && (
-              <Button variant="outline" size="sm" className="hover:bg-primary/10 hover:text-primary" onClick={() => setShowAll((prev) => !prev)}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="hover:bg-primary/10 hover:text-primary"
+                onClick={() => setShowAll((prev) => !prev)}
+              >
                 <Eye className="w-4 h-4 mr-2" />
                 {showAll ? "Show Less" : "View All"}
               </Button>
@@ -279,152 +359,140 @@ export function Dashboard({ phone }: { phone?: string }) {
             <p className="text-center text-muted-foreground py-6">No leads available.</p>
           ) : (
             <div className="space-y-4">
-              {visibleLeads.map((lead) => (
-                <div key={lead.id} className="relative flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <h3 className="font-medium text-foreground">{lead.client_name}</h3>
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${lead.status === "new" ? "bg-primary/20 text-primary" : "bg-blue-100 text-blue-700"}`}>
-                        {lead.status}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{lead.service}</span>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        <span>{lead.booking_date}</span>
-                      </div>
-                    <div className="flex items-center gap-1">
-  <IndianRupee className="w-3 h-3" />
-<span>{lead.budget_range?.label ?? "N/A"}</span>
-
-
-</div>
-
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        <span>{lead.location}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{lead.requirements}</span>
-                    </div>
-
-                    {/* Show saved remark if exists */}
-                    {remarks[lead.id] && (
-                      <div className="mt-2 text-sm text-muted-foreground italic">
-                        <strong>Remark:</strong> {remarks[lead.id]}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 relative">
-                    {profile?.payment_status === "pending" ? (
-                      <Button variant="default" size="sm" onClick={() => navigate("/payments")}>
-                        Unlock
-                      </Button>
-                    ) : (
-                      <>
-                        {/* Contact Number - triggers claim */}
-                        <div
-                          className={`px-3 py-1 border rounded text-sm cursor-pointer flex items-center gap-2 ${claimingLeadId === lead.id ? "opacity-70 pointer-events-none" : "hover:bg-primary/10 hover:text-primary"}`}
-                          onClick={() => {
-                            if (selectedContactId === lead.id) {
-                              setSelectedContactId(null);
-                              return;
-                            }
-                            claimLead(lead.id);
-                          }}
+              {visibleLeads.map((lead) => {
+                const phoneVisible = isContactVisible(lead);
+                const contactDisabled = isLeadContactDisabled(lead);
+                return (
+                  <div
+                    key={lead.id}
+                    className="relative flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <h3 className="font-medium text-foreground">{lead.client_name}</h3>
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full font-medium ${
+                            lead.status === "new" ? "bg-primary/20 text-primary" : "bg-blue-100 text-blue-700"
+                          }`}
                         >
-                          <Phone className="w-4 h-4 inline" />
-                          {claimingLeadId === lead.id ? "Claiming..." : selectedContactId === lead.id ? lead.phone : "Contact"}
+                          {lead.status}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{lead.service}</span>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>{lead.booking_date}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <IndianRupee className="w-3 h-3" />
+                          <span>{lead.budget_range?.label ?? "N/A"}</span>
                         </div>
 
-                        {/* show inline claim error if any */}
-                        {claimErrors[lead.id] && <div className="text-xs text-red-400 mt-1 max-w-xs">{claimErrors[lead.id]}</div>}
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>{lead.location}</span>
+                        </div>
+                      </div>
 
-                        {/* Upgrade */}
-                     <Button
-  variant="outline"
-  size="sm"
-  className="hover:bg-primary/10 hover:text-primary"
-  onClick={() => navigate("/payments")}
->
-  <ClockArrowUp className="w-4 h-4 mr-1" />
-  Upgrade
-</Button>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{lead.requirements}</span>
+                      </div>
 
-                        {/* Remark toggle & popup */}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="hover:bg-primary/10 hover:text-primary"
-                          onClick={() => {
-                            const next = remarkingLeadId === lead.id ? null : lead.id;
-                            setRemarkingLeadId(next);
-                            setRemarkText(next ? remarks[lead.id] || "" : "");
-                          }}
-                        >
-                          Remark
+                      {/* Show saved remark if exists */}
+                      {remarks[lead.id] && (
+                        <div className="mt-2 text-sm text-muted-foreground italic">
+                          <strong>Remark:</strong> {remarks[lead.id]}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 relative">
+                      {profile?.payment_status === "pending" ? (
+                        <Button variant="default" size="sm" onClick={() => navigate("/payments")}>
+                          Unlock
                         </Button>
+                      ) : (
+                        <>
+                          {/* Contact Number - now disabled if API status === 'contacted' */}
+                          <Button
+                            size="sm"
+                            disabled={contactDisabled || claimingLeadId === lead.id}
+                            onClick={() => {
+                              // guard: prevent clicking if disabled
+                              if (contactDisabled) return;
+                              if (selectedContactId === lead.id) {
+                                // toggle off selection (but keep persisted contactedMap timestamp)
+                                setSelectedContactId(null);
+                                return;
+                              }
+                              claimLead(lead.id);
+                            }}
+                            className={`px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 ${
+                              contactDisabled ? " cursor-not-allowed" : "hover:bg-primary/10 hover:text-primary"
+                            }`}
+                          >
+                            <Phone className="w-4 h-4 inline" />
+                            {claimingLeadId === lead.id
+                              ? "Claiming..."
+                              : contactDisabled
+                              ? "Contacted"
+                              : phoneVisible
+                              ? lead.phone
+                              : "Claim"}
+                          </Button>
 
-                        {remarkingLeadId === lead.id && (
-                          <div className="absolute top-full right-0 mt-2 w-72 bg-white border rounded shadow px-3 py-3 z-20">
-                            <input type="text" value={remarkText} onChange={(e) => setRemarkText(e.target.value)} placeholder="Enter remark..." className="w-full border px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-                            <div className="flex justify-end gap-2 mt-3">
-                              <Button size="sm" onClick={() => submitRemark(lead.id)}>
-                                Save
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => { setRemarkingLeadId(null); setRemarkText(""); }}>
-                                Cancel
-                              </Button>
+                          {/* Upgrade */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="hover:bg-primary/10 hover:text-primary"
+                            onClick={() => navigate("/payments")}
+                          >
+                            <ClockArrowUp className="w-4 h-4 mr-1" />
+                            Upgrade
+                          </Button>
+
+                          {remarkingLeadId === lead.id && (
+                            <div className="absolute top-full right-0 mt-2 w-72 bg-white border rounded shadow px-3 py-3 z-20">
+                              <input
+                                type="text"
+                                value={remarkText}
+                                onChange={(e) => setRemarkText(e.target.value)}
+                                placeholder="Enter remark..."
+                                className="w-full border px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                              />
+                              <div className="flex justify-end gap-2 mt-3">
+                                <Button size="sm" onClick={() => submitRemark(lead.id)}>
+                                  Save
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setRemarkingLeadId(null);
+                                    setRemarkText("");
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </>
-                    )}
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 border-l-primary">
-          <div className="text-center space-y-3">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto">
-              <Users className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="font-semibold text-foreground">Update Profile</h3>
-            <p className="text-sm text-muted-foreground">Keep your portfolio fresh</p>
-          </div>
-        </Card>
 
-        <Card className="p-6 hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 border-l-primary">
-          <div className="text-center space-y-3">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto">
-              <Coins className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="font-semibold text-foreground">Buy Credits</h3>
-            <p className="text-sm text-muted-foreground">Unlock more leads</p>
-          </div>
-        </Card>
-
-        <Card className="p-6 hover:shadow-lg transition-all duration-300 cursor-pointer border-l-4 border-l-primary">
-          <div className="text-center space-y-3">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto">
-              <TrendingUp className="w-6 h-6 text-primary" />
-            </div>
-            <h3 className="font-semibold text-foreground">View Analytics</h3>
-            <p className="text-sm text-muted-foreground">Track your performance</p>
-          </div>
-        </Card>
-      </div>
     </div>
   );
 }
