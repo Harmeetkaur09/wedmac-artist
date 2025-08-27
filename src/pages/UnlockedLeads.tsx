@@ -41,7 +41,7 @@ export default function UnlockedLeads() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [eventFilter, setEventFilter] = useState<string>("all");
 // fixed options
-const statusOptions = ["pending", "contacted", "booked"];
+const statusOptions = ["pending", "contacted", "booked", "claimed"];
 const eventOptions = ["wedding", "engagement", "party"];
 
   // fetch claimed/unlocked leads

@@ -125,7 +125,7 @@ export default function Services() {
         throw new Error(`Create failed: ${createResp.status} ${txt}`);
       }
       const created = await createResp.json();
-      const createdId = created?.id;
+      const createdId = created?.service_id;
       if (!createdId) throw new Error("Create response missing id.");
 
       // append to UI
@@ -155,7 +155,7 @@ export default function Services() {
       }
 
       await completeResp.json();
-      setToast({ type: "success", message: `Created service id:${createdId} and updated profile.` });
+      setToast({ type: "success", message: `Created service and updated profile.` });
       resetForm();
     } catch (err: any) {
       console.error(err);
@@ -354,7 +354,7 @@ export default function Services() {
               </div> */}
 
               <div className="flex justify-end items-center gap-4 mt-4">
-                {/* <div className="text-sm text-muted-foreground mr-auto">{statusMessage}</div> */}
+                <div className="text-sm text-muted-foreground mr-auto">{statusMessage}</div>
                 <Button
                   variant="outline"
                   className="mr-2"
@@ -373,11 +373,11 @@ export default function Services() {
           </CardContent>
         </Card>
         {/* Toast */}
-        {/* {toast && (
+        {toast && (
           <div className={`fixed right-6 bottom-6 p-3 rounded shadow ${toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}>
             {toast.message}
           </div>
-        )} */}
+        )} 
       </div>
     </Layout>
   );

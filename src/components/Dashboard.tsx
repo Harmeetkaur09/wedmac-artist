@@ -47,7 +47,7 @@ type BudgetRange = {
   max_value: number;
 } | null;
 
-const CONTACTED_STORAGE_KEY = "contactedLeads";
+const claimed_STORAGE_KEY = "claimedLeads";
 const CONTACT_VISIBLE_TTL = 24 * 60 * 60 * 1000; // 24 hours in ms
 
 export function Dashboard({ phone }: { phone?: string }) {
@@ -71,10 +71,10 @@ export function Dashboard({ phone }: { phone?: string }) {
   // remarks mapping: leadId -> remark text (persisted in localStorage)
   const [remarks, setRemarks] = useState<{ [key: number]: string }>({});
 
-  // contacted map: { "<leadId>": timestampMs }  (kept for legacy 24h-visibility if needed)
-  const [contactedMap, setContactedMap] = useState<Record<string, number>>({});
+  // claimed map: { "<leadId>": timestampMs }  (kept for legacy 24h-visibility if needed)
+  const [claimedMap, setclaimedMap] = useState<Record<string, number>>({});
 
-  // Toast state
+  // Toast stateUp
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastId = useRef(1);
 
@@ -98,25 +98,25 @@ export function Dashboard({ phone }: { phone?: string }) {
     }
   }, []);
 
-  // load contactedMap from localStorage once (kept - optional)
+  // load claimedMap from localStorage once (kept - optional)
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(CONTACTED_STORAGE_KEY);
+      const stored = localStorage.getItem(claimed_STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored) as Record<string, number>;
-        setContactedMap(parsed || {});
+        setclaimedMap(parsed || {});
       }
     } catch (err) {
-      console.error("Failed to load contactedMap:", err);
+      console.error("Failed to load claimedMap:", err);
     }
   }, []);
 
-  // helper to persist contactedMap
-  const persistContactedMap = (map: Record<string, number>) => {
+  // helper to persist claimedMap
+  const persistclaimedMap = (map: Record<string, number>) => {
     try {
-      localStorage.setItem(CONTACTED_STORAGE_KEY, JSON.stringify(map));
+      localStorage.setItem(claimed_STORAGE_KEY, JSON.stringify(map));
     } catch (err) {
-      console.error("Failed to save contactedMap:", err);
+      console.error("Failed to save claimedMap:", err);
     }
   };
 
@@ -226,9 +226,9 @@ export function Dashboard({ phone }: { phone?: string }) {
 
       // Save contact timestamp (kept for local visibility fallback)
       const now = Date.now();
-      const updatedMap = { ...contactedMap, [String(leadId)]: now };
-      setContactedMap(updatedMap);
-      persistContactedMap(updatedMap);
+      const updatedMap = { ...claimedMap, [String(leadId)]: now };
+      setclaimedMap(updatedMap);
+      persistclaimedMap(updatedMap);
 
       // update lead locally if backend returned new fields
       if (data && typeof data === "object") {
@@ -249,29 +249,29 @@ export function Dashboard({ phone }: { phone?: string }) {
     }
   };
 
-  // helper: whether contact for a lead should be visible (selected OR contacted within last 24h)
+  // helper: whether contact for a lead should be visible (selected OR claimed within last 24h)
   const isContactVisible = (lead: Lead) => {
     // if currently selected (just clicked) show
     if (selectedContactId === lead.id) return true;
-    const ts = contactedMap[String(lead.id)];
+    const ts = claimedMap[String(lead.id)];
     if (!ts) return false;
     return Date.now() - ts < CONTACT_VISIBLE_TTL;
   };
 
   // ----------------- NEW: disable based on API status -----------------
-  // check API status first (case-insensitive). If API says "contacted", disable claim button.
+  // check API status first (case-insensitive). If API says "claimed", disable claim button.
   const isLeadContactDisabled = (lead: Lead) => {
     const status = lead.status ? String(lead.status).toLowerCase() : "";
-    if (status === "contacted") return true;
+    if (status === "claimed") return true;
     // fallback: still allow local TTL disabling if you want (uncomment next lines)
-    // const ts = contactedMap[String(lead.id)];
+    // const ts = claimedMap[String(lead.id)];
     // return !!ts && (Date.now() - ts < CONTACT_VISIBLE_TTL);
     return false;
   };
   // -------------------------------------------------------------------
 
-  // compute totals from API 'leads' (count status === 'contacted')
-  const contactedFromApiCount = leads.filter((l) => String(l.status || "").toLowerCase() === "contacted").length;
+  // compute totals from API 'leads' (count status === 'claimed')
+  const claimedFromApiCount = leads.filter((l) => String(l.status || "").toLowerCase() === "claimed").length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -319,9 +319,9 @@ export function Dashboard({ phone }: { phone?: string }) {
           trend={{ value: "+8%", isPositive: true }}
         />
         <StatCard
-          title="Contacted Leads"
-          value={contactedFromApiCount}
-          subtitle="From API (status: contacted)"
+          title="Claimed Leads"
+          value={claimedFromApiCount}
+          subtitle="From API (status: claimed)"
           icon={Coins}
         />
         <StatCard
@@ -415,7 +415,7 @@ export function Dashboard({ phone }: { phone?: string }) {
                         </Button>
                       ) : (
                         <>
-                          {/* Contact Number - now disabled if API status === 'contacted' */}
+                          {/* Contact Number - now disabled if API status === 'claimed' */}
                           <Button
                             size="sm"
                             disabled={contactDisabled || claimingLeadId === lead.id}
@@ -423,7 +423,7 @@ export function Dashboard({ phone }: { phone?: string }) {
                               // guard: prevent clicking if disabled
                               if (contactDisabled) return;
                               if (selectedContactId === lead.id) {
-                                // toggle off selection (but keep persisted contactedMap timestamp)
+                                // toggle off selection (but keep persisted claimedMap timestamp)
                                 setSelectedContactId(null);
                                 return;
                               }
@@ -437,7 +437,7 @@ export function Dashboard({ phone }: { phone?: string }) {
                             {claimingLeadId === lead.id
                               ? "Claiming..."
                               : contactDisabled
-                              ? "Contacted"
+                              ? "claimed"
                               : phoneVisible
                               ? lead.phone
                               : "Claim"}
