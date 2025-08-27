@@ -226,6 +226,7 @@ const eventOptions = ["wedding", "engagement", "party"];
                     <TableRow>
                       <TableHead>Client Details</TableHead>
                       <TableHead>Event Info</TableHead>
+                      <TableHead>Date</TableHead>
                       <TableHead>Budget</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
@@ -256,6 +257,8 @@ const eventOptions = ["wedding", "engagement", "party"];
                                 {email}
                               </div>
                               {lead.notes && <div className="text-xs text-muted-foreground italic mt-1">{lead.notes}</div>}
+
+
                             </div>
                           </TableCell>
 
@@ -273,6 +276,11 @@ const eventOptions = ["wedding", "engagement", "party"];
                             </div>
                           </TableCell>
 
+                          <TableCell>{lead.created_at && (
+  <div className="text-xs text-muted-foreground  mt-1">
+    {new Date(lead.created_at).toLocaleDateString("en-GB")}
+  </div>
+)}</TableCell>
                           <TableCell>
                             <span className="font-semibold text-primary">{budget}</span>
                           </TableCell>
