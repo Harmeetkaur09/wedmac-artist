@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, ReactNode } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "./StatCard";
@@ -18,6 +18,7 @@ import { getMyProfile, MyProfile } from "@/api/profile";
 import { useNavigate } from "react-router-dom";
 
 interface Lead {
+  created_at: string | ReactNode;
   budget_range: BudgetRange;
   requirements: string;
   id: number;
@@ -58,6 +59,13 @@ export function Dashboard({ phone }: { phone?: string }) {
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+
+  // subscription / credits state
+  const [subscriptionValid, setSubscriptionValid] = useState<boolean>(true);
+  const [creditsAvailable, setCreditsAvailable] = useState<number | null>(null);
+  const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<number | null>(null);
+  const [planTotalLeads, setPlanTotalLeads] = useState<number | null>(null);
+  const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
 
   // per-lead UI state
   const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
@@ -120,7 +128,7 @@ export function Dashboard({ phone }: { phone?: string }) {
     }
   };
 
-  // fetch profile + leads
+  // fetch profile + leads + credits history
   useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -129,8 +137,26 @@ export function Dashboard({ phone }: { phone?: string }) {
         setProfile(profileData);
 
         const token = sessionStorage.getItem("accessToken");
-        const res = await fetch(
-          "https://wedmac-be.onrender.com/api/leads/artist/recent-leads/",
+
+        // 1) fetch recent leads
+        const leadsRes = await fetch(
+          "https://api.wedmacindia.com/api/leads/artist/recent-leads/",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (!leadsRes.ok) throw new Error("Failed to fetch leads");
+        const leadsData = await leadsRes.json();
+        setSummary(leadsData.summary);
+        setLeads(leadsData.leads);
+
+        // 2) fetch credits/history to determine subscription validity & credits left
+        // we assume the endpoint returns results sorted (or we sort by created_at)
+        const creditsRes = await fetch(
+          "https://api.wedmacindia.com/api/credits/history/",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -139,10 +165,56 @@ export function Dashboard({ phone }: { phone?: string }) {
           }
         );
 
-        if (!res.ok) throw new Error("Failed to fetch leads");
-        const data = await res.json();
-        setSummary(data.summary);
-        setLeads(data.leads);
+        if (!creditsRes.ok) {
+          console.warn("Failed to fetch credits history");
+          // default: keep subscriptionValid true (or you can set false)
+          return;
+        }
+
+        const creditsData = await creditsRes.json();
+        const results = Array.isArray(creditsData.results) ? creditsData.results : [];
+
+        // find latest purchase for lead credits
+        const purchases = results
+          .filter((r: any) => r.transaction_type === "purchase" && r.credit_type === "lead_credit")
+          .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        if (purchases.length === 0) {
+          // No active purchase found -> mark invalid
+          setSubscriptionValid(false);
+          setCreditsAvailable(0);
+          setSubscriptionExpiresAt(null);
+          setPlanTotalLeads(null);
+          setSubscriptionId(null);
+          // hide leads immediately
+          setLeads([]);
+          return;
+        }
+
+        const latest = purchases[0];
+        const plan = latest.plan_details || null;
+        const createdAt = new Date(latest.created_at).getTime();
+        const durationDays = plan?.duration_days ? Number(plan.duration_days) : 0;
+        const expiryTs = createdAt + durationDays * 24 * 60 * 60 * 1000;
+
+        // credits_after indicates current credits after purchase (use if available)
+        const creditsAfter = typeof latest.credits_after === "number" ? latest.credits_after : null;
+
+        // set states
+        setSubscriptionExpiresAt(expiryTs);
+        setCreditsAvailable(creditsAfter);
+        setPlanTotalLeads(plan?.total_leads ?? null);
+        setSubscriptionId(latest.subscription_plan ?? null);
+
+        const now = Date.now();
+        if (expiryTs && expiryTs > now) {
+          setSubscriptionValid(true);
+        } else {
+          // expired
+          setSubscriptionValid(false);
+          // hide leads if expired
+          setLeads([]);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -181,6 +253,24 @@ export function Dashboard({ phone }: { phone?: string }) {
 
   // ----- claimLead: POST to /api/leads/{id}/claim/ -----
   const claimLead = async (leadId: number) => {
+    // guard: subscription must be valid
+    if (!subscriptionValid) {
+      const msg = "Your subscription is expired. Purchase a plan to continue claiming leads.";
+      setClaimErrors((prev) => ({ ...prev, [leadId]: msg }));
+      addToast(msg, "error");
+      return;
+    }
+
+    // guard: credits must be available
+    // Note: we assume each lead costs 1 credit. Change requiredCreditsPerLead if different.
+    const requiredCreditsPerLead = 1;
+    if (creditsAvailable !== null && creditsAvailable < requiredCreditsPerLead) {
+      const msg = "Insufficient lead credits. Purchase/renew plan to get more leads.";
+      setClaimErrors((prev) => ({ ...prev, [leadId]: msg }));
+      addToast(msg, "error");
+      return;
+    }
+
     // clear previous error for this lead
     setClaimErrors((prev) => ({ ...prev, [leadId]: "" }));
     setClaimingLeadId(leadId);
@@ -188,7 +278,7 @@ export function Dashboard({ phone }: { phone?: string }) {
     try {
       const token = sessionStorage.getItem("accessToken");
       const res = await fetch(
-        `https://wedmac-be.onrender.com/api/leads/${leadId}/claim/`,
+        `https://api.wedmacindia.com/api/leads/${leadId}/claim/`,
         {
           method: "POST",
           headers: {
@@ -233,8 +323,20 @@ export function Dashboard({ phone }: { phone?: string }) {
       // update lead locally if backend returned new fields
       if (data && typeof data === "object") {
         setLeads((prev) =>
-          prev.map((l) => (l.id === leadId ? { ...l, ...(data as Partial<Lead>) } : l))
+          prev.map((l) =>
+            l.id === leadId ? { ...l, ...(data as Partial<Lead>) } : l
+          )
         );
+        // if backend returned updated credits, use them
+        if ((data as any).credits_after !== undefined) {
+          setCreditsAvailable((data as any).credits_after);
+        } else {
+          // otherwise decrement local creditsAvailable by requiredCreditsPerLead
+          setCreditsAvailable((prev) => (prev !== null ? prev - requiredCreditsPerLead : prev));
+        }
+      } else {
+        // decrement local creditsAvailable by requiredCreditsPerLead
+        setCreditsAvailable((prev) => (prev !== null ? prev - requiredCreditsPerLead : prev));
       }
 
       // ✅ show success toast
@@ -263,15 +365,14 @@ export function Dashboard({ phone }: { phone?: string }) {
   const isLeadContactDisabled = (lead: Lead) => {
     const status = lead.status ? String(lead.status).toLowerCase() : "";
     if (status === "claimed") return true;
-    // fallback: still allow local TTL disabling if you want (uncomment next lines)
-    // const ts = claimedMap[String(lead.id)];
-    // return !!ts && (Date.now() - ts < CONTACT_VISIBLE_TTL);
     return false;
   };
   // -------------------------------------------------------------------
 
   // compute totals from API 'leads' (count status === 'claimed')
-  const claimedFromApiCount = leads.filter((l) => String(l.status || "").toLowerCase() === "claimed").length;
+  const claimedFromApiCount = leads.filter(
+    (l) => String(l.status || "").toLowerCase() === "claimed"
+  ).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -297,7 +398,9 @@ export function Dashboard({ phone }: { phone?: string }) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Welcome back! Here's your overview</p>
+          <p className="text-muted-foreground mt-1">
+            Welcome back! Here's your overview
+          </p>
         </div>
         <div className="flex items-center gap-3"></div>
       </div>
@@ -333,166 +436,203 @@ export function Dashboard({ phone }: { phone?: string }) {
         />
       </div>
 
-      {/* Recent Leads */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl font-semibold">Recent Leads</CardTitle>
-            {!loading && leads.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="hover:bg-primary/10 hover:text-primary"
-                onClick={() => setShowAll((prev) => !prev)}
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                {showAll ? "Show Less" : "View All"}
-              </Button>
-            )}
-          </div>
-        </CardHeader>
+      {/* Recent Leads / or subscription expired message */}
+      {!subscriptionValid ? (
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl font-semibold">No Active Plan</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="py-6 text-center">
+              <p className="mb-3 text-muted-foreground">
+                Your lead subscription has expired or no purchase found. Purchase/renew a plan to get leads.
+              </p>
+              <div className="flex justify-center gap-3">
+                <Button onClick={() => navigate("/payments")}>Purchase Plan</Button>
+                <Button variant="outline" onClick={() => navigate("/pricing")}>View Plans</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl font-semibold">Recent Leads</CardTitle>
+              {!loading && leads.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="hover:bg-primary/10 hover:text-primary"
+                  onClick={() => setShowAll((prev) => !prev)}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  {showAll ? "Show Less" : "View All"}
+                </Button>
+              )}
+            </div>
+          </CardHeader>
 
-        <CardContent>
-          {loading ? (
-            <p className="text-center text-muted-foreground py-6">⏳ Loading leads...</p>
-          ) : leads.length === 0 ? (
-            <p className="text-center text-muted-foreground py-6">No leads available.</p>
-          ) : (
-            <div className="space-y-4">
-              {visibleLeads.map((lead) => {
-                const phoneVisible = isContactVisible(lead);
-                const contactDisabled = isLeadContactDisabled(lead);
-                return (
-                  <div
-                    key={lead.id}
-                    className="relative flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-medium text-foreground">{lead.client_name}</h3>
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full font-medium ${
-                            lead.status === "new" ? "bg-primary/20 text-primary" : "bg-blue-100 text-blue-700"
-                          }`}
-                        >
-                          {lead.status}
-                        </span>
+          <CardContent>
+            {loading ? (
+              <p className="text-center text-muted-foreground py-6">
+                ⏳ Loading leads...
+              </p>
+            ) : leads.length === 0 ? (
+              <p className="text-center text-muted-foreground py-6">
+                No leads available.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {visibleLeads.map((lead) => {
+                  const phoneVisible = isContactVisible(lead);
+                  const contactDisabled = isLeadContactDisabled(lead);
+                  return (
+                    <div
+                      key={lead.id}
+                      className="relative flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-medium text-foreground">
+                            {lead.client_name}
+                          </h3>
+                        </div>
+
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>{lead.service}</span>
+
+                          {/* Booking Date */}
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>Booking: {lead.booking_date}</span>
+                          </div>
+
+                          {/* Created At */}
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            <span>Created: {lead.created_at}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <IndianRupee className="w-3 h-3" />
+                            <span>{lead.budget_range?.label ?? "N/A"}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            <span>{lead.location}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>{lead.requirements}</span>
+                        </div>
+
+                        {/* Show saved remark if exists */}
+                        {remarks[lead.id] && (
+                          <div className="mt-2 text-sm text-muted-foreground italic">
+                            <strong>Remark:</strong> {remarks[lead.id]}
+                          </div>
+                        )}
                       </div>
 
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{lead.service}</span>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          <span>{lead.booking_date}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <IndianRupee className="w-3 h-3" />
-                          <span>{lead.budget_range?.label ?? "N/A"}</span>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          <span>{lead.location}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{lead.requirements}</span>
-                      </div>
-
-                      {/* Show saved remark if exists */}
-                      {remarks[lead.id] && (
-                        <div className="mt-2 text-sm text-muted-foreground italic">
-                          <strong>Remark:</strong> {remarks[lead.id]}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-2 relative">
-                      {profile?.payment_status === "pending" ? (
-                        <Button variant="default" size="sm" onClick={() => navigate("/payments")}>
-                          Unlock
-                        </Button>
-                      ) : (
-                        <>
-                          {/* Contact Number - now disabled if API status === 'claimed' */}
+                      <div className="flex items-center gap-2 relative">
+                        {profile?.payment_status === "pending" ? (
                           <Button
+                            variant="default"
                             size="sm"
-                            disabled={contactDisabled || claimingLeadId === lead.id}
-                            onClick={() => {
-                              // guard: prevent clicking if disabled
-                              if (contactDisabled) return;
-                              if (selectedContactId === lead.id) {
-                                // toggle off selection (but keep persisted claimedMap timestamp)
-                                setSelectedContactId(null);
-                                return;
-                              }
-                              claimLead(lead.id);
-                            }}
-                            className={`px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 ${
-                              contactDisabled ? " cursor-not-allowed" : "hover:bg-primary/10 hover:text-primary"
-                            }`}
-                          >
-                            <Phone className="w-4 h-4 inline" />
-                            {claimingLeadId === lead.id
-                              ? "Claiming..."
-                              : contactDisabled
-                              ? "claimed"
-                              : phoneVisible
-                              ? lead.phone
-                              : "Claim"}
-                          </Button>
-
-                          {/* Upgrade */}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="hover:bg-primary/10 hover:text-primary"
                             onClick={() => navigate("/payments")}
                           >
-                            <ClockArrowUp className="w-4 h-4 mr-1" />
-                            Upgrade
+                            Unlock
                           </Button>
+                        ) : (
+                          <>
+                            {/* Contact Number - now disabled if API status === 'claimed' */}
+                            <Button
+                              size="sm"
+                              disabled={
+                                contactDisabled || claimingLeadId === lead.id
+                              }
+                              onClick={() => {
+                                // guard: prevent clicking if disabled
+                                if (contactDisabled) return;
+                                if (selectedContactId === lead.id) {
+                                  // toggle off selection (but keep persisted claimedMap timestamp)
+                                  setSelectedContactId(null);
+                                  return;
+                                }
+                                claimLead(lead.id);
+                              }}
+                              className={`px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 ${
+                                contactDisabled
+                                  ? " cursor-not-allowed"
+                                  : "hover:bg-primary/10 hover:text-primary"
+                              }`}
+                            >
+                              <Phone className="w-4 h-4 inline" />
+                              {claimingLeadId === lead.id
+                                ? "Claiming..."
+                                : contactDisabled
+                                ? "claimed"
+                                : phoneVisible
+                                ? lead.phone
+                                : "Claim"}
+                            </Button>
 
-                          {remarkingLeadId === lead.id && (
-                            <div className="absolute top-full right-0 mt-2 w-72 bg-white border rounded shadow px-3 py-3 z-20">
-                              <input
-                                type="text"
-                                value={remarkText}
-                                onChange={(e) => setRemarkText(e.target.value)}
-                                placeholder="Enter remark..."
-                                className="w-full border px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                              />
-                              <div className="flex justify-end gap-2 mt-3">
-                                <Button size="sm" onClick={() => submitRemark(lead.id)}>
-                                  Save
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => {
-                                    setRemarkingLeadId(null);
-                                    setRemarkText("");
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
+                            {/* Upgrade */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="hover:bg-primary/10 hover:text-primary"
+                              onClick={() => navigate("/payments")}
+                            >
+                              <ClockArrowUp className="w-4 h-4 mr-1" />
+                              Upgrade
+                            </Button>
+
+                            {remarkingLeadId === lead.id && (
+                              <div className="absolute top-full right-0 mt-2 w-72 bg-white border rounded shadow px-3 py-3 z-20">
+                                <input
+                                  type="text"
+                                  value={remarkText}
+                                  onChange={(e) => setRemarkText(e.target.value)}
+                                  placeholder="Enter remark..."
+                                  className="w-full border px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                                <div className="flex justify-end gap-2 mt-3">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => submitRemark(lead.id)}
+                                  >
+                                    Save
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setRemarkingLeadId(null);
+                                      setRemarkText("");
+                                    }}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </>
-                      )}
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Actions */}
-
     </div>
   );
 }

@@ -48,7 +48,7 @@ const OTPVerification = () => {
     try {
       // you may need to send payload per your API; here we only send phone
       const res = await fetch(
-        "https://wedmac-be.onrender.com/api/users/request-otp/",
+        "https://api.wedmacindia.com/api/users/request-otp/",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -76,7 +76,7 @@ const OTPVerification = () => {
 
     try {
       const res = await fetch(
-        "https://wedmac-be.onrender.com/api/users/verify-otp/",
+        "https://api.wedmacindia.com/api/users/verify-otp/",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

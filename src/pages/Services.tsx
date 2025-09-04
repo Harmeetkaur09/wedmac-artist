@@ -32,7 +32,10 @@ export default function Services() {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   // auto-hide toast
   useEffect(() => {
@@ -43,7 +46,8 @@ export default function Services() {
 
   const getAuthHeader = () => {
     if (typeof window === "undefined") return {};
-    const token = sessionStorage.getItem("accessToken") || sessionStorage.getItem("token");
+    const token =
+      sessionStorage.getItem("accessToken") || sessionStorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
@@ -52,20 +56,25 @@ export default function Services() {
     setLoadingServices(true);
     setStatusMessage(null);
     try {
-      const resp = await fetch("https://wedmac-be.onrender.com/api/artist-services/services/get/", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        },
-      });
+      const resp = await fetch(
+        "https://api.wedmacindia.com/api/artist-services/services/get/",
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+        }
+      );
       if (!resp.ok) {
         const txt = await resp.text();
         throw new Error(`Failed to fetch services: ${resp.status} ${txt}`);
       }
       const data = await resp.json();
       // support both array or paginated response
-      const items = Array.isArray(data) ? data : data.results || data.data || [];
+      const items = Array.isArray(data)
+        ? data
+        : data.results || data.data || [];
       // normalize price -> string with 2 decimals if available
       const normalized: ServiceItem[] = items.map((it: any) => ({
         id: it.id,
@@ -79,7 +88,10 @@ export default function Services() {
       setServices(normalized);
     } catch (err: any) {
       console.error(err);
-      setToast({ type: "error", message: err?.message || "Failed to load services" });
+      setToast({
+        type: "error",
+        message: err?.message || "Failed to load services",
+      });
       setStatusMessage(err?.message || "Failed to load services");
     } finally {
       setLoadingServices(false);
@@ -104,22 +116,26 @@ export default function Services() {
   const handleCreateService = async () => {
     setStatusMessage(null);
     if (!name.trim()) return setStatusMessage("Please provide service name.");
-    if (price === "" || Number(price) <= 0) return setStatusMessage("Please provide a valid price.");
+    if (price === "" || Number(price) <= 0)
+      return setStatusMessage("Please provide a valid price.");
 
     setSubmitting(true);
     try {
-      const createResp = await fetch("https://wedmac-be.onrender.com/api/artist-services/services/create/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim(),
-          price: Number(price).toFixed(2),
-        }),
-      });
+      const createResp = await fetch(
+        "https://api.wedmacindia.com/api/artist-services/services/create/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+          body: JSON.stringify({
+            name: name.trim(),
+            description: description.trim(),
+            price: Number(price).toFixed(2),
+          }),
+        }
+      );
       if (!createResp.ok) {
         const txt = await createResp.text();
         throw new Error(`Create failed: ${createResp.status} ${txt}`);
@@ -133,29 +149,40 @@ export default function Services() {
         id: createdId,
         name: created.name || name,
         description: created.description || description,
-        price: created.price != null ? String(created.price) : Number(price).toFixed(2),
+        price:
+          created.price != null
+            ? String(created.price)
+            : Number(price).toFixed(2),
         trialAvailable,
       };
       setServices((s) => [newService, ...s]);
 
       // attach created id to profile
-      const completeResp = await fetch("https://wedmac-be.onrender.com/api/artists/complete-profile/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        },
-        body: JSON.stringify({ services: [createdId] }),
-      });
+      const completeResp = await fetch(
+        "https://api.wedmacindia.com/api/artists/complete-profile/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+          body: JSON.stringify({ services: [createdId] }),
+        }
+      );
 
       if (!completeResp.ok) {
         const txt = await completeResp.text();
         // non-fatal but surface error
-        throw new Error(`Complete profile failed: ${completeResp.status} ${txt}`);
+        throw new Error(
+          `Complete profile failed: ${completeResp.status} ${txt}`
+        );
       }
 
       await completeResp.json();
-      setToast({ type: "success", message: `Created service and updated profile.` });
+      setToast({
+        type: "success",
+        message: `Created service and updated profile.`,
+      });
       resetForm();
     } catch (err: any) {
       console.error(err);
@@ -170,22 +197,26 @@ export default function Services() {
   const handleUpdateService = async () => {
     if (!editingId) return setStatusMessage("No service selected to update.");
     if (!name.trim()) return setStatusMessage("Please provide service name.");
-    if (price === "" || Number(price) <= 0) return setStatusMessage("Please provide a valid price.");
+    if (price === "" || Number(price) <= 0)
+      return setStatusMessage("Please provide a valid price.");
 
     setSubmitting(true);
     try {
-      const resp = await fetch(`https://wedmac-be.onrender.com/api/artist-services/services/${editingId}/`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim(),
-          price: Number(price).toFixed(2),
-        }),
-      });
+      const resp = await fetch(
+        `https://api.wedmacindia.com/api/artist-services/services/${editingId}/`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+          body: JSON.stringify({
+            name: name.trim(),
+            description: description.trim(),
+            price: Number(price).toFixed(2),
+          }),
+        }
+      );
 
       if (!resp.ok) {
         const txt = await resp.text();
@@ -194,12 +225,21 @@ export default function Services() {
 
       const updated = await resp.json();
       // update local list
-      setServices((prev) => prev.map((s) => (s.id === editingId ? {
-        ...s,
-        name: updated.name || name,
-        description: updated.description || description,
-        price: updated.price != null ? String(updated.price) : Number(price).toFixed(2),
-      } : s)));
+      setServices((prev) =>
+        prev.map((s) =>
+          s.id === editingId
+            ? {
+                ...s,
+                name: updated.name || name,
+                description: updated.description || description,
+                price:
+                  updated.price != null
+                    ? String(updated.price)
+                    : Number(price).toFixed(2),
+              }
+            : s
+        )
+      );
       setToast({ type: "success", message: `Service ${editingId} updated.` });
       resetForm();
     } catch (err: any) {
@@ -218,13 +258,16 @@ export default function Services() {
     setDeletingId(id);
     setStatusMessage(null);
     try {
-      const resp = await fetch(`https://wedmac-be.onrender.com/api/artist-services/services/${id}/`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        },
-      });
+      const resp = await fetch(
+        `https://api.wedmacindia.com/api/artist-services/services/${id}/`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            ...getAuthHeader(),
+          },
+        }
+      );
 
       if (!resp.ok) {
         const txt = await resp.text();
@@ -270,14 +313,16 @@ export default function Services() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">{editingId ? "Edit Service" : "Makeup Services"}</h2>
-            <p className="text-muted-foreground">Manage your service offerings and pricing</p>
+            <h2 className="text-2xl font-bold text-foreground">
+              {editingId ? "Edit Service" : "Makeup Services"}
+            </h2>
+            <p className="text-muted-foreground">
+              Manage your service offerings and pricing
+            </p>
           </div>
-        
         </div>
 
         {/* Add / Edit Form */}
-      
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -287,16 +332,32 @@ export default function Services() {
             <div className="text-muted-foreground">No services found.</div>
           ) : (
             services.map((service) => (
-              <Card key={service.id} className="hover:shadow-lg transition-shadow">
+              <Card
+                key={service.id}
+                className="hover:shadow-lg transition-shadow"
+              >
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-lg">{service.name}</CardTitle>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => startEdit(service)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => startEdit(service)}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700" onClick={() => handleDeleteService(service.id)}>
-                        {deletingId === service.id ? "Deleting..." : <Trash2 className="w-4 h-4" />}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700"
+                        onClick={() => handleDeleteService(service.id)}
+                      >
+                        {deletingId === service.id ? (
+                          "Deleting..."
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -304,12 +365,20 @@ export default function Services() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Price:</span>
+                      <span className="text-sm text-muted-foreground">
+                        Price:
+                      </span>
                       <span className="font-semibold text-primary">
-                        {String(service.price).startsWith("₹") ? service.price : `₹${service.price}`}
+                        {String(service.price).startsWith("₹")
+                          ? service.price
+                          : `₹${service.price}`}
                       </span>
                     </div>
-                    {service.description ? <div className="text-sm text-muted-foreground">{service.description}</div> : null}
+                    {service.description ? (
+                      <div className="text-sm text-muted-foreground">
+                        {service.description}
+                      </div>
+                    ) : null}
                   </div>
 
                   {/* <div className="flex items-center justify-between pt-2 border-t">
@@ -323,7 +392,7 @@ export default function Services() {
             ))
           )}
         </div>
-  <Card>
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Scissors className="w-5 h-5 text-primary" />
@@ -335,17 +404,37 @@ export default function Services() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="serviceName">Service Name</Label>
-                  <Input id="serviceName" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Bridal Makeup" />
+                  <Input
+                    id="serviceName"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g., Bridal Makeup"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="price">Price (₹)</Label>
-                  <Input id="price" value={price} onChange={(e) => setPrice(e.target.value === "" ? "" : Number(e.target.value))} type="number" placeholder="15000" />
+                  <Input
+                    id="price"
+                    value={price}
+                    onChange={(e) =>
+                      setPrice(
+                        e.target.value === "" ? "" : Number(e.target.value)
+                      )
+                    }
+                    type="number"
+                    placeholder="15000"
+                  />
                 </div>
               </div>
 
               <div className="space-y-2 mt-2">
                 <Label htmlFor="description">Description</Label>
-                <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description (optional)" />
+                <Input
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Short description (optional)"
+                />
               </div>
 
               {/* <div className="flex items-center space-x-2 mt-2">
@@ -354,7 +443,9 @@ export default function Services() {
               </div> */}
 
               <div className="flex justify-end items-center gap-4 mt-4">
-                <div className="text-sm text-muted-foreground mr-auto">{statusMessage}</div>
+                <div className="text-sm text-muted-foreground mr-auto">
+                  {statusMessage}
+                </div>
                 <Button
                   variant="outline"
                   className="mr-2"
@@ -365,8 +456,17 @@ export default function Services() {
                 >
                   Cancel
                 </Button>
-                <Button className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white" disabled={submitting}>
-                  {submitting ? (editingId ? "Updating..." : "Adding...") : (editingId ? "Update Service" : "Add Service")}
+                <Button
+                  className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
+                  disabled={submitting}
+                >
+                  {submitting
+                    ? editingId
+                      ? "Updating..."
+                      : "Adding..."
+                    : editingId
+                    ? "Update Service"
+                    : "Add Service"}
                 </Button>
               </div>
             </form>
@@ -374,10 +474,16 @@ export default function Services() {
         </Card>
         {/* Toast */}
         {toast && (
-          <div className={`fixed right-6 bottom-6 p-3 rounded shadow ${toast.type === "success" ? "bg-green-600 text-white" : "bg-red-600 text-white"}`}>
+          <div
+            className={`fixed right-6 bottom-6 p-3 rounded shadow ${
+              toast.type === "success"
+                ? "bg-green-600 text-white"
+                : "bg-red-600 text-white"
+            }`}
+          >
             {toast.message}
           </div>
-        )} 
+        )}
       </div>
     </Layout>
   );

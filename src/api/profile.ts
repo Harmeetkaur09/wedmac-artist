@@ -20,6 +20,8 @@ export interface DocumentData {
 export interface SocialLinks {
   instagram: string;
   facebook?: string;
+  twitter?: string;
+  youtube?: string;
 }
 
 export interface MyProfile {
@@ -119,7 +121,7 @@ export async function getMyProfile(): Promise<MyProfile> {
     ...(await authHeaders()),
   };
   const res = await fetch(
-    "https://wedmac-be.onrender.com/api/artists/my-profile/",
+    "https://api.wedmacindia.com/api/artists/my-profile/",
     { headers }
   );
   if (!res.ok) {
@@ -140,10 +142,11 @@ export async function uploadDocument(
   form.append("file_type", fileType);
   form.append("tag", tag);
 
-  const res = await fetch(
-    "https://wedmac-be.onrender.com/api/documents/upload/",
-    { method: "POST", headers, body: form }
-  );
+  const res = await fetch("https://api.wedmacindia.com/api/documents/upload/", {
+    method: "POST",
+    headers,
+    body: form,
+  });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || "Upload failed");
@@ -162,14 +165,16 @@ export async function uploadDocument(
   };
 }
 
-export async function completeProfile(payload: CompleteProfilePayload): Promise<void> {
+export async function completeProfile(
+  payload: CompleteProfilePayload
+): Promise<void> {
   const headers = {
     "Content-Type": "application/json",
     ...(await authHeaders()),
   };
 
   const res = await fetch(
-    "https://wedmac-be.onrender.com/api/artists/complete-profile/",
+    "https://api.wedmacindia.com/api/artists/complete-profile/",
     { method: "POST", headers, body: JSON.stringify(payload) }
   );
 

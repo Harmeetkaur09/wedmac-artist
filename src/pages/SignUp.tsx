@@ -40,12 +40,12 @@ const SignUp = () => {
     state: "",
   });
   const sliderImages = [
-  "/images/hero1.JPG",
-  "/images/hero2.JPG",
-  "/images/hero3.JPG",
-  "/images/hero4.JPG",
-  "/images/hero5.JPG",
-];
+    "/images/hero1.JPG",
+    "/images/hero2.JPG",
+    "/images/hero3.JPG",
+    "/images/hero4.JPG",
+    "/images/hero5.JPG",
+  ];
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const { login } = useAuth();
@@ -53,7 +53,7 @@ const SignUp = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-    const [current, setCurrent] = useState(0);
+  const [current, setCurrent] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -77,7 +77,7 @@ const SignUp = () => {
     setLoading(true);
     try {
       const res = await fetch(
-        "https://wedmac-be.onrender.com/api/users/request-otp/",
+        "https://api.wedmacindia.com/api/users/request-otp/",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -112,7 +112,7 @@ const SignUp = () => {
     setLoading(true);
     try {
       const res = await fetch(
-        "https://wedmac-be.onrender.com/api/users/verify-otp/",
+        "https://api.wedmacindia.com/api/users/verify-otp/",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -156,9 +156,12 @@ const SignUp = () => {
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between h-16">
               {/* Logo */}
-              <a href="https://wed-mac-qsxz.vercel.app/" className="block w-[140px] h-auto relative">
+              <a
+                href="https://wed-mac-qsxz.vercel.app/"
+                className="block w-[140px] h-auto relative"
+              >
                 <img
-            src="/images/website_logo.png"
+                  src="/images/website_logo.png"
                   alt="Website Logo"
                   width={140}
                   height={50}

@@ -5,13 +5,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Share2, Copy, MessageCircle, Mail, Gift, Users, TrendingUp, ExternalLink } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Share2,
+  Copy,
+  MessageCircle,
+  Mail,
+  Gift,
+  Users,
+  TrendingUp,
+  ExternalLink,
+} from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
 export default function ReferEarn() {
   // Vite-friendly API base
-  const API_BASE = (import.meta as any).env?.VITE_API_BASE || (window as any).__API_BASE__ || "https://wedmac-be.onrender.com";
+  const API_BASE =
+    (import.meta as any).env?.VITE_API_BASE ||
+    (window as any).__API_BASE__ ||
+    "https://api.wedmacindia.com";
 
   // referral code state (null = not generated)
   const [referralCode, setReferralCode] = useState<string | null>(null);
@@ -20,18 +39,46 @@ export default function ReferEarn() {
 
   // sample history data (keep your demo data)
   const referralHistory = [
-    { id: 1, name: "Sneha Makeup Artist", email: "sneha@email.com", joinDate: "2024-01-15", status: "Active", earnings: "₹500", type: "Artist" },
-    { id: 2, name: "Priya Client", email: "priya@email.com", joinDate: "2024-01-18", status: "Active", earnings: "₹200", type: "Client" },
-    { id: 3, name: "Ravi Photography", email: "ravi@email.com", joinDate: "2024-01-20", status: "Pending", earnings: "₹0", type: "Artist" }
+    {
+      id: 1,
+      name: "Sneha Makeup Artist",
+      email: "sneha@email.com",
+      joinDate: "2024-01-15",
+      status: "Active",
+      earnings: "₹500",
+      type: "Artist",
+    },
+    {
+      id: 2,
+      name: "Priya Client",
+      email: "priya@email.com",
+      joinDate: "2024-01-18",
+      status: "Active",
+      earnings: "₹200",
+      type: "Client",
+    },
+    {
+      id: 3,
+      name: "Ravi Photography",
+      email: "ravi@email.com",
+      joinDate: "2024-01-20",
+      status: "Pending",
+      earnings: "₹0",
+      type: "Artist",
+    },
   ];
 
   // robust token lookup (same pattern as Support)
   const getToken = () => {
     try {
       const anyWindow = window as any;
-      if (anyWindow.sessionStorage && (anyWindow.sessionStorage as any).authData) {
+      if (
+        anyWindow.sessionStorage &&
+        (anyWindow.sessionStorage as any).authData
+      ) {
         const maybe = (anyWindow.sessionStorage as any).authData;
-        if (maybe && typeof maybe === "object" && maybe.token) return maybe.token;
+        if (maybe && typeof maybe === "object" && maybe.token)
+          return maybe.token;
       }
       const candidates = ["authData", "accessToken", "token"];
       for (const key of candidates) {
@@ -64,9 +111,9 @@ export default function ReferEarn() {
       const res = await fetch(`${API_BASE}/api/artists/referral-code/`, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!res.ok) {
@@ -101,14 +148,17 @@ export default function ReferEarn() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/artists/referral-code/generate/`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({}) // endpoint expects no body
-      });
+      const res = await fetch(
+        `${API_BASE}/api/artists/referral-code/generate/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}), // endpoint expects no body
+        }
+      );
 
       if (!res.ok && res.status !== 200 && res.status !== 201) {
         const txt = await res.text();
@@ -151,7 +201,9 @@ export default function ReferEarn() {
 
   const copyReferralLink = async () => {
     if (!referralCode) return;
-    const link = `${window.location.origin}/signup?ref=${encodeURIComponent(referralCode)}`;
+    const link = `${window.location.origin}/signup?ref=${encodeURIComponent(
+      referralCode
+    )}`;
     try {
       await navigator.clipboard.writeText(link);
       toast.success("Referral link copied");
@@ -162,7 +214,9 @@ export default function ReferEarn() {
 
   const shareWhatsApp = () => {
     if (!referralCode) return;
-    const message = `Join Wedmac with my referral code ${referralCode} and get exclusive benefits! Signup: ${window.location.origin}/signup?ref=${encodeURIComponent(referralCode)}`;
+    const message = `Join Wedmac with my referral code ${referralCode} and get exclusive benefits! Signup: ${
+      window.location.origin
+    }/signup?ref=${encodeURIComponent(referralCode)}`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
   };
@@ -170,7 +224,11 @@ export default function ReferEarn() {
   const shareEmail = () => {
     if (!referralCode) return;
     const subject = encodeURIComponent("Join Wedmac — referral inside");
-    const body = encodeURIComponent(`Hey,\n\nJoin Wedmac using my referral code ${referralCode} to get special benefits.\n\nSign up here: ${window.location.origin}/signup?ref=${encodeURIComponent(referralCode)}\n\nCheers!`);
+    const body = encodeURIComponent(
+      `Hey,\n\nJoin Wedmac using my referral code ${referralCode} to get special benefits.\n\nSign up here: ${
+        window.location.origin
+      }/signup?ref=${encodeURIComponent(referralCode)}\n\nCheers!`
+    );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
@@ -200,7 +258,10 @@ export default function ReferEarn() {
 
               {/* Generate button shown only when no code present */}
               {!referralCode ? (
-                <Button onClick={generateReferral} disabled={generating || loading}>
+                <Button
+                  onClick={generateReferral}
+                  disabled={generating || loading}
+                >
                   {generating ? "Generating..." : "Generate"}
                 </Button>
               ) : (
@@ -215,12 +276,13 @@ export default function ReferEarn() {
             {/* Share / Copy Link buttons - visible only after referral exists */}
             {referralCode && (
               <div className="flex flex-wrap gap-3">
-                <Button onClick={shareWhatsApp} className="bg-green-600 hover:bg-green-700 text-white">
+                <Button
+                  onClick={shareWhatsApp}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Share on WhatsApp
                 </Button>
-
-             
 
                 <Button onClick={copyReferralLink} variant="outline">
                   <ExternalLink className="w-4 h-4 mr-2" />
@@ -232,7 +294,9 @@ export default function ReferEarn() {
             {/* If you want, show hint when no code */}
             {!referralCode && !loading && (
               <div className="text-sm text-muted-foreground">
-                You don't have a referral code yet. Click <strong>Generate</strong> to create one and unlock share options.
+                You don't have a referral code yet. Click{" "}
+                <strong>Generate</strong> to create one and unlock share
+                options.
               </div>
             )}
           </CardContent>
@@ -260,7 +324,7 @@ export default function ReferEarn() {
                 </div>
                 <h3 className="font-semibold">They Sign Up</h3>
                 <p className="text-sm text-muted-foreground">
-                  New users register using your code 
+                  New users register using your code
                 </p>
               </div>
               <div className="text-center space-y-3">

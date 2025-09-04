@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Layout } from "@/components/Layout"; 
+import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +46,7 @@ export default function WedmacPlans() {
       setError(null);
       try {
         const resp = await fetch(
-          "https://wedmac-be.onrender.com/api/admin/master/list/?type=subscriptions_plan",
+          "https://api.wedmacindia.com/api/admin/master/list/?type=subscriptions_plan",
           {
             method: "GET",
             headers: {
@@ -67,7 +67,9 @@ export default function WedmacPlans() {
         // map API data into UI-friendly shape
         const uiPlans: UiPlan[] = (data || []).map((p) => {
           const priceNumber =
-            p.price == null ? null : Number(typeof p.price === "string" ? p.price : p.price);
+            p.price == null
+              ? null
+              : Number(typeof p.price === "string" ? p.price : p.price);
           const priceLabel =
             priceNumber == null || Number.isNaN(priceNumber)
               ? "—"
@@ -79,10 +81,13 @@ export default function WedmacPlans() {
 
           // convert days to months (rounded)
           const months =
-            typeof p.duration_days === "number" && !Number.isNaN(p.duration_days)
+            typeof p.duration_days === "number" &&
+            !Number.isNaN(p.duration_days)
               ? Math.round(p.duration_days / 30)
               : null;
-          const periodLabel = months ? `/${months} ${months === 1 ? "month" : "months"}` : "/—";
+          const periodLabel = months
+            ? `/${months} ${months === 1 ? "month" : "months"}`
+            : "/—";
 
           return {
             id: p.id,
@@ -135,7 +140,9 @@ export default function WedmacPlans() {
 
         {loading ? (
           <Card>
-            <CardContent className="p-6 text-center">Loading plans…</CardContent>
+            <CardContent className="p-6 text-center">
+              Loading plans…
+            </CardContent>
           </Card>
         ) : error ? (
           <Card>
@@ -153,7 +160,9 @@ export default function WedmacPlans() {
                 plans.map((plan) => (
                   <Card
                     key={plan.id}
-                    className={`relative ${plan.popular ? "ring-2 ring-primary shadow-lg" : ""}`}
+                    className={`relative ${
+                      plan.popular ? "ring-2 ring-primary shadow-lg" : ""
+                    }`}
                   >
                     {plan.popular && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -168,12 +177,18 @@ export default function WedmacPlans() {
                         <PlanBadge plan={plan.name} />
                       </div>
                       <div className="space-y-1">
-                        <div className="text-3xl font-bold">{plan.priceLabel}</div>
-                        <div className="text-muted-foreground">{plan.periodLabel}</div>
+                        <div className="text-3xl font-bold">
+                          {plan.priceLabel}
+                        </div>
+                        <div className="text-muted-foreground">
+                          {plan.periodLabel}
+                        </div>
                       </div>
                       <div className="flex items-center justify-center gap-2 mt-2">
                         <Zap className="w-4 h-4 text-primary" />
-                        <span className="font-semibold">{plan.credits ?? "—"} Credits</span>
+                        <span className="font-semibold">
+                          {plan.credits ?? "—"} Credits
+                        </span>
                       </div>
                     </CardHeader>
 
@@ -190,7 +205,9 @@ export default function WedmacPlans() {
                             </li>
                           ))
                         ) : (
-                          <li className="text-sm text-muted-foreground">No features listed</li>
+                          <li className="text-sm text-muted-foreground">
+                            No features listed
+                          </li>
                         )}
                       </ul>
 
@@ -220,20 +237,36 @@ export default function WedmacPlans() {
                   <table className="w-full text-sm border-collapse border border-gray-200">
                     <thead>
                       <tr className="bg-gray-100 border-b border-gray-300">
-                        <th className="text-left py-3 px-4 border-r border-gray-300">Features</th>
-                        <th className="text-center py-3 px-4 border-r border-gray-300">Basic</th>
-                        <th className="text-center py-3 px-4 border-r border-gray-300">Standard</th>
-                        <th className="text-center py-3 px-4 border-r border-gray-300">Premium</th>
+                        <th className="text-left py-3 px-4 border-r border-gray-300">
+                          Features
+                        </th>
+                        <th className="text-center py-3 px-4 border-r border-gray-300">
+                          Basic
+                        </th>
+                        <th className="text-center py-3 px-4 border-r border-gray-300">
+                          Standard
+                        </th>
+                        <th className="text-center py-3 px-4 border-r border-gray-300">
+                          Premium
+                        </th>
                         <th className="text-center py-3 px-4">Pro</th>
                       </tr>
                     </thead>
                     <tbody>
                       {/* keep your existing rows here — or map from `plans` */}
                       <tr className="bg-white">
-                        <td className="py-3 px-4 font-medium border-r border-gray-300">Validity Period</td>
-                        <td className="text-center py-3 px-4 border-r border-gray-300">2 Months</td>
-                        <td className="text-center py-3 px-4 border-r border-gray-300">3 Months</td>
-                        <td className="text-center py-3 px-4 border-r border-gray-300">3 Months</td>
+                        <td className="py-3 px-4 font-medium border-r border-gray-300">
+                          Validity Period
+                        </td>
+                        <td className="text-center py-3 px-4 border-r border-gray-300">
+                          2 Months
+                        </td>
+                        <td className="text-center py-3 px-4 border-r border-gray-300">
+                          3 Months
+                        </td>
+                        <td className="text-center py-3 px-4 border-r border-gray-300">
+                          3 Months
+                        </td>
                         <td className="text-center py-3 px-4">6 Months</td>
                       </tr>
                       {/* ... rest of your static rows */}

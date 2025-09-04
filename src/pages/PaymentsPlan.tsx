@@ -4,10 +4,28 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { PlanBadge } from "@/components/PlanBadge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { CreditCard, Calendar, Crown, QrCode, Smartphone } from "lucide-react";
 
 /**
@@ -102,7 +120,9 @@ export default function PaymentsPlan(): JSX.Element {
   const selectedPlanData = availablePlans.find((p) => p.id === selectedPlan);
 
   // is the API data visible/ready for the selected plan?
-  const isApiDataVisible = !loading && Boolean(selectedPlanData && Object.keys(selectedPlanData).length > 0);
+  const isApiDataVisible =
+    !loading &&
+    Boolean(selectedPlanData && Object.keys(selectedPlanData).length > 0);
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -110,12 +130,15 @@ export default function PaymentsPlan(): JSX.Element {
         setLoadingPayments(true);
         const token = sessionStorage.getItem("accessToken") ?? "";
 
-        const res = await fetch("https://wedmac-be.onrender.com/api/artists/payments/history/", {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            "Content-Type": "application/json",
-          },
-        });
+        const res = await fetch(
+          "https://api.wedmacindia.com/api/artists/payments/history/",
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
         if (!res.ok) throw new Error("Failed to fetch payment history");
         const data = await res.json();
@@ -139,16 +162,24 @@ export default function PaymentsPlan(): JSX.Element {
         const completed = results
           .filter((p) => p.payment?.status === "success")
           .sort((a, b) => {
-            const ta = a.dates?.created_at ? new Date(a.dates.created_at!).getTime() : 0;
-            const tb = b.dates?.created_at ? new Date(b.dates.created_at!).getTime() : 0;
+            const ta = a.dates?.created_at
+              ? new Date(a.dates.created_at!).getTime()
+              : 0;
+            const tb = b.dates?.created_at
+              ? new Date(b.dates.created_at!).getTime()
+              : 0;
             return tb - ta;
           })[0];
 
         if (completed) {
           setCurrentPlan({
             name: completed.plan?.name,
-            price: completed.plan?.price ? `₹${completed.plan.price}` : undefined,
-            validUntil: completed.dates?.end_date ? new Date(completed.dates.end_date).toLocaleDateString() : undefined,
+            price: completed.plan?.price
+              ? `₹${completed.plan.price}`
+              : undefined,
+            validUntil: completed.dates?.end_date
+              ? new Date(completed.dates.end_date).toLocaleDateString()
+              : undefined,
             credits: completed.usage?.remaining_leads ?? 0,
           });
         }
@@ -167,7 +198,9 @@ export default function PaymentsPlan(): JSX.Element {
     const fetchPlans = async () => {
       try {
         setLoading(true);
-        const res = await fetch("https://wedmac-be.onrender.com/api/admin/master/list/?type=subscriptions_plan");
+        const res = await fetch(
+          "https://api.wedmacindia.com/api/admin/master/list/?type=subscriptions_plan"
+        );
         if (!res.ok) throw new Error("Failed to fetch plans");
         const data = (await res.json()) as Plan[];
         setAvailablePlans(data);
@@ -209,13 +242,16 @@ export default function PaymentsPlan(): JSX.Element {
       try {
         const token = sessionStorage.getItem("accessToken") ?? "";
 
-        const res = await fetch(`https://wedmac-be.onrender.com/api/artists/plans/${planId}/purchase/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token ? `Bearer ${token}` : "",
-          },
-        });
+        const res = await fetch(
+          `https://api.wedmacindia.com/api/artists/plans/${planId}/purchase/`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+          }
+        );
 
         const raw = await res.text().catch(() => "");
         let data: PurchaseInitResponse | Record<string, unknown> | null = null;
@@ -229,9 +265,15 @@ export default function PaymentsPlan(): JSX.Element {
           // safely extract backend error message if present
           const backendErr =
             data && typeof data === "object"
-              ? ((data as Record<string, unknown>).error ?? (data as Record<string, unknown>).message)
+              ? (data as Record<string, unknown>).error ??
+                (data as Record<string, unknown>).message
               : null;
-          alert(`❌ ${String(backendErr ?? "Payment initiation failed! Please wait for admin approval.")}`);
+          alert(
+            `❌ ${String(
+              backendErr ??
+                "Payment initiation failed! Please wait for admin approval."
+            )}`
+          );
           return;
         }
 
@@ -244,7 +286,8 @@ export default function PaymentsPlan(): JSX.Element {
         await new Promise<void>((resolve, reject) => {
           if (!rzpScript) return reject(new Error("Script missing"));
           rzpScript.onload = () => resolve();
-          rzpScript.onerror = () => reject(new Error("Failed to load Razorpay script"));
+          rzpScript.onerror = () =>
+            reject(new Error("Failed to load Razorpay script"));
         });
 
         const payload = data as PurchaseInitResponse;
@@ -258,22 +301,27 @@ export default function PaymentsPlan(): JSX.Element {
           order_id: payload!.razorpay_order_id,
           handler: async (response: RazorpaySuccess) => {
             try {
-              await fetch("https://wedmac-be.onrender.com/api/artists/payment/verify/", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: token ? `Bearer ${token}` : "",
-                },
-                body: JSON.stringify({
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature,
-                }),
-              });
+              await fetch(
+                "https://api.wedmacindia.com/api/artists/payment/verify/",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: token ? `Bearer ${token}` : "",
+                  },
+                  body: JSON.stringify({
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_order_id: response.razorpay_order_id,
+                    razorpay_signature: response.razorpay_signature,
+                  }),
+                }
+              );
               alert("✅ Payment Successful!");
             } catch (err) {
               console.error("Verification failed:", err);
-              alert("⚠️ Payment succeeded but verification failed. Contact support.");
+              alert(
+                "⚠️ Payment succeeded but verification failed. Contact support."
+              );
             }
           },
           prefill: {
@@ -329,7 +377,9 @@ export default function PaymentsPlan(): JSX.Element {
     if (!isApiDataVisible) {
       setPendingPurchase(true);
       // small UX feedback — replace with your toast system if available
-      alert("Plan details are loading. We'll continue payment automatically when ready.");
+      alert(
+        "Plan details are loading. We'll continue payment automatically when ready."
+      );
       return;
     }
 
@@ -348,10 +398,13 @@ export default function PaymentsPlan(): JSX.Element {
 
   // Map currentPlan.name into allowed PlanBadge values (fallback to 'Standard')
   const allowedPlanNames = ["Basic", "Standard", "Premium", "Pro"] as const;
-  const planBadgeName = ((): typeof allowedPlanNames[number] => {
+  const planBadgeName = ((): (typeof allowedPlanNames)[number] => {
     const n = currentPlan?.name;
-    if (typeof n === "string" && (allowedPlanNames as readonly string[]).includes(n)) {
-      return n as typeof allowedPlanNames[number];
+    if (
+      typeof n === "string" &&
+      (allowedPlanNames as readonly string[]).includes(n)
+    ) {
+      return n as (typeof allowedPlanNames)[number];
     }
     // fallback
     return "Standard";
@@ -366,13 +419,17 @@ export default function PaymentsPlan(): JSX.Element {
         </DialogHeader>
         <div className="space-y-4">
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-4">Scan QR code with any UPI app to pay</p>
+            <p className="text-sm text-gray-600 mb-4">
+              Scan QR code with any UPI app to pay
+            </p>
             <div className="flex justify-center mb-4">
               <div className="w-48 h-48 bg-gray-100 flex items-center justify-center rounded-lg">
                 <QrCode className="w-32 h-32 text-gray-400" />
               </div>
             </div>
-            <p className="font-semibold text-lg">Amount: {selectedPlanData?.price ?? "-"}</p>
+            <p className="font-semibold text-lg">
+              Amount: {selectedPlanData?.price ?? "-"}
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -391,7 +448,11 @@ export default function PaymentsPlan(): JSX.Element {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowQR(false)} className="flex-1">
+            <Button
+              variant="outline"
+              onClick={() => setShowQR(false)}
+              className="flex-1"
+            >
               Cancel
             </Button>
             <Button
@@ -429,17 +490,23 @@ export default function PaymentsPlan(): JSX.Element {
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Monthly Cost</p>
-                  <p className="text-2xl font-bold text-primary">{currentPlan.price}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {currentPlan.price}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Valid Until</p>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">{currentPlan.validUntil}</span>
+                    <span className="font-medium">
+                      {currentPlan.validUntil}
+                    </span>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Remaining Credits</p>
+                  <p className="text-sm text-muted-foreground">
+                    Remaining Credits
+                  </p>
                   <p className="text-2xl font-bold">{currentPlan.credits}</p>
                 </div>
               </div>
@@ -479,14 +546,16 @@ export default function PaymentsPlan(): JSX.Element {
               </div>
             )}
 
-         
-
             <Button
               onClick={handlePurchasePlan}
               disabled={!selectedPlan}
               aria-disabled={!selectedPlan}
               className={`w-full flex items-center justify-center gap-2
-                ${(!isApiDataVisible && !pendingPurchase) ? "opacity-90 bg-gray-100 text-gray-600" : "bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"}
+                ${
+                  !isApiDataVisible && !pendingPurchase
+                    ? "opacity-90 bg-gray-100 text-gray-600"
+                    : "bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
+                }
               `}
             >
               <QrCode className="w-4 h-4" />
@@ -515,11 +584,15 @@ export default function PaymentsPlan(): JSX.Element {
           </CardHeader>
           <CardContent>
             {loadingPayments ? (
-              <p className="text-center text-gray-500">⏳ Loading payments...</p>
+              <p className="text-center text-gray-500">
+                ⏳ Loading payments...
+              </p>
             ) : errorPayments ? (
               <p className="text-center text-red-500">{errorPayments}</p>
             ) : paymentHistory.length === 0 ? (
-              <p className="text-center text-gray-500">No payment history found.</p>
+              <p className="text-center text-gray-500">
+                No payment history found.
+              </p>
             ) : (
               <Table>
                 <TableHeader>
@@ -534,14 +607,22 @@ export default function PaymentsPlan(): JSX.Element {
                 <TableBody>
                   {paymentHistory.map((payment) => (
                     <TableRow key={payment.id}>
-                      <TableCell>{payment.date ? new Date(payment.date).toLocaleDateString() : "-"}</TableCell>
+                      <TableCell>
+                        {payment.date
+                          ? new Date(payment.date).toLocaleDateString()
+                          : "-"}
+                      </TableCell>
                       <TableCell>{payment.description}</TableCell>
                       <TableCell>
-                        <span className="font-semibold text-primary">{payment.amount}</span>
+                        <span className="font-semibold text-primary">
+                          {payment.amount}
+                        </span>
                       </TableCell>
                       <TableCell>{payment.method}</TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(payment.status)}>{payment.status}</Badge>
+                        <Badge className={getStatusColor(payment.status)}>
+                          {payment.status}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))}

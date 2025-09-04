@@ -150,6 +150,8 @@ export default function MyProfile() {
   // — social
   const [instagramLink, setInstagramLink] = useState("");
   const [facebookLink, setFacebookLink] = useState("");
+  const [twitterLink, setTwitterLink] = useState("");
+  const [ytLink, setYTLink] = useState("");
 
   // — payment methods (UI only)
 
@@ -167,13 +169,13 @@ export default function MyProfile() {
   useEffect(() => {
     Promise.all([
       fetch(
-        "https://wedmac-be.onrender.com/api/admin/master/list/?type=makeup_types"
+        "https://api.wedmacindia.com/api/admin/master/list/?type=makeup_types"
       ).then((r) => r.json()),
       fetch(
-        "https://wedmac-be.onrender.com/api/admin/master/list/?type=products"
+        "https://api.wedmacindia.com/api/admin/master/list/?type=products"
       ).then((r) => r.json()),
       fetch(
-        "https://wedmac-be.onrender.com/api/admin/master/list/?type=payment_methods"
+        "https://api.wedmacindia.com/api/admin/master/list/?type=payment_methods"
       ).then((r) => r.json()),
     ])
       .then(([makeups, products, payments]) => {
@@ -228,6 +230,8 @@ export default function MyProfile() {
         setTrialAvailableBoolean(Boolean(data.trial_available));
         setInstagramLink(data.social_links?.instagram || "");
         setFacebookLink(data.social_links?.facebook || "");
+        setTwitterLink(data.social_links?.twitter || "");
+        setYTLink(data.social_links?.youtube || "");
         setTravelPolicy(data.travel_policy || "local");
         const raw = data as unknown as Record<string, unknown>;
         const makeupRaw =
@@ -395,479 +399,491 @@ export default function MyProfile() {
           message={loading ? "Please wait..." : undefined}
         />
 
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Profile Header */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="w-5 h-5 text-primary" />
-              Profile Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center gap-6">
-              <Avatar className="w-24 h-24">
-                {profile_picture_data ? (
-                  <AvatarImage src={profile_picture_data.file_url} />
-                ) : (
-                  <AvatarFallback>
-                    <Camera />
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) =>
-                  handleFileUpload(e.target.files, "profile-photo")
-                }
-                disabled={loading}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>First Name</Label>
-                <Input
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Last Name</Label>
-                <Input
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Phone Number</Label>
-                <Input
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Gender</Label>
-                <RadioGroup
-                  value={gender}
-                  onValueChange={(v: "male" | "female" | "other") =>
-                    setGender(v)
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Profile Header */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Camera className="w-5 h-5 text-primary" />
+                Profile Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center gap-6">
+                <Avatar className="w-24 h-24">
+                  {profile_picture_data ? (
+                    <AvatarImage src={profile_picture_data.file_url} />
+                  ) : (
+                    <AvatarFallback>
+                      <Camera />
+                    </AvatarFallback>
+                  )}
+                </Avatar>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) =>
+                    handleFileUpload(e.target.files, "profile-photo")
                   }
-                >
-                  <div className="flex space-x-4">
-                    <div>
-                      <RadioGroupItem value="female" id="gender-f" />
-                      <Label htmlFor="gender-f">Female</Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="male" id="gender-m" />
-                      <Label htmlFor="gender-m">Male</Label>
-                    </div>
-                    <div>
-                      <RadioGroupItem value="other" id="gender-o" />
-                      <Label htmlFor="gender-o">Other</Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-              </div>
-              <div className="space-y-2">
-                <Label>Date of Birth</Label>
-                <Input
-                  type="date"
-                  value={dob}
-                  onChange={(e) => setDob(e.target.value)}
+                  disabled={loading}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Referral Code</Label>
-                <Input
-                  value={referralCode}
-                  onChange={(e) => setReferralCode(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Offer Chosen</Label>
-                <Input
-                  value={chosenOffer}
-                  onChange={(e) => setChosenOffer(e.target.value)}
-                />
-              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                <Label>Price Range</Label>
-                <Input
-                  value={priceRange}
-                  onChange={(e) => setPriceRange(e.target.value)}
+                  <Label>First Name</Label>
+                  <Input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Last Name</Label>
+                  <Input
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone Number</Label>
+                  <Input
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    disabled
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Gender</Label>
+                  <RadioGroup
+                    value={gender}
+                    onValueChange={(v: "male" | "female" | "other") =>
+                      setGender(v)
+                    }
+                  >
+                    <div className="flex space-x-4">
+                      <div>
+                        <RadioGroupItem value="female" id="gender-f" />
+                        <Label htmlFor="gender-f">Female</Label>
+                      </div>
+                      <div>
+                        <RadioGroupItem value="male" id="gender-m" />
+                        <Label htmlFor="gender-m">Male</Label>
+                      </div>
+                      <div>
+                        <RadioGroupItem value="other" id="gender-o" />
+                        <Label htmlFor="gender-o">Other</Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                </div>
+                <div className="space-y-2">
+                  <Label>Date of Birth</Label>
+                  <Input
+                    type="date"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Referral Code</Label>
+                  <Input
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Offer Chosen</Label>
+                  <Input
+                    value={chosenOffer}
+                    onChange={(e) => setChosenOffer(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Price Range</Label>
+                  <Input
+                    value={priceRange}
+                    onChange={(e) => setPriceRange(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Bio</Label>
+                <Textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="min-h-[100px]"
                 />
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="space-y-2">
-              <Label>Bio</Label>
-              <Textarea
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                className="min-h-[100px]"
-              />
-            </div>
-          </CardContent>
-        </Card>
+          {/* Payment Methods */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <CreditCard />
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {paymentOptions.map((pm) => (
+                  <Badge
+                    key={pm.id}
+                    onClick={() =>
+                      setSelectedPaymentIds((ids) =>
+                        ids.includes(pm.id)
+                          ? ids.filter((x) => x !== pm.id)
+                          : [...ids, pm.id]
+                      )
+                    }
+                    className={
+                      selectedPaymentIds.includes(pm.id)
+                        ? "bg-primary/10 text-primary"
+                        : "bg-gray-100 text-black"
+                    }
+                  >
+                    {pm.name}
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Payment Methods */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <CreditCard />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {paymentOptions.map((pm) => (
-                <Badge
-                  key={pm.id}
-                  onClick={() =>
-                    setSelectedPaymentIds((ids) =>
-                      ids.includes(pm.id)
-                        ? ids.filter((x) => x !== pm.id)
-                        : [...ids, pm.id]
-                    )
-                  }
-                  className={
-                    selectedPaymentIds.includes(pm.id)
-                      ? "bg-primary/10 text-primary"
-                      : "bg-gray-100 text-black"
-                  }
-                >
-                  {pm.name}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Travel & Trial */}
-        {/* Travel & Trial */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Car className="w-5 h-5 text-primary" />
-              Travel & Trial
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Travel Policy</Label>
-              <Select
-                value={travelPolicy}
-                onValueChange={(v) => setTravelPolicy(v)}
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Select Policy" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="local">Local</SelectItem>
-                  <SelectItem value="anywhere">Anywhere</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Trial Available?</Label>
-              <RadioGroup
-                value={String(trialAvailableBoolean)}
-                onValueChange={(v) => setTrialAvailableBoolean(v === "true")}
-              >
-                <div className="flex gap-4">
-                  <div>
-                    <RadioGroupItem value="true" id="trial-yes" />
-                    <Label htmlFor="trial-yes">Yes</Label>
-                  </div>
-                  <div>
-                    <RadioGroupItem value="false" id="trial-no" />
-                    <Label htmlFor="trial-no">No</Label>
-                  </div>
-                </div>
-              </RadioGroup>
-            </div>
-
-            {/* SHOW trial-type ONLY when trialAvailableBoolean === true */}
-            {trialAvailableBoolean && (
+          {/* Travel & Trial */}
+          {/* Travel & Trial */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Car className="w-5 h-5 text-primary" />
+                Travel & Trial
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
-                <Label>Trial Type</Label>
-                <RadioGroup
-                  value={trialType}
-                  onValueChange={(v) => setTrialType(v as "free" | "paid")}
+                <Label>Travel Policy</Label>
+                <Select
+                  value={travelPolicy}
+                  onValueChange={(v) => setTravelPolicy(v)}
                 >
-                  <div className="flex gap-4 items-center">
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Select Policy" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="local">Local</SelectItem>
+                    <SelectItem value="anywhere">Anywhere</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Trial Available?</Label>
+                <RadioGroup
+                  value={String(trialAvailableBoolean)}
+                  onValueChange={(v) => setTrialAvailableBoolean(v === "true")}
+                >
+                  <div className="flex gap-4">
                     <div>
-                      <RadioGroupItem value="free" id="trial-free" />
-                      <Label htmlFor="trial-free">Free</Label>
+                      <RadioGroupItem value="true" id="trial-yes" />
+                      <Label htmlFor="trial-yes">Yes</Label>
                     </div>
                     <div>
-                      <RadioGroupItem value="paid" id="trial-paid" />
-                      <Label htmlFor="trial-paid">Paid</Label>
+                      <RadioGroupItem value="false" id="trial-no" />
+                      <Label htmlFor="trial-no">No</Label>
                     </div>
                   </div>
                 </RadioGroup>
               </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Makeup Types & Products */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* SHOW trial-type ONLY when trialAvailableBoolean === true */}
+              {trialAvailableBoolean && (
+                <div>
+                  <Label>Trial Type</Label>
+                  <RadioGroup
+                    value={trialType}
+                    onValueChange={(v) => setTrialType(v as "free" | "paid")}
+                  >
+                    <div className="flex gap-4 items-center">
+                      <div>
+                        <RadioGroupItem value="free" id="trial-free" />
+                        <Label htmlFor="trial-free">Free</Label>
+                      </div>
+                      <div>
+                        <RadioGroupItem value="paid" id="trial-paid" />
+                        <Label htmlFor="trial-paid">Paid</Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Makeup Types & Products */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette />
+                  Makeup Type
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {makeupTypesApi.map((m) => (
+                    <Badge
+                      key={m.id}
+                      onClick={() =>
+                        setSelectedMakeupIds((ids) =>
+                          ids.includes(m.id)
+                            ? ids.filter((x) => x !== m.id)
+                            : [...ids, m.id]
+                        )
+                      }
+                      className={
+                        selectedMakeupIds.includes(m.id)
+                          ? "bg-primary/10 text-primary cursor-pointer"
+                          : "bg-gray-100 text-black cursor-pointer"
+                      }
+                    >
+                      {m.name}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package />
+                  Product Use
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {/* Products */}
+                  {productOptions.map((p) => (
+                    <Badge
+                      key={p.id}
+                      onClick={() =>
+                        setSelectedProductIds((ids) =>
+                          ids.includes(p.id)
+                            ? ids.filter((x) => x !== p.id)
+                            : [...ids, p.id]
+                        )
+                      }
+                      className={
+                        selectedProductIds.includes(p.id)
+                          ? "bg-primary/10 text-primary cursor-pointer"
+                          : "bg-gray-100 text-black cursor-pointer"
+                      }
+                    >
+                      {p.name}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Work Portfolio */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Palette />
-                Makeup Type
+                <Camera className="w-5 h-5 text-primary" />
+                Work Portfolio (Max 8)
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {makeupTypesApi.map((m) => (
-                  <Badge
-                    key={m.id}
-                    onClick={() =>
-                      setSelectedMakeupIds((ids) =>
-                        ids.includes(m.id)
-                          ? ids.filter((x) => x !== m.id)
-                          : [...ids, m.id]
-                      )
-                    }
-                    className={
-                      selectedMakeupIds.includes(m.id)
-                        ? "bg-primary/10 text-primary cursor-pointer"
-                        : "bg-gray-100 text-black cursor-pointer"
-                    }
-                  >
-                    {m.name}
-                  </Badge>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {portfolioDocs.map((doc) => (
+                  <div key={doc.id} className="relative group">
+                    <img
+                      src={doc.file_url}
+                      alt={doc.file_name}
+                      className="h-24 w-24 object-cover rounded-lg"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-1 right-1 p-1"
+                      onClick={() =>
+                        setPortfolioDocs((d) =>
+                          d.filter((x) => x.id !== doc.id)
+                        )
+                      }
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
                 ))}
+                {portfolioDocs.length < 8 && (
+                  <label className="h-24 w-24 border-dashed flex items-center justify-center cursor-pointer rounded-lg">
+                    <Upload />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) =>
+                        handleFileUpload(e.target.files, "portfolio")
+                      }
+                      disabled={loading}
+                    />
+                  </label>
+                )}
               </div>
             </CardContent>
           </Card>
 
+          {/* Certifications */}
+          {/* Certifications */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Package />
-                Product Use
+                <Award className="w-5 h-5 text-primary" />
+                Certifications
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {/* Products */}
-                {productOptions.map((p) => (
-                  <Badge
-                    key={p.id}
-                    onClick={() =>
-                      setSelectedProductIds((ids) =>
-                        ids.includes(p.id)
-                          ? ids.filter((x) => x !== p.id)
-                          : [...ids, p.id]
-                      )
-                    }
-                    className={
-                      selectedProductIds.includes(p.id)
-                        ? "bg-primary/10 text-primary cursor-pointer"
-                        : "bg-gray-100 text-black cursor-pointer"
-                    }
-                  >
-                    {p.name}
-                  </Badge>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {certDocs.map((doc) => (
+                  <div key={doc.id} className="relative group">
+                    <img
+                      src={doc.file_url}
+                      alt={doc.file_name}
+                      className="h-24 w-24 object-cover rounded-lg"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-1 right-1 p-1"
+                      onClick={() =>
+                        setCertDocs((current) =>
+                          current.filter((d) => d.id !== doc.id)
+                        )
+                      }
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
                 ))}
+
+                {certDocs.length < 8 && (
+                  <label className="h-24 w-24 border-dashed rounded-lg flex items-center justify-center cursor-pointer">
+                    <Upload />
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      onChange={(e) =>
+                        handleFileUpload(e.target.files, "certificate")
+                      }
+                      disabled={loading}
+                    />
+                  </label>
+                )}
               </div>
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="w-5 h-5 text-primary" />
+                ID Documents (Aadhaar, PAN)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {idDocs.map((doc) => (
+                  <div key={doc.id} className="relative group">
+                    <img
+                      src={doc.file_url}
+                      alt={doc.file_name}
+                      className="h-24 w-24 object-cover rounded-lg"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-1 right-1 p-1"
+                      onClick={() =>
+                        setIdDocs((d) => d.filter((x) => x.id !== doc.id))
+                      }
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                ))}
+                {idDocs.length < 4 && (
+                  <label className="h-24 w-24 border-dashed rounded-lg flex items-center justify-center cursor-pointer">
+                    <Upload />
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
+                      onChange={(e) =>
+                        handleFileUpload(e.target.files, "id-document")
+                      }
+                      disabled={loading}
+                    />
+                  </label>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Social Links */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Instagram className="w-5 h-5 text-primary" />
+                Social Media Links
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                placeholder="Instagram URL"
+                value={instagramLink}
+                onChange={(e) => setInstagramLink(e.target.value)}
+              />
+              <Input
+                placeholder="Facebook URL"
+                value={facebookLink}
+                onChange={(e) => setFacebookLink(e.target.value)}
+              />
+                <Input
+                placeholder="YouTube URL"
+                value={ytLink}
+                onChange={(e) => setYTLink(e.target.value)}
+              />  <Input
+                placeholder="Twitter URL"
+                value={twitterLink}
+                onChange={(e) => setTwitterLink(e.target.value)}
+              />
+            </CardContent>
+          </Card>
+
+          {error && <p className="text-sm text-red-500">{error}</p>}
+
+          <div className="flex justify-end">
+            <Button
+              onClick={handleSave}
+              disabled={loading}
+              className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
+            >
+              {loading ? "Saving…" : "Save Changes"}
+            </Button>
+          </div>
         </div>
-
-        {/* Work Portfolio */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="w-5 h-5 text-primary" />
-              Work Portfolio (Max 8)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {portfolioDocs.map((doc) => (
-                <div key={doc.id} className="relative group">
-                  <img
-                    src={doc.file_url}
-                    alt={doc.file_name}
-                    className="h-24 w-24 object-cover rounded-lg"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-1 right-1 p-1"
-                    onClick={() =>
-                      setPortfolioDocs((d) => d.filter((x) => x.id !== doc.id))
-                    }
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              ))}
-              {portfolioDocs.length < 8 && (
-                <label className="h-24 w-24 border-dashed flex items-center justify-center cursor-pointer rounded-lg">
-                  <Upload />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) =>
-                      handleFileUpload(e.target.files, "portfolio")
-                    }
-                    disabled={loading}
-                  />
-                </label>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Certifications */}
-        {/* Certifications */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-primary" />
-              Certifications
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {certDocs.map((doc) => (
-                <div key={doc.id} className="relative group">
-                  <img
-                    src={doc.file_url}
-                    alt={doc.file_name}
-                    className="h-24 w-24 object-cover rounded-lg"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-1 right-1 p-1"
-                    onClick={() =>
-                      setCertDocs((current) =>
-                        current.filter((d) => d.id !== doc.id)
-                      )
-                    }
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              ))}
-
-              {certDocs.length < 8 && (
-                <label className="h-24 w-24 border-dashed rounded-lg flex items-center justify-center cursor-pointer">
-                  <Upload />
-                  <input
-                    type="file"
-                    accept="image/*,application/pdf"
-                    className="hidden"
-                    onChange={(e) =>
-                      handleFileUpload(e.target.files, "certificate")
-                    }
-                    disabled={loading}
-                  />
-                </label>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-primary" />
-              ID Documents (Aadhaar, PAN)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {idDocs.map((doc) => (
-                <div key={doc.id} className="relative group">
-                  <img
-                    src={doc.file_url}
-                    alt={doc.file_name}
-                    className="h-24 w-24 object-cover rounded-lg"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-1 right-1 p-1"
-                    onClick={() =>
-                      setIdDocs((d) => d.filter((x) => x.id !== doc.id))
-                    }
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              ))}
-              {idDocs.length < 4 && (
-                <label className="h-24 w-24 border-dashed rounded-lg flex items-center justify-center cursor-pointer">
-                  <Upload />
-                  <input
-                    type="file"
-                    accept="image/*,application/pdf"
-                    className="hidden"
-                    onChange={(e) =>
-                      handleFileUpload(e.target.files, "id-document")
-                    }
-                    disabled={loading}
-                  />
-                </label>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Social Links */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Instagram className="w-5 h-5 text-primary" />
-              Social Media Links
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Input
-              placeholder="Instagram URL"
-              value={instagramLink}
-              onChange={(e) => setInstagramLink(e.target.value)}
-            />
-            <Input
-              placeholder="Facebook URL"
-              value={facebookLink}
-              onChange={(e) => setFacebookLink(e.target.value)}
-            />
-          </CardContent>
-        </Card>
-
-        {error && <p className="text-sm text-red-500">{error}</p>}
-
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSave}
-            disabled={loading}
-            className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
-          >
-            {loading ? "Saving…" : "Save Changes"}
-          </Button>
-        </div>
-      </div>
-    </Layout>
+      </Layout>
     </ProtectedRoute>
   );
 }

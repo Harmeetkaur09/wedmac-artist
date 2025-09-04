@@ -3,7 +3,14 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Flag, AlertTriangle, CheckCircle, Clock, Trash2 } from "lucide-react";
 
 type ReportedLeadItem = {
@@ -33,7 +40,8 @@ export default function ReportedLeads() {
       reportReason: "Fake inquiry",
       reportDate: "2024-01-20",
       status: "Under Review",
-      description: "Client asked for services but provided fake contact details",
+      description:
+        "Client asked for services but provided fake contact details",
     },
     {
       id: 2,
@@ -69,7 +77,10 @@ export default function ReportedLeads() {
   const [claimedLeads, setClaimedLeads] = useState<any[]>([]);
   const [leadsLoading, setLeadsLoading] = useState(false);
   const [leadsError, setLeadsError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const [falseClaims, setFalseClaims] = useState<any[]>([]);
   const [claimsLoading, setClaimsLoading] = useState(false);
@@ -84,7 +95,10 @@ export default function ReportedLeads() {
   const getAuthHeader = () => {
     const token =
       typeof window !== "undefined" &&
-      (sessionStorage.getItem("accessToken") || sessionStorage.getItem("token") || localStorage.getItem("jwt") || "");
+      (sessionStorage.getItem("accessToken") ||
+        sessionStorage.getItem("token") ||
+        localStorage.getItem("jwt") ||
+        "");
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
@@ -96,10 +110,13 @@ export default function ReportedLeads() {
         "Content-Type": "application/json",
         ...getAuthHeader(),
       };
-      const resp = await fetch(`https://wedmac-be.onrender.com/api/leads/false-claims/my/`, {
-        method: "GET",
-        headers,
-      });
+      const resp = await fetch(
+        `https://api.wedmacindia.com/api/leads/false-claims/my/`,
+        {
+          method: "GET",
+          headers,
+        }
+      );
       if (!resp.ok) {
         const text = await resp.text();
         throw new Error(`Failed to fetch false claims: ${resp.status} ${text}`);
@@ -128,10 +145,13 @@ export default function ReportedLeads() {
           ...getAuthHeader(),
         };
 
-        const resp = await fetch("https://wedmac-be.onrender.com/api/leads/artist/my-claimed-leads/", {
-          method: "GET",
-          headers,
-        });
+        const resp = await fetch(
+          "https://api.wedmacindia.com/api/leads/artist/my-claimed-leads/",
+          {
+            method: "GET",
+            headers,
+          }
+        );
 
         if (!resp.ok) {
           const text = await resp.text();
@@ -139,7 +159,9 @@ export default function ReportedLeads() {
         }
 
         const data = await resp.json();
-        const items = Array.isArray(data) ? data : (data.results || data.data || []);
+        const items = Array.isArray(data)
+          ? data
+          : data.results || data.data || [];
         setClaimedLeads(items);
       } catch (err: any) {
         console.error(err);
@@ -188,19 +210,23 @@ export default function ReportedLeads() {
       formData.append("file_type", fileType);
       formData.append("tag", tag);
       const headers = getAuthHeader();
-      const resp = await fetch("https://wedmac-be.onrender.com/api/documents/upload/", {
-        method: "POST",
-        headers: {
-          ...headers,
-        },
-        body: formData,
-      });
+      const resp = await fetch(
+        "https://api.wedmacindia.com/api/documents/upload/",
+        {
+          method: "POST",
+          headers: {
+            ...headers,
+          },
+          body: formData,
+        }
+      );
       if (!resp.ok) {
         const text = await resp.text();
         throw new Error(`Upload failed: ${resp.status} ${text}`);
       }
       const data = await resp.json();
-      if (!data?.document_id) throw new Error("Upload response did not include an id");
+      if (!data?.document_id)
+        throw new Error("Upload response did not include an id");
       const doc: UploadedDoc = {
         id: data.document_id,
         file_name: data.file_name || file.name,
@@ -229,6 +255,11 @@ export default function ReportedLeads() {
         setStatusMessage("Please provide a lead ID and a reason.");
         return;
       }
+        if (uploadedDocs.length === 0) {
+      setStatusMessage("Please upload at least one document/image.");
+      return;
+    }
+
       const payload = {
         lead: Number(leadId),
         reason: reason.trim(),
@@ -239,11 +270,14 @@ export default function ReportedLeads() {
         ...getAuthHeader(),
       };
       setStatusMessage("Submitting report...");
-      const resp = await fetch("https://wedmac-be.onrender.com/api/leads/false-claims/", {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      });
+      const resp = await fetch(
+        "https://api.wedmacindia.com/api/leads/false-claims/",
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        }
+      );
       if (!resp.ok) {
         const text = await resp.text();
         throw new Error(`Submit failed: ${resp.status} ${text}`);
@@ -270,11 +304,16 @@ export default function ReportedLeads() {
     } catch (err: any) {
       console.error(err);
       setStatusMessage(err?.message || "Failed to submit report");
-      setToast({ message: err?.message || "Failed to submit report", type: "error" });
+      setToast({
+        message: err?.message || "Failed to submit report",
+        type: "error",
+      });
     }
   };
 
-  const handleFileSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelection = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     for (let i = 0; i < files.length; i++) {
@@ -285,15 +324,24 @@ export default function ReportedLeads() {
 
   // ----------------- NEW: calculate stats for the 3 cards -----------------
   // choose data source: prefer API falseClaims when present, otherwise fallback to sample reportedLeads
-  const dataSource = falseClaims && falseClaims.length > 0 ? falseClaims : reportedLeads;
+  const dataSource =
+    falseClaims && falseClaims.length > 0 ? falseClaims : reportedLeads;
 
   // normalize status checks (case-insensitive)
   const normalize = (s: any) => (s ? String(s).toLowerCase() : "");
 
   const totalReports = dataSource.length;
-  const underReviewCount = dataSource.filter((it) => normalize(it.status).includes("under review") || normalize(it.status).includes("review")).length;
+  const underReviewCount = dataSource.filter(
+    (it) =>
+      normalize(it.status).includes("under review") ||
+      normalize(it.status).includes("review")
+  ).length;
   // treat "Action Taken" and "Resolved" as resolved/final states
-  const resolvedCount = dataSource.filter((it) => normalize(it.status).includes("resolved") || normalize(it.status).includes("action")).length;
+  const resolvedCount = dataSource.filter(
+    (it) =>
+      normalize(it.status).includes("resolved") ||
+      normalize(it.status).includes("action")
+  ).length;
   // ------------------------------------------------------------------------
 
   return (
@@ -308,7 +356,9 @@ export default function ReportedLeads() {
                   <Flag className="w-5 h-5 text-red-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{claimsLoading ? "..." : totalReports}</div>
+                  <div className="text-2xl font-bold">
+                    {claimsLoading ? "..." : totalReports}
+                  </div>
                   <p className="text-sm text-muted-foreground">Total Reports</p>
                 </div>
               </div>
@@ -321,7 +371,9 @@ export default function ReportedLeads() {
                   <Clock className="w-5 h-5 text-yellow-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{claimsLoading ? "..." : underReviewCount}</div>
+                  <div className="text-2xl font-bold">
+                    {claimsLoading ? "..." : underReviewCount}
+                  </div>
                   <p className="text-sm text-muted-foreground">Under Review</p>
                 </div>
               </div>
@@ -334,8 +386,12 @@ export default function ReportedLeads() {
                   <CheckCircle className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{claimsLoading ? "..." : resolvedCount}</div>
-                  <p className="text-sm text-muted-foreground">Resolved / Action Taken</p>
+                  <div className="text-2xl font-bold">
+                    {claimsLoading ? "..." : resolvedCount}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Resolved / Action Taken
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -367,7 +423,9 @@ export default function ReportedLeads() {
                   </TableRow>
                 ) : claimsError ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-red-600">{claimsError}</TableCell>
+                    <TableCell colSpan={4} className="text-red-600">
+                      {claimsError}
+                    </TableCell>
                   </TableRow>
                 ) : falseClaims.length === 0 && reportedLeads.length === 0 ? (
                   <TableRow>
@@ -375,33 +433,65 @@ export default function ReportedLeads() {
                   </TableRow>
                 ) : (
                   // show API-backed falseClaims when available, otherwise fallback to reportedLeads
-                  (falseClaims.length > 0 ? falseClaims : reportedLeads).map((item: any) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium">{item.lead_name || `${item.first_name || ''} ${item.last_name || ''}`.trim() || item.clientName || `Lead #${item.lead_id || item.lead}`}</div>
-                          <div className="text-sm text-muted-foreground">{item.phone || ''}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="destructive" className="bg-red-100 text-red-800">{item.reason || item.reportReason}</Badge>
-                      </TableCell>
-                      <TableCell>{(item.created_at || item.reportDate || "").slice(0,10)}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(item.status || 'Under Review')}
-                          <Badge className={getStatusColor(item.status || 'Under Review')}>{item.status ? item.status : 'Under Review'}</Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="max-w-xs">
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {item.proof_documents && item.proof_documents.length > 0 ? item.proof_documents.map((d: any) => d.file_name).join(', ') : item.description || ''}
-                          </p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  (falseClaims.length > 0 ? falseClaims : reportedLeads).map(
+                    (item: any) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="font-medium">
+                              {item.lead_name ||
+                                `${item.first_name || ""} ${
+                                  item.last_name || ""
+                                }`.trim() ||
+                                item.clientName ||
+                                `Lead #${item.lead_id || item.lead}`}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {item.phone || ""}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="destructive"
+                            className="bg-red-100 text-red-800"
+                          >
+                            {item.reason || item.reportReason}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {(item.created_at || item.reportDate || "").slice(
+                            0,
+                            10
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(item.status || "Under Review")}
+                            <Badge
+                              className={getStatusColor(
+                                item.status || "Under Review"
+                              )}
+                            >
+                              {item.status ? item.status : "Under Review"}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-xs">
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {item.proof_documents &&
+                              item.proof_documents.length > 0
+                                ? item.proof_documents
+                                    .map((d: any) => d.file_name)
+                                    .join(", ")
+                                : item.description || ""}
+                            </p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  )
                 )}
               </TableBody>
             </Table>
@@ -415,7 +505,8 @@ export default function ReportedLeads() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              If you encounter fake leads, spam, or inappropriate behavior, report it to help improve the platform.
+              If you encounter fake leads, spam, or inappropriate behavior,
+              report it to help improve the platform.
             </p>
 
             {!showForm ? (
@@ -433,21 +524,28 @@ export default function ReportedLeads() {
                     {leadsLoading ? (
                       <div className="p-2">Loading leads...</div>
                     ) : leadsError ? (
-                      <div className="p-2 text-sm text-red-600">{leadsError}</div>
+                      <div className="p-2 text-sm text-red-600">
+                        {leadsError}
+                      </div>
                     ) : (
                       <select
                         value={leadId}
                         onChange={(e) => {
                           const val = e.target.value;
                           setLeadId(val === "" ? "" : Number(val));
-                          setSelectedLeadName(e.target.selectedOptions?.[0]?.text || "");
+                          setSelectedLeadName(
+                            e.target.selectedOptions?.[0]?.text || ""
+                          );
                         }}
                         className="input input-bordered w-full"
                       >
                         <option value="">Select a lead</option>
                         {claimedLeads.map((l: any) => (
                           <option key={l.id} value={l.id}>
-                            {l.name || l.client_name || l.event_name || `${l.first_name} ${l.last_name || ""}`}
+                            {l.name ||
+                              l.client_name ||
+                              l.event_name ||
+                              `${l.first_name} ${l.last_name || ""}`}
                           </option>
                         ))}
                       </select>
@@ -471,8 +569,11 @@ export default function ReportedLeads() {
                       onChange={handleFileSelection}
                       multiple
                       className=""
+                      required={true}
                     />
-                    <div className="text-sm text-muted-foreground">Allowed: any file (server-side will validate)</div>
+                    <div className="text-sm text-muted-foreground">
+                      Allowed: any file (server-side will validate)
+                    </div>
                   </div>
 
                   {uploading && <div className="text-sm">Uploading...</div>}
@@ -480,15 +581,27 @@ export default function ReportedLeads() {
                   {uploadedDocs.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                       {uploadedDocs.map((d) => (
-                        <div key={d.id} className="p-2 border rounded flex items-center justify-between">
+                        <div
+                          key={d.id}
+                          className="p-2 border rounded flex items-center justify-between"
+                        >
                           <div className="truncate">{d.file_name}</div>
                           <div className="flex items-center gap-2">
                             {d.file_url ? (
-                              <a href={d.file_url} target="_blank" rel="noreferrer" className="underline text-sm">
+                              <a
+                                href={d.file_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline text-sm"
+                              >
                                 view
                               </a>
                             ) : null}
-                            <button onClick={() => removeUploadedDoc(d.id)} title="Remove" className="p-1">
+                            <button
+                              onClick={() => removeUploadedDoc(d.id)}
+                              title="Remove"
+                              className="p-1"
+                            >
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -499,15 +612,25 @@ export default function ReportedLeads() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white" onClick={handleSubmitReport}>
+                  <Button
+                    className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
+                    onClick={handleSubmitReport}
+                  >
                     Submit Report
                   </Button>
-                  <Button variant="secondary" onClick={() => setShowForm(false)}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowForm(false)}
+                  >
                     Cancel
                   </Button>
                 </div>
 
-                {statusMessage && <div className="text-sm text-muted-foreground">{statusMessage}</div>}
+                {statusMessage && (
+                  <div className="text-sm text-muted-foreground">
+                    {statusMessage}
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

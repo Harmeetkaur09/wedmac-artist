@@ -4,8 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Unlock, Search, Phone, Mail, Calendar, MapPin } from "lucide-react";
 
 type ApiLead = {
@@ -40,42 +53,48 @@ export default function UnlockedLeads() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [eventFilter, setEventFilter] = useState<string>("all");
-// fixed options
-const statusOptions = ["pending", "contacted", "booked", "claimed"];
-const eventOptions = ["wedding", "engagement", "party"];
+  // fixed options
+  const statusOptions = [ "booked", "claimed"];
+  const eventOptions = ["wedding", "engagement", "party", "Bridal", "Engagement", "Party", "Airbrush", "Haldi", "Mehandi",  "Sangeet",  "Reception",  "Nude",  "Smoky",  "Celebrity",  "Other",  "modernart"];
 
   // fetch claimed/unlocked leads
-  useEffect(() => {
-    const fetchLeads = async () => {
-      setLoading(true);
-      setError(null);
+useEffect(() => {
+  const fetchLeads = async () => {
+    setLoading(true);
+    setError(null);
 
-      try {
-        const token = sessionStorage.getItem("accessToken");
-        const res = await fetch("https://wedmac-be.onrender.com/api/leads/artist/my-claimed-leads/", {
+    try {
+      const token = sessionStorage.getItem("accessToken");
+      const res = await fetch(
+        "https://api.wedmacindia.com/api/leads/artist/my-claimed-leads/",
+        {
           headers: {
             Authorization: token ? `Bearer ${token}` : "",
             "Content-Type": "application/json",
           },
-        });
-
-        if (!res.ok) {
-          const text = await res.text().catch(() => "");
-          throw new Error(text || `Failed to fetch leads (status ${res.status})`);
         }
+      );
 
-        const data: ApiLead[] = await res.json();
-        setLeads(data || []);
-      } catch (err: any) {
-        console.error("Failed to load unlocked leads:", err);
-        setError(err?.message || "Failed to fetch unlocked leads");
-      } finally {
-        setLoading(false);
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `Failed to fetch leads (status ${res.status})`);
       }
-    };
 
-    fetchLeads();
-  }, []);
+      const data = await res.json();
+      console.log("API response:", data);
+
+      setLeads(Array.isArray(data.leads) ? data.leads : []);
+    } catch (err: any) {
+      console.error("Failed to load unlocked leads:", err);
+      setError(err?.message || "Failed to fetch unlocked leads");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchLeads();
+}, []);
+
 
   const getStatusColor = (status?: string) => {
     if (!status) return "bg-gray-100 text-gray-800";
@@ -93,17 +112,28 @@ const eventOptions = ["wedding", "engagement", "party"];
     }
   };
 
-
   // filtered leads
   const filteredLeads = useMemo(() => {
     return leads.filter((l) => {
       const q = searchQuery.trim().toLowerCase();
       if (q) {
-        const hay = `${l.first_name ?? ""} ${l.last_name ?? ""} ${l.email ?? ""} ${l.phone ?? ""} ${l.service ?? ""} ${l.requirements ?? ""}`.toLowerCase();
+        const hay = `${l.first_name ?? ""} ${l.last_name ?? ""} ${
+          l.email ?? ""
+        } ${l.phone ?? ""} ${l.service ?? ""} ${
+          l.requirements ?? ""
+        }`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      if (statusFilter !== "all" && (l.status ?? "").toLowerCase() !== statusFilter.toLowerCase()) return false;
-      if (eventFilter !== "all" && (l.event_type ?? "").toLowerCase() !== eventFilter.toLowerCase()) return false;
+      if (
+        statusFilter !== "all" &&
+        (l.status ?? "").toLowerCase() !== statusFilter.toLowerCase()
+      )
+        return false;
+      if (
+        eventFilter !== "all" &&
+        (l.event_type ?? "").toLowerCase() !== eventFilter.toLowerCase()
+      )
+        return false;
       return true;
     });
   }, [leads, searchQuery, statusFilter, eventFilter]);
@@ -125,25 +155,45 @@ const eventOptions = ["wedding", "engagement", "party"];
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-primary">{leads.length}</div>
+              <div className="text-2xl font-bold text-primary">
+                {leads.length}
+              </div>
               <p className="text-sm text-muted-foreground">Total Unlocked</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-green-600">{leads.filter(l => (l.status ?? "").toLowerCase() === "booked").length}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {
+                  leads.filter(
+                    (l) => (l.status ?? "").toLowerCase() === "booked"
+                  ).length
+                }
+              </div>
               <p className="text-sm text-muted-foreground">Booked</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-blue-600">{leads.filter(l => (l.status ?? "").toLowerCase() === "contacted").length}</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {
+                  leads.filter(
+                    (l) => (l.status ?? "").toLowerCase() === "contacted"
+                  ).length
+                }
+              </div>
               <p className="text-sm text-muted-foreground">Contacted</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-yellow-600">{leads.filter(l => (l.status ?? "").toLowerCase() === "pending").length}</div>
+              <div className="text-2xl font-bold text-yellow-600">
+                {
+                  leads.filter(
+                    (l) => (l.status ?? "").toLowerCase() === "pending"
+                  ).length
+                }
+              </div>
               <p className="text-sm text-muted-foreground">Pending</p>
             </CardContent>
           </Card>
@@ -173,40 +223,53 @@ const eventOptions = ["wedding", "engagement", "party"];
               </div>
 
               <div>
-   <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val)}>
-  <SelectTrigger className="w-[150px]">
-    <SelectValue placeholder="Status" />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="all">All Status</SelectItem>
-    {statusOptions.map((s) => (
-      <SelectItem key={s} value={s}>
-        {s.charAt(0).toUpperCase() + s.slice(1)}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
-
+                <Select
+                  value={statusFilter}
+                  onValueChange={(val) => setStatusFilter(val)}
+                >
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    {statusOptions.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s.charAt(0).toUpperCase() + s.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-   <Select value={eventFilter} onValueChange={(val) => setEventFilter(val)}>
-  <SelectTrigger className="w-[150px]">
-    <SelectValue placeholder="Event Type" />
-  </SelectTrigger>
-  <SelectContent>
-    <SelectItem value="all" >All Events</SelectItem>
-    {eventOptions.map((e) => (
-      <SelectItem key={e} value={e} >
-        {e.charAt(0).toUpperCase() + e.slice(1)}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
+                <Select
+                  value={eventFilter}
+                  onValueChange={(val) => setEventFilter(val)}
+                >
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Event Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Events</SelectItem>
+                    {eventOptions.map((e) => (
+                      <SelectItem key={e} value={e}>
+                        {e.charAt(0).toUpperCase() + e.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
-                <Button size="sm" variant="outline" onClick={() => { setSearchQuery(""); setStatusFilter("all"); setEventFilter("all"); }}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setStatusFilter("all");
+                    setEventFilter("all");
+                  }}
+                >
                   Clear
                 </Button>
               </div>
@@ -215,18 +278,22 @@ const eventOptions = ["wedding", "engagement", "party"];
             {/* Leads Table */}
             <div className="overflow-x-auto">
               {loading ? (
-                <div className="p-6 text-center text-muted-foreground">⏳ Loading unlocked leads…</div>
+                <div className="p-6 text-center text-muted-foreground">
+                  ⏳ Loading unlocked leads…
+                </div>
               ) : error ? (
                 <div className="p-6 text-center text-red-400">{error}</div>
               ) : filteredLeads.length === 0 ? (
-                <div className="p-6 text-center text-muted-foreground">No leads found.</div>
+                <div className="p-6 text-center text-muted-foreground">
+                  No leads found.
+                </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Client Details</TableHead>
                       <TableHead>Event Info</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Unlock Date</TableHead>
                       <TableHead>Budget</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Actions</TableHead>
@@ -235,11 +302,15 @@ const eventOptions = ["wedding", "engagement", "party"];
 
                   <TableBody>
                     {filteredLeads.map((lead) => {
-                      const clientName = `${lead.first_name ?? ""}${lead.last_name ? " " + lead.last_name : ""}`;
+                      const clientName = `${lead.first_name ?? ""}${
+                        lead.last_name ? " " + lead.last_name : ""
+                      }`;
                       const phone = lead.phone ?? "-";
                       const email = lead.email ?? "-";
                       const eventType = lead.event_type ?? lead.service ?? "-";
-                      const bookingDate = lead.booking_date ? new Date(lead.booking_date).toLocaleDateString() : "-";
+                      const bookingDate = lead.booking_date
+                        ? new Date(lead.booking_date).toLocaleDateString()
+                        : "-";
                       const budget = lead.budget_range ?? "₹25000 - ₹30000";
                       const location = lead.location ?? "-";
 
@@ -256,9 +327,11 @@ const eventOptions = ["wedding", "engagement", "party"];
                                 <Mail className="w-3 h-3" />
                                 {email}
                               </div>
-                              {lead.notes && <div className="text-xs text-muted-foreground italic mt-1">{lead.notes}</div>}
-
-
+                              {lead.notes && (
+                                <div className="text-xs text-muted-foreground italic mt-1">
+                                  {lead.notes}
+                                </div>
+                              )}
                             </div>
                           </TableCell>
 
@@ -276,17 +349,25 @@ const eventOptions = ["wedding", "engagement", "party"];
                             </div>
                           </TableCell>
 
-                          <TableCell>{lead.created_at && (
-  <div className="text-xs text-muted-foreground  mt-1">
-    {new Date(lead.created_at).toLocaleDateString("en-GB")}
-  </div>
-)}</TableCell>
                           <TableCell>
-                            <span className="font-semibold text-primary">{budget}</span>
+                            {lead.created_at && (
+                              <div className="text-xs text-muted-foreground  mt-1">
+                                {new Date(lead.created_at).toLocaleDateString(
+                                  "en-GB"
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-semibold text-primary">
+                              {budget}
+                            </span>
                           </TableCell>
 
                           <TableCell>
-                            <Badge className={getStatusColor(lead.status)}>{lead.status ?? "-"}</Badge>
+                            <Badge className={getStatusColor(lead.status)}>
+                              {lead.status ?? "-"}
+                            </Badge>
                           </TableCell>
 
                           <TableCell>
@@ -297,7 +378,9 @@ const eventOptions = ["wedding", "engagement", "party"];
                                 onClick={() => {
                                   if (!lead.phone) return;
                                   // open dialer
-                                  window.location.href = `tel:${(lead.phone ?? "").replace(/\s+/g, "")}`;
+                                  window.location.href = `tel:${(
+                                    lead.phone ?? ""
+                                  ).replace(/\s+/g, "")}`;
                                 }}
                               >
                                 <Phone className="w-3 h-3 mr-1" />

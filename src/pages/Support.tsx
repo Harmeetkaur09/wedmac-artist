@@ -7,9 +7,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { HelpCircle, Crown, Calendar } from "lucide-react";
 import { PlanBadge } from "@/components/PlanBadge";
 import toast, { Toaster } from "react-hot-toast";
@@ -52,7 +70,10 @@ type CreditsHistoryItem = {
 
 export default function Support() {
   // Vite-friendly API base
-  const API_BASE = (import.meta as any).env?.VITE_API_BASE || (window as any).__API_BASE__ || "https://wedmac-be.onrender.com";
+  const API_BASE =
+    (import.meta as any).env?.VITE_API_BASE ||
+    (window as any).__API_BASE__ ||
+    "https://api.wedmacindia.com";
 
   // current plan state (will be filled from API)
   const [currentPlan, setCurrentPlan] = useState({
@@ -64,10 +85,26 @@ export default function Support() {
   });
 
   const faqs = [
-    { question: "How do I unlock leads?", answer: "To unlock leads, go to the dashboard and click on any lead card. You'll need sufficient credits in your account to unlock lead contact details." },
-    { question: "What happens when my plan expires?", answer: "When your plan expires, you'll lose access to premium features and your profile visibility will be reduced. You can renew your plan anytime to restore full access." },
-    { question: "How can I get more credits?", answer: "You can get more credits by upgrading your plan or purchasing additional credit packs from the Credit History section." },
-    { question: "Can I change my plan anytime?", answer: "Yes, you can upgrade or downgrade your plan anytime. Changes will take effect immediately, and billing will be prorated accordingly." }
+    {
+      question: "How do I unlock leads?",
+      answer:
+        "To unlock leads, go to the dashboard and click on any lead card. You'll need sufficient credits in your account to unlock lead contact details.",
+    },
+    {
+      question: "What happens when my plan expires?",
+      answer:
+        "When your plan expires, you'll lose access to premium features and your profile visibility will be reduced. You can renew your plan anytime to restore full access.",
+    },
+    {
+      question: "How can I get more credits?",
+      answer:
+        "You can get more credits by upgrading your plan or purchasing additional credit packs from the Credit History section.",
+    },
+    {
+      question: "Can I change my plan anytime?",
+      answer:
+        "Yes, you can upgrade or downgrade your plan anytime. Changes will take effect immediately, and billing will be prorated accordingly.",
+    },
   ];
 
   // ticket form / list state
@@ -86,9 +123,13 @@ export default function Support() {
     try {
       const anyWindow = window as any;
       // sessionStorage.authData (object)
-      if (anyWindow.sessionStorage && (anyWindow.sessionStorage as any).authData) {
+      if (
+        anyWindow.sessionStorage &&
+        (anyWindow.sessionStorage as any).authData
+      ) {
         const maybe = (anyWindow.sessionStorage as any).authData;
-        if (maybe && typeof maybe === "object" && maybe.token) return maybe.token;
+        if (maybe && typeof maybe === "object" && maybe.token)
+          return maybe.token;
       }
       // common keys
       const candidates = ["authData", "accessToken", "token"];
@@ -133,9 +174,9 @@ export default function Support() {
       const res = await fetch(`${API_BASE}/api/credits/history/`, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
       if (!res.ok) {
         const txt = await res.text();
@@ -143,7 +184,9 @@ export default function Support() {
       }
       const data = await res.json();
       // data.results expected (paginated)
-      const results: CreditsHistoryItem[] = Array.isArray(data) ? data : (data.results || []);
+      const results: CreditsHistoryItem[] = Array.isArray(data)
+        ? data
+        : data.results || [];
       if (results.length === 0) {
         // no history — keep defaults
         return;
@@ -155,7 +198,11 @@ export default function Support() {
       let validUntil = "—";
       const createdAt = latest.created_at || latest.plan_details?.created_at;
       const durationDays = latest.plan_details?.duration_days ?? null;
-      if (createdAt && durationDays != null && !Number.isNaN(Number(durationDays))) {
+      if (
+        createdAt &&
+        durationDays != null &&
+        !Number.isNaN(Number(durationDays))
+      ) {
         try {
           const base = new Date(createdAt);
           base.setDate(base.getDate() + Number(durationDays));
@@ -169,7 +216,8 @@ export default function Support() {
       let priceLabel = latest.plan_details?.price ?? "—";
       if (typeof priceLabel === "string") {
         const cleaned = priceLabel.replace(/[^0-9.]/g, "");
-        if (cleaned && !isNaN(Number(cleaned))) priceLabel = `₹${Number(cleaned).toLocaleString()}`;
+        if (cleaned && !isNaN(Number(cleaned)))
+          priceLabel = `₹${Number(cleaned).toLocaleString()}`;
       }
 
       setCurrentPlan({
@@ -177,7 +225,7 @@ export default function Support() {
         price: priceLabel,
         validUntil,
         credits: latest.plan_details?.total_leads ?? latest.credits_after ?? 0,
-        raw: latest
+        raw: latest,
       });
     } catch (err) {
       console.error("Failed to load credits history", err);
@@ -196,20 +244,24 @@ export default function Support() {
       return;
     }
     try {
-      const url = `${API_BASE}/api/support/artist/tickets/?status=${encodeURIComponent(status)}`;
+      const url = `${API_BASE}/api/support/artist/tickets/?status=${encodeURIComponent(
+        status
+      )}`;
       const res = await fetch(url, {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
       if (!res.ok) {
         const text = await res.text();
         throw new Error(`Failed to fetch tickets: ${res.status} ${text}`);
       }
       const data = await res.json();
-      const list: Ticket[] = Array.isArray(data) ? data : (data.results || data.items || []);
+      const list: Ticket[] = Array.isArray(data)
+        ? data
+        : data.results || data.items || [];
       setTickets(list);
     } catch (err) {
       console.error(err);
@@ -228,10 +280,22 @@ export default function Support() {
 
   // create ticket (re-fetch tickets on success)
   const handleCreateTicket = async () => {
-    if (!subject.trim()) { toast.error("Please enter a subject."); return; }
-    if (!category) { toast.error("Please select a category."); return; }
-    if (!priority) { toast.error("Please select a priority."); return; }
-    if (!description.trim()) { toast.error("Please add a description."); return; }
+    if (!subject.trim()) {
+      toast.error("Please enter a subject.");
+      return;
+    }
+    if (!category) {
+      toast.error("Please select a category.");
+      return;
+    }
+    if (!priority) {
+      toast.error("Please select a priority.");
+      return;
+    }
+    if (!description.trim()) {
+      toast.error("Please add a description.");
+      return;
+    }
 
     setCreating(true);
     const token = getToken();
@@ -242,14 +306,17 @@ export default function Support() {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/support/artist/tickets/create/`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ subject, category, priority, description })
-      });
+      const res = await fetch(
+        `${API_BASE}/api/support/artist/tickets/create/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ subject, category, priority, description }),
+        }
+      );
 
       if (!res.ok) {
         const errText = await res.text();
@@ -277,22 +344,31 @@ export default function Support() {
 
   const getStatusColor = (status: string) => {
     switch ((status || "").toLowerCase()) {
-      case "open": return "bg-red-100 text-red-800";
+      case "open":
+        return "bg-red-100 text-red-800";
       case "in progress":
-      case "in_progress": return "bg-yellow-100 text-yellow-800";
+      case "in_progress":
+        return "bg-yellow-100 text-yellow-800";
       case "resolved":
-      case "closed": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "closed":
+        return "bg-green-100 text-green-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch ((priority || "").toLowerCase()) {
-      case "high": return "bg-red-100 text-red-800";
-      case "medium": return "bg-yellow-100 text-yellow-800";
-      case "low": return "bg-green-100 text-green-800";
-      case "urgent": return "bg-red-200 text-red-900";
-      default: return "bg-gray-100 text-gray-800";
+      case "high":
+        return "bg-red-100 text-red-800";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800";
+      case "low":
+        return "bg-green-100 text-green-800";
+      case "urgent":
+        return "bg-red-200 text-red-900";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -312,21 +388,29 @@ export default function Support() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Plan</p>
-                  <PlanBadge plan={
-                    (["Basic", "Standard", "Premium", "Pro"].includes(currentPlan.name)
-                      ? currentPlan.name
-                      : "Basic") as "Basic" | "Standard" | "Premium" | "Pro"
-                  } />
+                  <PlanBadge
+                    plan={
+                      (["Basic", "Standard", "Premium", "Pro"].includes(
+                        currentPlan.name
+                      )
+                        ? currentPlan.name
+                        : "Basic") as "Basic" | "Standard" | "Premium" | "Pro"
+                    }
+                  />
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Price</p>
-                  <p className="text-2xl font-bold text-primary">{currentPlan.price}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {currentPlan.price}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Valid Until</p>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium">{currentPlan.validUntil}</span>
+                    <span className="font-medium">
+                      {currentPlan.validUntil}
+                    </span>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -350,7 +434,12 @@ export default function Support() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="subject">Subject</Label>
-                <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Brief description of your issue" />
+                <Input
+                  id="subject"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Brief description of your issue"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
@@ -372,7 +461,10 @@ export default function Support() {
 
             <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
-              <Select onValueChange={(v) => setPriority(v)} defaultValue={priority}>
+              <Select
+                onValueChange={(v) => setPriority(v)}
+                defaultValue={priority}
+              >
                 <SelectTrigger className="w-full md:w-[200px]">
                   <SelectValue placeholder="Select priority" />
                 </SelectTrigger>
@@ -387,15 +479,48 @@ export default function Support() {
 
             <div className="space-y-2">
               <Label htmlFor="message">Detailed Description</Label>
-              <Textarea id="message" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Please provide detailed information about your issue..." className="min-h-[120px]" />
+              <Textarea
+                id="message"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Please provide detailed information about your issue..."
+                className="min-h-[120px]"
+              />
             </div>
 
-            <Button className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white" onClick={handleCreateTicket} disabled={creating}>
-              {creating ? "Submitting..." : "Submit Ticket"}
-            </Button>
-          </CardContent>
-        </Card>
+           <Button
+      className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
+      onClick={handleCreateTicket}
+      disabled={creating}
+    >
+      {creating ? "Submitting..." : "Submit Ticket"}
+    </Button>
 
+    {/* Company Info Section */}
+    <div className="pt-6 border-t mt-6 text-sm text-muted-foreground">
+      <p className="font-semibold">Company: 
+      <span> Wedmac India</span></p>
+
+      <p className="font-semibold mt-2">Website:
+      <span>
+      <a
+        href="https://www.wedmacindia.com"
+        target="_blank"
+        rel="noreferrer"
+        className="text-primary underline"
+      > https://wed-mac-qsxz.vercel.app/
+      </a></span></p>
+
+      <p className="font-semibold mt-2">Email:
+      <span>
+      <a
+        href="mailto:support@wedmacindia.com"
+        className="text-primary underline"
+      > support@wedmacindia.com
+      </a></span></p>
+    </div>
+  </CardContent>
+</Card>
         {/* Tickets list */}
         <Card>
           <CardHeader>
@@ -403,8 +528,13 @@ export default function Support() {
               <CardTitle>Your Support Tickets</CardTitle>
               <div className="flex items-center gap-3">
                 <Label className="text-sm">Filter</Label>
-                <Select onValueChange={(v) => setStatusFilter(v || "open")} defaultValue={statusFilter}>
-                  <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                <Select
+                  onValueChange={(v) => setStatusFilter(v || "open")}
+                  defaultValue={statusFilter}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="open">Open</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
@@ -429,16 +559,37 @@ export default function Support() {
               </TableHeader>
               <TableBody>
                 {loadingTickets ? (
-                  <TableRow><TableCell colSpan={6} className="text-center">Loading...</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center">
+                      Loading...
+                    </TableCell>
+                  </TableRow>
                 ) : tickets.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center">No tickets found.</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center">
+                      No tickets found.
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   tickets.map((ticket) => (
-                    <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50">
-                      <TableCell className="font-mono text-sm">#{ticket.id}</TableCell>
+                    <TableRow
+                      key={ticket.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                    >
+                      <TableCell className="font-mono text-sm">
+                        #{ticket.id}
+                      </TableCell>
                       <TableCell>{ticket.subject}</TableCell>
-                      <TableCell><Badge className={getStatusColor(ticket.status)}>{ticket.status}</Badge></TableCell>
-                      <TableCell><Badge className={getPriorityColor(ticket.priority)}>{ticket.priority}</Badge></TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(ticket.status)}>
+                          {ticket.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getPriorityColor(ticket.priority)}>
+                          {ticket.priority}
+                        </Badge>
+                      </TableCell>
                       <TableCell>{formatDate(ticket.created_at)}</TableCell>
                       <TableCell>{ticket.artist}</TableCell>
                     </TableRow>
@@ -450,13 +601,19 @@ export default function Support() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>Frequently Asked Questions</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Frequently Asked Questions</CardTitle>
+          </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full">
               {faqs.map((faq, index) => (
                 <AccordionItem key={index} value={`item-${index}`}>
-                  <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>
+                  <AccordionTrigger className="text-left">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    {faq.answer}
+                  </AccordionContent>
                 </AccordionItem>
               ))}
             </Accordion>
