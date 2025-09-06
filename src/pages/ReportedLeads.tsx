@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,17 +11,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Flag, AlertTriangle, CheckCircle, Clock, Trash2 } from "lucide-react";
-
-type ReportedLeadItem = {
-  id: number;
-  clientName: string;
-  phone: string;
-  reportReason: string;
-  reportDate: string;
-  status: string;
-  description: string;
-};
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Flag,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 
 type UploadedDoc = {
   id: number;
@@ -31,37 +28,32 @@ type UploadedDoc = {
   tag?: string;
 };
 
+const getAuthHeader = () => {
+  try {
+    const token =
+      typeof window !== "undefined" &&
+      (sessionStorage.getItem("accessToken") ||
+        localStorage.getItem("accessToken") ||
+        sessionStorage.getItem("token") ||
+        localStorage.getItem("token") ||
+        "");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+};
+
+const normalize = (s?: any) => (s ? String(s).toLowerCase() : "");
+
 export default function ReportedLeads() {
-  const [reportedLeads, setReportedLeads] = useState<ReportedLeadItem[]>([
-    {
-      id: 1,
-      clientName: "John Doe",
-      phone: "+91 9876543213",
-      reportReason: "Fake inquiry",
-      reportDate: "2024-01-20",
-      status: "Under Review",
-      description:
-        "Client asked for services but provided fake contact details",
-    },
-    {
-      id: 2,
-      clientName: "Jane Smith",
-      phone: "+91 9876543214",
-      reportReason: "Spam",
-      reportDate: "2024-01-18",
-      status: "Action Taken",
-      description: "Multiple fake inquiries from same number",
-    },
-    {
-      id: 3,
-      clientName: "Mike Johnson",
-      phone: "+91 9876543215",
-      reportReason: "Inappropriate behavior",
-      reportDate: "2024-01-15",
-      status: "Resolved",
-      description: "Client was rude and used inappropriate language",
-    },
-  ]);
+  const [reportedLeads, setReportedLeads] = useState<any[]>([]);
+  const [falseClaims, setFalseClaims] = useState<any[]>([]);
+  const [claimsLoading, setClaimsLoading] = useState(false);
+  const [claimsError, setClaimsError] = useState<string | null>(null);
+
+  const [claimedLeads, setClaimedLeads] = useState<any[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [leadsError, setLeadsError] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [leadId, setLeadId] = useState<number | "">("");
@@ -74,94 +66,67 @@ export default function ReportedLeads() {
   const [tag, setTag] = useState("front");
   const [selectedLeadName, setSelectedLeadName] = useState<string>("");
 
-  const [claimedLeads, setClaimedLeads] = useState<any[]>([]);
-  const [leadsLoading, setLeadsLoading] = useState(false);
-  const [leadsError, setLeadsError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{
-    message: string;
-    type: "success" | "error";
-  } | null>(null);
-
-  const [falseClaims, setFalseClaims] = useState<any[]>([]);
-  const [claimsLoading, setClaimsLoading] = useState(false);
-  const [claimsError, setClaimsError] = useState<string | null>(null);
-
+  // Fetch false-claims (reports)
   useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3500);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  const getAuthHeader = () => {
-    const token =
-      typeof window !== "undefined" &&
-      (sessionStorage.getItem("accessToken") ||
-        sessionStorage.getItem("token") ||
-        localStorage.getItem("jwt") ||
-        "");
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
-
-  const fetchFalseClaims = async () => {
-    try {
+    const fetchFalseClaims = async () => {
       setClaimsLoading(true);
       setClaimsError(null);
-      const headers = {
-        "Content-Type": "application/json",
-        ...getAuthHeader(),
-      };
-      const resp = await fetch(
-        `https://api.wedmacindia.com/api/leads/false-claims/my/`,
-        {
-          method: "GET",
-          headers,
+      try {
+        const resp = await fetch(
+          "https://api.wedmacindia.com/api/leads/false-claims/my/",
+          {
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeader(),
+            },
+          }
+        );
+        if (!resp.ok) {
+          const text = await resp.text();
+          throw new Error(`${resp.status} ${text}`);
         }
-      );
-      if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(`Failed to fetch false claims: ${resp.status} ${text}`);
+        const data = await resp.json();
+        console.log("False Claims API Response:", data);
+        const items = Array.isArray(data)
+          ? data
+          : // flexible extraction: check common keys
+            data.results || data.data || data.false_claims || [];
+        setFalseClaims(items);
+      } catch (err: any) {
+        console.error(err);
+        setClaimsError(err?.message || "Failed to load false claims");
+      } finally {
+        setClaimsLoading(false);
       }
-      const data = await resp.json();
-      setFalseClaims(Array.isArray(data) ? data : data.results || []);
-    } catch (err: any) {
-      console.error(err);
-      setClaimsError(err?.message || "Failed to load false claims");
-    } finally {
-      setClaimsLoading(false);
-    }
-  };
-
-  useEffect(() => {
+    };
     fetchFalseClaims();
   }, []);
 
+  // Fetch claimed leads for dropdown
   useEffect(() => {
     const fetchLeads = async () => {
+      setLeadsLoading(true);
+      setLeadsError(null);
       try {
-        setLeadsLoading(true);
-        setLeadsError(null);
-        const headers = {
-          "Content-Type": "application/json",
-          ...getAuthHeader(),
-        };
-
         const resp = await fetch(
           "https://api.wedmacindia.com/api/leads/artist/my-claimed-leads/",
           {
-            method: "GET",
-            headers,
+            headers: {
+              "Content-Type": "application/json",
+              ...getAuthHeader(),
+            },
           }
         );
-
         if (!resp.ok) {
           const text = await resp.text();
-          throw new Error(`Failed to fetch leads: ${resp.status} ${text}`);
+          throw new Error(`${resp.status} ${text}`);
         }
-
         const data = await resp.json();
+        console.log("Claimed Leads API Response:", data);
+        // <-- FIX: include `leads` key from your API response
         const items = Array.isArray(data)
           ? data
-          : data.results || data.data || [];
+          : data.leads || data.results || data.data || [];
         setClaimedLeads(items);
       } catch (err: any) {
         console.error(err);
@@ -170,37 +135,25 @@ export default function ReportedLeads() {
         setLeadsLoading(false);
       }
     };
-
     fetchLeads();
   }, []);
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "Under Review":
-        return <Clock className="w-4 h-4 text-yellow-500" />;
-      case "Action Taken":
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case "Resolved":
-        return <CheckCircle className="w-4 h-4 text-blue-500" />;
-      default:
-        return <AlertTriangle className="w-4 h-4 text-gray-500" />;
-    }
+    if (normalize(status).includes("review"))
+      return <Clock className="w-4 h-4 text-yellow-500" />;
+    if (normalize(status).includes("action") || normalize(status).includes("resolved"))
+      return <CheckCircle className="w-4 h-4 text-green-500" />;
+    return <AlertTriangle className="w-4 h-4 text-gray-500" />;
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Under Review":
-        return "bg-yellow-100 text-yellow-800";
-      case "Action Taken":
-        return "bg-green-100 text-green-800";
-      case "Resolved":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+    if (normalize(status).includes("review")) return "bg-yellow-100 text-yellow-800";
+    if (normalize(status).includes("action") || normalize(status).includes("resolved"))
+      return "bg-green-100 text-green-800";
+    return "bg-gray-100 text-gray-800";
   };
 
-  // --- File upload and reporting handlers (unchanged) ---
+  // file upload handler (unchanged)
   const handleFileUpload = async (file: File) => {
     try {
       setUploading(true);
@@ -210,23 +163,19 @@ export default function ReportedLeads() {
       formData.append("file_type", fileType);
       formData.append("tag", tag);
       const headers = getAuthHeader();
-      const resp = await fetch(
-        "https://api.wedmacindia.com/api/documents/upload/",
-        {
-          method: "POST",
-          headers: {
-            ...headers,
-          },
-          body: formData,
-        }
-      );
+      const resp = await fetch("https://api.wedmacindia.com/api/documents/upload/", {
+        method: "POST",
+        headers: {
+          ...headers,
+        },
+        body: formData,
+      });
       if (!resp.ok) {
         const text = await resp.text();
         throw new Error(`Upload failed: ${resp.status} ${text}`);
       }
       const data = await resp.json();
-      if (!data?.document_id)
-        throw new Error("Upload response did not include an id");
+      if (!data?.document_id) throw new Error("Upload response did not include an id");
       const doc: UploadedDoc = {
         id: data.document_id,
         file_name: data.file_name || file.name,
@@ -248,6 +197,15 @@ export default function ReportedLeads() {
     setUploadedDocs((prev) => prev.filter((d) => d.id !== id));
   };
 
+  const handleFileSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    for (let i = 0; i < files.length; i++) {
+      await handleFileUpload(files[i]);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleSubmitReport = async () => {
     try {
       setStatusMessage(null);
@@ -255,11 +213,10 @@ export default function ReportedLeads() {
         setStatusMessage("Please provide a lead ID and a reason.");
         return;
       }
-        if (uploadedDocs.length === 0) {
-      setStatusMessage("Please upload at least one document/image.");
-      return;
-    }
-
+      if (uploadedDocs.length === 0) {
+        setStatusMessage("Please upload at least one document/image.");
+        return;
+      }
       const payload = {
         lead: Number(leadId),
         reason: reason.trim(),
@@ -270,33 +227,19 @@ export default function ReportedLeads() {
         ...getAuthHeader(),
       };
       setStatusMessage("Submitting report...");
-      const resp = await fetch(
-        "https://api.wedmacindia.com/api/leads/false-claims/",
-        {
-          method: "POST",
-          headers,
-          body: JSON.stringify(payload),
-        }
-      );
+      const resp = await fetch("https://api.wedmacindia.com/api/leads/false-claims/", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      });
       if (!resp.ok) {
         const text = await resp.text();
         throw new Error(`Submit failed: ${resp.status} ${text}`);
       }
       const data = await resp.json();
       setStatusMessage("Report submitted successfully.");
-      setToast({ message: "Report submitted successfully.", type: "success" });
-      setReportedLeads((prev) => [
-        {
-          id: data?.id || Math.floor(Math.random() * 100000),
-          clientName: `Lead #${leadId}`,
-          phone: "",
-          reportReason: reason,
-          reportDate: new Date().toISOString().slice(0, 10),
-          status: "Under Review",
-          description: uploadedDocs.map((d) => d.file_name).join(", ") || "",
-        },
-        ...prev,
-      ]);
+      // refresh falseClaims after submit
+      setFalseClaims((prev) => [{ id: data.id, reason: payload.reason, status: "Under Review", lead: payload.lead, created_at: new Date().toISOString() }, ...prev]);
       setLeadId("");
       setReason("");
       setUploadedDocs([]);
@@ -304,45 +247,14 @@ export default function ReportedLeads() {
     } catch (err: any) {
       console.error(err);
       setStatusMessage(err?.message || "Failed to submit report");
-      setToast({
-        message: err?.message || "Failed to submit report",
-        type: "error",
-      });
     }
   };
 
-  const handleFileSelection = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    for (let i = 0; i < files.length; i++) {
-      await handleFileUpload(files[i]);
-    }
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  // ----------------- NEW: calculate stats for the 3 cards -----------------
-  // choose data source: prefer API falseClaims when present, otherwise fallback to sample reportedLeads
-  const dataSource =
-    falseClaims && falseClaims.length > 0 ? falseClaims : reportedLeads;
-
-  // normalize status checks (case-insensitive)
-  const normalize = (s: any) => (s ? String(s).toLowerCase() : "");
-
+  // stats from falseClaims (or fallback reportedLeads)
+  const dataSource = falseClaims && falseClaims.length > 0 ? falseClaims : reportedLeads;
   const totalReports = dataSource.length;
-  const underReviewCount = dataSource.filter(
-    (it) =>
-      normalize(it.status).includes("under review") ||
-      normalize(it.status).includes("review")
-  ).length;
-  // treat "Action Taken" and "Resolved" as resolved/final states
-  const resolvedCount = dataSource.filter(
-    (it) =>
-      normalize(it.status).includes("resolved") ||
-      normalize(it.status).includes("action")
-  ).length;
-  // ------------------------------------------------------------------------
+  const underReviewCount = dataSource.filter((it) => normalize(it.status).includes("review")).length;
+  const resolvedCount = dataSource.filter((it) => normalize(it.status).includes("resolved")).length;
 
   return (
     <Layout title="Reported Leads">
@@ -350,114 +262,43 @@ export default function ReportedLeads() {
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-100 rounded-lg">
-                  <Flag className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">
-                    {claimsLoading ? "..." : totalReports}
-                  </div>
-                  <p className="text-sm text-muted-foreground">Total Reports</p>
-                </div>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg"><Flag className="w-5 h-5 text-red-600" /></div>
+              <div>
+                <div className="text-2xl font-bold">{claimsLoading ? "..." : totalReports}</div>
+                <p className="text-sm text-muted-foreground">Total Reports</p>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 rounded-lg">
-                  <Clock className="w-5 h-5 text-yellow-600" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">
-                    {claimsLoading ? "..." : underReviewCount}
-                  </div>
-                  <p className="text-sm text-muted-foreground">Under Review</p>
-                </div>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 rounded-lg"><Clock className="w-5 h-5 text-yellow-600" /></div>
+              <div>
+                <div className="text-2xl font-bold">{claimsLoading ? "..." : underReviewCount}</div>
+                <p className="text-sm text-muted-foreground">Under Review</p>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <div className="text-2xl font-bold">
-                    {claimsLoading ? "..." : resolvedCount}
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Resolved / Action Taken
-                  </p>
-                </div>
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg"><CheckCircle className="w-5 h-5 text-green-600" /></div>
+              <div>
+                <div className="text-2xl font-bold">{claimsLoading ? "..." : resolvedCount}</div>
+                <p className="text-sm text-muted-foreground">Resolved / Action Taken</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Reported Leads Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Flag className="w-5 h-5 text-primary" />
-              Reported Leads
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Lead Details</TableHead>
-                  <TableHead>Report Reason</TableHead>
-                  <TableHead>Report Date</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {claimsLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={4}>Loading...</TableCell>
-                  </TableRow>
-                ) : claimsError ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-red-600">
-                      {claimsError}
-                    </TableCell>
-                  </TableRow>
-                ) : falseClaims.length === 0 && reportedLeads.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4}>No reports found.</TableCell>
-                  </TableRow>
-                ) : (
-                  // show API-backed falseClaims when available, otherwise fallback to reportedLeads
-                 <p>No reports found.</p>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* Report New Lead (form) - unchanged */}
+        {/* Report New Lead Form */}
         <Card>
           <CardHeader>
             <CardTitle>Report a Lead</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">
-              If you encounter fake leads, spam, or inappropriate behavior,
-              report it to help improve the platform.
-            </p>
-
             {!showForm ? (
-              <Button
-                className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
-                onClick={() => setShowForm(true)}
-              >
-                <Flag className="w-4 h-4 mr-2" />
-                Report New Lead
+              <Button className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white" onClick={() => setShowForm(true)}>
+                <Flag className="w-4 h-4 mr-2" /> Report New Lead
               </Button>
             ) : (
               <div className="space-y-4">
@@ -466,28 +307,21 @@ export default function ReportedLeads() {
                     {leadsLoading ? (
                       <div className="p-2">Loading leads...</div>
                     ) : leadsError ? (
-                      <div className="p-2 text-sm text-red-600">
-                        {leadsError}
-                      </div>
+                      <div className="p-2 text-sm text-red-600">{leadsError}</div>
                     ) : (
                       <select
                         value={leadId}
                         onChange={(e) => {
                           const val = e.target.value;
                           setLeadId(val === "" ? "" : Number(val));
-                          setSelectedLeadName(
-                            e.target.selectedOptions?.[0]?.text || ""
-                          );
+                          setSelectedLeadName(e.target.selectedOptions?.[0]?.text || "");
                         }}
                         className="input input-bordered w-full"
                       >
                         <option value="">Select a lead</option>
                         {claimedLeads.map((l: any) => (
                           <option key={l.id} value={l.id}>
-                            {l.name ||
-                              l.client_name ||
-                              l.event_name ||
-                              `${l.first_name} ${l.last_name || ""}`}
+                            {`${(l.first_name || "")} ${(l.last_name || "")}`.trim() || `Lead #${l.id}`} {l.phone ? `(${l.phone})` : ""}
                           </option>
                         ))}
                       </select>
@@ -505,17 +339,8 @@ export default function ReportedLeads() {
 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      onChange={handleFileSelection}
-                      multiple
-                      className=""
-                      required={true}
-                    />
-                    <div className="text-sm text-muted-foreground">
-                      Allowed: any file (server-side will validate)
-                    </div>
+                    <input ref={fileInputRef} type="file" onChange={handleFileSelection} multiple required />
+                    <div className="text-sm text-muted-foreground">Allowed: any file (server-side will validate)</div>
                   </div>
 
                   {uploading && <div className="text-sm">Uploading...</div>}
@@ -523,27 +348,11 @@ export default function ReportedLeads() {
                   {uploadedDocs.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                       {uploadedDocs.map((d) => (
-                        <div
-                          key={d.id}
-                          className="p-2 border rounded flex items-center justify-between"
-                        >
+                        <div key={d.id} className="p-2 border rounded flex items-center justify-between">
                           <div className="truncate">{d.file_name}</div>
                           <div className="flex items-center gap-2">
-                            {d.file_url ? (
-                              <a
-                                href={d.file_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="underline text-sm"
-                              >
-                                view
-                              </a>
-                            ) : null}
-                            <button
-                              onClick={() => removeUploadedDoc(d.id)}
-                              title="Remove"
-                              className="p-1"
-                            >
+                            {d.file_url ? <a href={d.file_url} target="_blank" rel="noreferrer" className="underline text-sm">view</a> : null}
+                            <button onClick={() => removeUploadedDoc(d.id)} title="Remove" className="p-1">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -554,27 +363,73 @@ export default function ReportedLeads() {
                 </div>
 
                 <div className="flex gap-2">
-                  <Button
-                    className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
-                    onClick={handleSubmitReport}
-                  >
-                    Submit Report
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setShowForm(false)}
-                  >
-                    Cancel
-                  </Button>
+                  <Button className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white" onClick={handleSubmitReport}>Submit Report</Button>
+                  <Button variant="secondary" onClick={() => setShowForm(false)}>Cancel</Button>
                 </div>
 
-                {statusMessage && (
-                  <div className="text-sm text-muted-foreground">
-                    {statusMessage}
-                  </div>
-                )}
+                {statusMessage && <div className="text-sm text-muted-foreground">{statusMessage}</div>}
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Reported Leads Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Flag className="w-5 h-5 text-primary" /> Reported Leads</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Lead Details</TableHead>
+                  <TableHead>Report Reason</TableHead>
+                  <TableHead>Report Date</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {claimsLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4}><Loader2 className="w-5 h-5 animate-spin mx-auto" /></TableCell>
+                  </TableRow>
+                ) : claimsError ? (
+                  <TableRow><TableCell colSpan={4} className="text-red-600">{claimsError}</TableCell></TableRow>
+                ) : falseClaims.length === 0 ? (
+                  <TableRow><TableCell colSpan={4}>No reports found.</TableCell></TableRow>
+                ) : (
+                  falseClaims.map((item: any) => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium">
+                            {item.lead_name ||
+                              item.clientName ||
+                              item.name ||
+                              item.event_name ||
+                              `${item.first_name || ""} ${item.last_name || ""}`.trim() ||
+                              `Lead #${item.lead_id || item.lead}`}
+                          </div>
+                          <div className="text-sm text-muted-foreground">{item.phone || ""}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="destructive" className="bg-red-100 text-red-800">
+                          {item.reason || item.reportReason}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{(item.created_at || item.reportDate || "").slice(0, 10)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(item.status || "Under Review")}
+                          <Badge className={getStatusColor(item.status || "Under Review")}>{item.status || "Under Review"}</Badge>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
