@@ -59,6 +59,7 @@ export function Dashboard({ phone }: { phone?: string }) {
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+const [isAdminCreated, setIsAdminCreated] = useState(false);
 
   // subscription / credits state
   const [subscriptionValid, setSubscriptionValid] = useState<boolean>(true);
@@ -130,97 +131,111 @@ export function Dashboard({ phone }: { phone?: string }) {
 
   // fetch profile + leads + credits history
   useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        setLoading(true);
-        const profileData = await getMyProfile();
-        setProfile(profileData);
+   const fetchAll = async () => {
+  try {
+    setLoading(true);
+    const profileData = await getMyProfile();
+    setProfile(profileData);
 
-        const token = sessionStorage.getItem("accessToken");
+    if (profileData?.created_by_admin === true) {
+      setIsAdminCreated(true);
+      // agar admin created hai → subscription always valid, credits irrelevant
+      setSubscriptionValid(true);
+      setCreditsAvailable(null);
+    }
 
-        // 1) fetch recent leads
-        const leadsRes = await fetch(
-          "https://api.wedmacindia.com/api/leads/artist/recent-leads/",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (!leadsRes.ok) throw new Error("Failed to fetch leads");
-        const leadsData = await leadsRes.json();
-        setSummary(leadsData.summary);
-        setLeads(leadsData.leads);
+    const token = sessionStorage.getItem("accessToken");
 
-        // 2) fetch credits/history to determine subscription validity & credits left
-        // we assume the endpoint returns results sorted (or we sort by created_at)
-        const creditsRes = await fetch(
-          "https://api.wedmacindia.com/api/credits/history/",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!creditsRes.ok) {
-          console.warn("Failed to fetch credits history");
-          // default: keep subscriptionValid true (or you can set false)
-          return;
-        }
-
-        const creditsData = await creditsRes.json();
-        const results = Array.isArray(creditsData.results) ? creditsData.results : [];
-
-        // find latest purchase for lead credits
-        const purchases = results
-          .filter((r: any) => r.transaction_type === "purchase" && r.credit_type === "lead_credit")
-          .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-        if (purchases.length === 0) {
-          // No active purchase found -> mark invalid
-          setSubscriptionValid(false);
-          setCreditsAvailable(0);
-          setSubscriptionExpiresAt(null);
-          setPlanTotalLeads(null);
-          setSubscriptionId(null);
-          // hide leads immediately
-          setLeads([]);
-          return;
-        }
-
-        const latest = purchases[0];
-        const plan = latest.plan_details || null;
-        const createdAt = new Date(latest.created_at).getTime();
-        const durationDays = plan?.duration_days ? Number(plan.duration_days) : 0;
-        const expiryTs = createdAt + durationDays * 24 * 60 * 60 * 1000;
-
-        // credits_after indicates current credits after purchase (use if available)
-        const creditsAfter = typeof latest.credits_after === "number" ? latest.credits_after : null;
-
-        // set states
-        setSubscriptionExpiresAt(expiryTs);
-        setCreditsAvailable(creditsAfter);
-        setPlanTotalLeads(plan?.total_leads ?? null);
-        setSubscriptionId(latest.subscription_plan ?? null);
-
-        const now = Date.now();
-        if (expiryTs && expiryTs > now) {
-          setSubscriptionValid(true);
-        } else {
-          // expired
-          setSubscriptionValid(false);
-          // hide leads if expired
-          setLeads([]);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+    // 1) fetch recent leads (✅ admin ke liye bhi chalega)
+    const leadsRes = await fetch(
+      "https://api.wedmacindia.com/api/leads/artist/recent-leads/",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
-    };
+    );
+    if (!leadsRes.ok) throw new Error("Failed to fetch leads");
+    const leadsData = await leadsRes.json();
+    setSummary(leadsData.summary);
+    setLeads(leadsData.leads);
+
+    // 2) fetch credits/history (❌ admin ke liye skip karo)
+    if (!profileData?.created_by_admin) {
+      const creditsRes = await fetch(
+        "https://api.wedmacindia.com/api/credits/history/",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!creditsRes.ok) {
+        console.warn("Failed to fetch credits history");
+        return;
+      }
+
+      const creditsData = await creditsRes.json();
+      const results = Array.isArray(creditsData.results)
+        ? creditsData.results
+        : [];
+
+      const purchases = results
+        .filter(
+          (r: any) =>
+            r.transaction_type === "purchase" &&
+            r.credit_type === "lead_credit"
+        )
+        .sort(
+          (a: any, b: any) =>
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime()
+        );
+
+      if (purchases.length === 0) {
+        setSubscriptionValid(false);
+        setCreditsAvailable(0);
+        setLeads([]);
+        return;
+      }
+
+      const latest = purchases[0];
+      const plan = latest.plan_details || null;
+      const createdAt = new Date(latest.created_at).getTime();
+      const durationDays = plan?.duration_days
+        ? Number(plan.duration_days)
+        : 0;
+      const expiryTs =
+        createdAt + durationDays * 24 * 60 * 60 * 1000;
+
+      const creditsAfter =
+        typeof latest.credits_after === "number"
+          ? latest.credits_after
+          : null;
+
+      setSubscriptionExpiresAt(expiryTs);
+      setCreditsAvailable(creditsAfter);
+      setPlanTotalLeads(plan?.total_leads ?? null);
+      setSubscriptionId(latest.subscription_plan ?? null);
+
+      const now = Date.now();
+      if (expiryTs && expiryTs > now) {
+        setSubscriptionValid(true);
+      } else {
+        setSubscriptionValid(false);
+        setLeads([]);
+      }
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
     fetchAll();
   }, []);
@@ -524,10 +539,12 @@ export function Dashboard({ phone }: { phone?: string }) {
                             <span>{lead.location}</span>
                           </div>
                         </div>
+<div className="flex items-center w-80 gap-4 text-sm text-muted-foreground">
+  <span className="break-words whitespace-normal min-w-0">
+    {lead.requirements}
+  </span>
+</div>
 
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{lead.requirements}</span>
-                        </div>
 
                         {/* Show saved remark if exists */}
                         {remarks[lead.id] && (
@@ -538,90 +555,54 @@ export function Dashboard({ phone }: { phone?: string }) {
                       </div>
 
                       <div className="flex items-center gap-2 relative">
-                        {profile?.payment_status === "pending" ? (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => navigate("/payments")}
-                          >
-                            Unlock
-                          </Button>
-                        ) : (
-                          <>
-                            {/* Contact Number - now disabled if API status === 'claimed' */}
-                            <Button
-                              size="sm"
-                              disabled={
-                                contactDisabled || claimingLeadId === lead.id
-                              }
-                              onClick={() => {
-                                // guard: prevent clicking if disabled
-                                if (contactDisabled) return;
-                                if (selectedContactId === lead.id) {
-                                  // toggle off selection (but keep persisted claimedMap timestamp)
-                                  setSelectedContactId(null);
-                                  return;
-                                }
-                                claimLead(lead.id);
-                              }}
-                              className={`px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 ${
-                                contactDisabled
-                                  ? " cursor-not-allowed"
-                                  : "hover:bg-primary/10 hover:text-primary"
-                              }`}
-                            >
-                              <Phone className="w-4 h-4 inline" />
-                              {claimingLeadId === lead.id
-                                ? "Claiming..."
-                                : contactDisabled
-                                ? "claimed"
-                                : phoneVisible
-                                ? lead.phone
-                                : "Claim"}
-                            </Button>
+                     {subscriptionValid ? (
+  <>
+    {/* Claim / Call Button */}
+    <Button
+      size="sm"
+      disabled={contactDisabled || claimingLeadId === lead.id}
+      onClick={() => {
+        if (contactDisabled) return;
+        claimLead(lead.id);
+      }}
+      className={`px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 ${
+        contactDisabled
+          ? "cursor-not-allowed"
+          : "hover:bg-primary/10 hover:text-primary"
+      }`}
+    >
+      <Phone className="w-4 h-4 inline" />
+      {claimingLeadId === lead.id
+        ? "Claiming..."
+        : contactDisabled
+        ? "Claimed"
+        : "Claim"}
+    </Button>
 
-                            {/* Upgrade */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="hover:bg-primary/10 hover:text-primary"
-                              onClick={() => navigate("/payments")}
-                            >
-                              <ClockArrowUp className="w-4 h-4 mr-1" />
-                              Upgrade
-                            </Button>
+    {/* Upgrade Button */}
+    <Button
+      variant="outline"
+      size="sm"
+      className="hover:bg-primary/10 hover:text-primary"
+      onClick={() => navigate("/payments")}
+    >
+      <ClockArrowUp className="w-4 h-4 mr-1" />
+      Upgrade
+    </Button>
+  </>
+) : (
+  profile?.payment_status === "pending" && (
+    <Button
+      variant="default"
+      size="sm"
+      onClick={() => navigate("/payments")}
+    >
+      Unlock
+    </Button>
+  )
+)}
 
-                            {remarkingLeadId === lead.id && (
-                              <div className="absolute top-full right-0 mt-2 w-72 bg-white border rounded shadow px-3 py-3 z-20">
-                                <input
-                                  type="text"
-                                  value={remarkText}
-                                  onChange={(e) => setRemarkText(e.target.value)}
-                                  placeholder="Enter remark..."
-                                  className="w-full border px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                                />
-                                <div className="flex justify-end gap-2 mt-3">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => submitRemark(lead.id)}
-                                  >
-                                    Save
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      setRemarkingLeadId(null);
-                                      setRemarkText("");
-                                    }}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
+                      
                       </div>
                     </div>
                   );

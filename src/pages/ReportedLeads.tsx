@@ -433,65 +433,7 @@ export default function ReportedLeads() {
                   </TableRow>
                 ) : (
                   // show API-backed falseClaims when available, otherwise fallback to reportedLeads
-                  (falseClaims.length > 0 ? falseClaims : reportedLeads).map(
-                    (item: any) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="font-medium">
-                              {item.lead_name ||
-                                `${item.first_name || ""} ${
-                                  item.last_name || ""
-                                }`.trim() ||
-                                item.clientName ||
-                                `Lead #${item.lead_id || item.lead}`}
-                            </div>
-                            <div className="text-sm text-muted-foreground">
-                              {item.phone || ""}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="destructive"
-                            className="bg-red-100 text-red-800"
-                          >
-                            {item.reason || item.reportReason}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {(item.created_at || item.reportDate || "").slice(
-                            0,
-                            10
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(item.status || "Under Review")}
-                            <Badge
-                              className={getStatusColor(
-                                item.status || "Under Review"
-                              )}
-                            >
-                              {item.status ? item.status : "Under Review"}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="max-w-xs">
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {item.proof_documents &&
-                              item.proof_documents.length > 0
-                                ? item.proof_documents
-                                    .map((d: any) => d.file_name)
-                                    .join(", ")
-                                : item.description || ""}
-                            </p>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  )
+                 <p>No reports found.</p>
                 )}
               </TableBody>
             </Table>

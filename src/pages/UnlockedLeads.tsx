@@ -370,37 +370,77 @@ useEffect(() => {
                             </Badge>
                           </TableCell>
 
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  if (!lead.phone) return;
-                                  // open dialer
-                                  window.location.href = `tel:${(
-                                    lead.phone ?? ""
-                                  ).replace(/\s+/g, "")}`;
-                                }}
-                              >
-                                <Phone className="w-3 h-3 mr-1" />
-                                Call
-                              </Button>
+                       <TableCell>
+  <div className="flex gap-2">
+    {/* Call Button */}
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => {
+        if (!lead.phone) return;
+        window.location.href = `tel:${(lead.phone ?? "").replace(/\s+/g, "")}`;
+      }}
+    >
+      <Phone className="w-3 h-3 mr-1" />
+      Call
+    </Button>
 
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  const url = buildWhatsAppUrl(lead.phone);
-                                  if (!url) return;
-                                  window.open(url, "_blank");
-                                }}
-                              >
-                                <Mail className="w-3 h-3 mr-1" />
-                                WhatsApp
-                              </Button>
-                            </div>
-                          </TableCell>
+    {/* WhatsApp Button */}
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={() => {
+        const url = buildWhatsAppUrl(lead.phone);
+        if (!url) return;
+        window.open(url, "_blank");
+      }}
+    >
+      <Mail className="w-3 h-3 mr-1" />
+      WhatsApp
+    </Button>
+
+    {/* Book Button */}
+    <Button
+      size="sm"
+      variant="default"
+      disabled={lead.status === "booked"} // disable if already booked
+      onClick={async () => {
+        try {
+          const token = sessionStorage.getItem("accessToken");
+          const res = await fetch(
+            `https://api.wedmacindia.com/api/leads/${lead.id}/book/`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: token ? `Bearer ${token}` : "",
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (!res.ok) {
+            throw new Error("Failed to book lead");
+          }
+
+          // Update local state to reflect booked status
+          setLeads((prev) =>
+            prev.map((l) =>
+              l.id === lead.id ? { ...l, status: "booked" } : l
+            )
+          );
+
+          alert("Lead successfully booked!");
+        } catch (err: any) {
+          console.error(err);
+          alert(err.message || "Failed to book lead");
+        }
+      }}
+    >
+      Book
+    </Button>
+  </div>
+</TableCell>
+
                         </TableRow>
                       );
                     })}

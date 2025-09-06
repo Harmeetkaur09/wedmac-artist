@@ -433,7 +433,7 @@ export default function Services() {
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Short description (optional)"
+                  placeholder="Short description"
                 />
               </div>
 

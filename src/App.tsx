@@ -21,6 +21,7 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import OTPVerification from "./pages/OTPVerification";
 import NotFound from "./pages/NotFound";
+import AssignedLeads from "./pages/AssignedLeads";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,11 @@ const App = () => (
             <Route path="/shop" element={
               <ProtectedRoute>
                 <WedmacShop />
+              </ProtectedRoute>
+            } />
+             <Route path="/assigned" element={
+              <ProtectedRoute>
+                <AssignedLeads />
               </ProtectedRoute>
             } />
             <Route path="/refer" element={

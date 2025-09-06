@@ -12,6 +12,8 @@ import {
   CreditCard,
   HelpCircle,
   Sparkles,
+  Badge,
+  Check,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -39,6 +41,7 @@ const allMenuItems = [
   { title: "Reported Leads", url: "/reported-leads", icon: Flag },
   { title: "Wedmac Plans", url: "/plans", icon: Crown },
   // { title: "Credit History", url: "/credit-history", icon: Clock },
+  { title: "Assigned Lead", url: "/assigned", icon: Check },
   { title: "Wedmac Shop", url: "/shop", icon: ShoppingBag },
   { title: "Refer & Earn", url: "/refer", icon: Share2 },
   { title: "Payments / Plan", url: "/payments", icon: CreditCard },
@@ -51,47 +54,54 @@ export function AppSidebar() {
   const [profileComplete, setProfileComplete] = useState(false);
   const [paymentApproved, setPaymentApproved] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
+const [createdByAdmin, setCreatedByAdmin] = useState(false); // 👈 new state
 
-  useEffect(() => {
-    getMyProfile()
-      .then((profile) => {
-        const dob = profile?.date_of_birth;
-        const paymentStatus = profile?.payment_status;
+useEffect(() => {
+  getMyProfile()
+    .then((profile) => {
+      const dob = profile?.date_of_birth;
+      const paymentStatus = profile?.payment_status;
+      const adminFlag = profile?.created_by_admin; // 👈 get from API
 
-        setProfileComplete(!!dob);
-        setPaymentApproved(paymentStatus === "approved");
-      })
-      .catch(() => {
-        setProfileComplete(false);
-        setPaymentApproved(false);
-      })
-      .finally(() => setLoadingProfile(false));
-  }, []);
+      setCreatedByAdmin(!!adminFlag); 
+      setProfileComplete(!!dob);
+      setPaymentApproved(paymentStatus === "approved");
+    })
+    .catch(() => {
+      setCreatedByAdmin(false);
+      setProfileComplete(false);
+      setPaymentApproved(false);
+    })
+    .finally(() => setLoadingProfile(false));
+}, []);
 
-  const handleClick = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
-    url: string
-  ) => {
-    if (loadingProfile) {
-      e.preventDefault();
-      toast({
-        title: "Loading Profile",
-        description: "Please wait, loading your profile...",
-        variant: "default",
-      });
-      return;
-    }
 
-    const alwaysAllowed = [
-      "/",
-      "/profile",
-      "/services",
-      "/plans",
-      "/shop",
-      "/payments",
-    ];
-    if (alwaysAllowed.includes(url)) return;
+const handleClick = (
+  e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+  url: string
+) => {
+  if (loadingProfile) {
+    e.preventDefault();
+    toast({
+      title: "Loading Profile",
+      description: "Please wait, loading your profile...",
+      variant: "default",
+    });
+    return;
+  }
 
+  const alwaysAllowed = [
+    "/",
+    "/profile",
+    "/services",
+    "/plans",
+    "/shop",
+    "/payments",
+  ];
+  if (alwaysAllowed.includes(url)) return;
+
+  // 👇 only check if NOT created_by_admin
+  if (!createdByAdmin) {
     if (!profileComplete) {
       e.preventDefault();
       toast({
@@ -111,7 +121,8 @@ export function AppSidebar() {
       });
       return;
     }
-  };
+  }
+};
 
   return (
     <Sidebar className="border-r border-border/40">

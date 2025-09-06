@@ -25,7 +25,8 @@ export interface SocialLinks {
 }
 
 export interface MyProfile {
-  status: any;
+  created_by_admin: boolean;
+  status: string;
   payment_status: string;
   first_name: string;
   last_name: string;
