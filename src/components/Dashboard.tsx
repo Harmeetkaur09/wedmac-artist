@@ -505,7 +505,7 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
                   return (
                     <div
                       key={lead.id}
-                      className="relative flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
+                      className="relative block md:flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
                     >
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
@@ -514,7 +514,7 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
                           </h3>
                         </div>
 
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="block md:flex items-center gap-4 text-sm text-muted-foreground">
                           <span>{lead.service}</span>
 
                           {/* Booking Date */}

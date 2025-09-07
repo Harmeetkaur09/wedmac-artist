@@ -315,7 +315,9 @@ export default function AssignedLeads() {
               size="sm"
               variant="outline"
               onClick={() => {
-                if (lead.phone) window.location.href = `tel:${lead.requested_artist.phone}`;
+if (lead.phone && lead.requested_artist?.phone) {
+  window.location.href = `tel:${lead.requested_artist.phone}`;
+}
               }}
             >
               <Phone className="w-3 h-3 mr-1" /> Call
@@ -324,7 +326,7 @@ export default function AssignedLeads() {
               size="sm"
               variant="outline"
               onClick={() => {
-                const url = buildWhatsAppUrl(lead.requested_artist.phone);
+const url = buildWhatsAppUrl(lead.requested_artist?.phone);
                 if (url) window.open(url, "_blank");
               }}
             >

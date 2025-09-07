@@ -54,7 +54,7 @@ export default function UnlockedLeads() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [eventFilter, setEventFilter] = useState<string>("all");
   // fixed options
-  const statusOptions = [ "booked", "claimed"];
+  const statusOptions = [ "booked", "New"];
   const eventOptions = ["wedding", "engagement", "party", "Bridal", "Engagement", "Party", "Airbrush", "Haldi", "Mehandi",  "Sangeet",  "Reception",  "Nude",  "Smoky",  "Celebrity",  "Other",  "modernart"];
 
   // fetch claimed/unlocked leads
@@ -152,7 +152,7 @@ useEffect(() => {
     <Layout title="Unlocked Leads">
       <div className="space-y-6">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-primary">
@@ -173,30 +173,8 @@ useEffect(() => {
               <p className="text-sm text-muted-foreground">Booked</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-blue-600">
-                {
-                  leads.filter(
-                    (l) => (l.status ?? "").toLowerCase() === "contacted"
-                  ).length
-                }
-              </div>
-              <p className="text-sm text-muted-foreground">Contacted</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-yellow-600">
-                {
-                  leads.filter(
-                    (l) => (l.status ?? "").toLowerCase() === "pending"
-                  ).length
-                }
-              </div>
-              <p className="text-sm text-muted-foreground">Pending</p>
-            </CardContent>
-          </Card>
+       
+       
         </div>
 
         {/* Filters */}
