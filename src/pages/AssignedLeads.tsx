@@ -63,6 +63,29 @@ export default function AssignedLeads() {
 
   const statusOptions = ["assigned", "booked", "contacted", "pending"];
   const eventOptions = ["wedding", "engagement", "party", "reception", "haldi", "sangeet", "mehendi", "other"];
+// safe renderer for values that may be string | number | object | null
+const renderValue = (v: unknown) => {
+  if (v === null || v === undefined) return "-";
+  if (typeof v === "string" || typeof v === "number") return String(v);
+
+  // if it's an object, try common keys we might want:
+  if (typeof v === "object") {
+  
+    if ("label" in v && typeof (v as any).label === "string") return (v as any).label;
+
+    if ("name" in v && typeof (v as any).name === "string") return (v as any).name;
+ 
+    if ("price" in v && (v as any).price != null) return `₹${(v as any).price}`;
+    // fallback: try JSON (short)
+    try {
+      return JSON.stringify(v);
+    } catch {
+      return "[object]";
+    }
+  }
+
+  return String(v);
+};
 
   // fetch assigned leads
   useEffect(() => {
@@ -276,12 +299,12 @@ export default function AssignedLeads() {
         {/* Event Info */}
         <TableCell>
           <div className="space-y-1">
-            <div className="font-medium">{lead.event_type ?? "-"}</div>
+<div className="font-medium">{renderValue(lead.event_type)}</div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="w-3 h-3" /> {bookingDate}
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <MapPin className="w-3 h-3" /> {lead.location ?? "-"}
+  <MapPin className="w-3 h-3" /> {renderValue(lead.location)}
             </div>
           </div>
         </TableCell>
@@ -301,7 +324,7 @@ export default function AssignedLeads() {
 
         {/* Budget */}
         <TableCell>
-          <span className="font-semibold text-primary">{lead.budget_range ?? "-"}</span>
+<span className="font-semibold text-primary">{renderValue(lead.budget_range)}</span>
         </TableCell>
 
         {/* Status */}
