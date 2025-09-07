@@ -375,7 +375,7 @@ export default function Services() {
                       </span>
                     </div>
                     {service.description ? (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-muted-foreground break-words">
                         {service.description}
                       </div>
                     ) : null}

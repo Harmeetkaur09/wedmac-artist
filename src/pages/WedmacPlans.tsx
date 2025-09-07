@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+// src/pages/WedmacPlans.tsx
+"use client";
+import React, { useEffect, useMemo, useState } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,15 +10,17 @@ import { useNavigate } from "react-router-dom";
 import { PlanBadge } from "@/components/PlanBadge";
 
 type ApiPlan = {
-  id: string;
-  name: string;
-  total_leads: number | null;
-  total_credit_points: number | null;
-  price: string | number | null;
-  duration_days: number | null;
+  id: string | number;
+  name?: string;
+  total_leads?: number | null;
+  total_credit_points?: number | null;
+  price?: string | number | null;
+  duration_days?: number | null;
   description?: string | null;
-  features?: string[] | null;
+  features?: Array<string | { label?: string; name?: string; [k: string]: any }> | null;
   created_at?: string | null;
+  slug?: string | null;
+  [k: string]: any;
 };
 
 type UiPlan = {
@@ -25,10 +29,11 @@ type UiPlan = {
   priceLabel: string;
   periodLabel: string;
   credits: number | null;
-  features: string[];
+  features: string[]; // normalized string array
   popular?: boolean;
   description?: string | null;
   createdAt?: string | null;
+  raw?: ApiPlan;
 };
 
 export default function WedmacPlans() {
@@ -37,6 +42,30 @@ export default function WedmacPlans() {
   const [plans, setPlans] = useState<UiPlan[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // helper: safe formatter for currency / numbers
+  const formatPrice = (p: any) => {
+    if (p == null) return "—";
+    const n = Number(typeof p === "string" ? p.replace(/[^\d.-]/g, "") : p);
+    if (Number.isNaN(n)) return String(p);
+    return n.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
+  };
+
+  // normalize feature value into string
+  const normalizeFeature = (f: any) => {
+    if (f == null) return "";
+    if (typeof f === "string") return f.trim();
+    if (typeof f === "object") {
+      if (typeof f.label === "string") return f.label.trim();
+      if (typeof f.name === "string") return f.name.trim();
+      try {
+        return JSON.stringify(f);
+      } catch {
+        return String(f);
+      }
+    }
+    return String(f);
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -51,59 +80,58 @@ export default function WedmacPlans() {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
-              // If endpoint requires auth, add your auth header here:
-              // ...getAuthHeader(),
             },
           }
         );
 
         if (!resp.ok) {
-          const txt = await resp.text();
+          const txt = await resp.text().catch(() => "");
           throw new Error(`API error: ${resp.status} ${txt}`);
         }
 
         const data: ApiPlan[] = await resp.json();
 
-        // map API data into UI-friendly shape
+        // map API data into UI-friendly shape and normalize features
         const uiPlans: UiPlan[] = (data || []).map((p) => {
-          const priceNumber =
-            p.price == null
-              ? null
-              : Number(typeof p.price === "string" ? p.price : p.price);
-          const priceLabel =
-            priceNumber == null || Number.isNaN(priceNumber)
-              ? "—"
-              : priceNumber.toLocaleString("en-IN", {
-                  style: "currency",
-                  currency: "INR",
-                  maximumFractionDigits: 0,
-                });
-
-          // convert days to months (rounded)
+          const priceLabel = formatPrice(p.price ?? p.plan_price ?? null);
           const months =
-            typeof p.duration_days === "number" &&
-            !Number.isNaN(p.duration_days)
+            typeof p.duration_days === "number" && !Number.isNaN(p.duration_days)
               ? Math.round(p.duration_days / 30)
               : null;
-          const periodLabel = months
-            ? `/${months} ${months === 1 ? "month" : "months"}`
-            : "/—";
+          const periodLabel = months ? `/${months} ${months === 1 ? "month" : "months"}` : "/—";
+
+          // features might be array of strings or objects; normalize to strings
+          const rawFeatures = Array.isArray(p.features) ? p.features : [];
+          const features = rawFeatures.map(normalizeFeature).filter(Boolean);
+
+          // credits prefer total_credit_points, then total_leads
+          const credits = p.total_credit_points ?? p.total_leads ?? null;
 
           return {
-            id: p.id,
-            name: p.name,
+            id: String(p.id),
+            name: p.name ?? String(p.id),
             priceLabel,
             periodLabel,
-            credits: p.total_credit_points ?? p.total_leads ?? null,
-            features: p.features ?? [],
-            popular: false, // you can set logic here to mark a plan 'popular'
+            credits: typeof credits === "number" ? credits : (credits == null ? null : Number(credits)),
+            features,
+            popular: false,
             description: p.description ?? null,
             createdAt: p.created_at ?? null,
+            raw: p,
           };
         });
 
-        if (mounted) {
-          setPlans(uiPlans);
+        // optional: mark most expensive or most-featured as popular
+        if (uiPlans.length > 0) {
+          // simple heuristic: plan with most features = popular
+          let best = uiPlans[0];
+          for (const pl of uiPlans) {
+            if ((pl.features?.length ?? 0) > (best.features?.length ?? 0)) best = pl;
+          }
+          const withFlag = uiPlans.map((pl) => ({ ...pl, popular: pl.id === best.id }));
+          if (mounted) setPlans(withFlag);
+        } else {
+          if (mounted) setPlans(uiPlans);
         }
       } catch (err: any) {
         console.error("Fetch plans error:", err);
@@ -121,7 +149,6 @@ export default function WedmacPlans() {
   }, []);
 
   const onPurchase = (plan: UiPlan) => {
-    // navigate to payments and pass plan id and minimal metadata
     navigate("/payments", {
       state: {
         planId: plan.id,
@@ -131,18 +158,34 @@ export default function WedmacPlans() {
     });
   };
 
+  // build feature union (unique set) from plans
+  const allFeatures = useMemo(() => {
+    if (!plans) return [];
+    const s = new Set<string>();
+    for (const p of plans) {
+      for (const f of p.features || []) s.add(f);
+    }
+    return Array.from(s);
+  }, [plans]);
+
+  // helper to render check or value
+  const renderFeatureCell = (plan: UiPlan, feature: string) => {
+    if (!plan || !feature) return "-";
+    return plan.features.includes(feature) ? (
+      <div className="flex items-center justify-center">
+        <Check className="w-4 h-4 text-green-500" />
+      </div>
+    ) : (
+      <span className="text-muted-foreground">—</span>
+    );
+  };
+
   return (
     <Layout title="Wedmac Plans">
       <div className="space-y-6">
-        {/*
-          You can show current plan status here if you need.
-        */}
-
         {loading ? (
           <Card>
-            <CardContent className="p-6 text-center">
-              Loading plans…
-            </CardContent>
+            <CardContent className="p-6 text-center">Loading plans…</CardContent>
           </Card>
         ) : error ? (
           <Card>
@@ -160,9 +203,7 @@ export default function WedmacPlans() {
                 plans.map((plan) => (
                   <Card
                     key={plan.id}
-                    className={`relative ${
-                      plan.popular ? "ring-2 ring-primary shadow-lg" : ""
-                    }`}
+                    className={`relative ${plan.popular ? "ring-2 ring-primary shadow-lg" : ""}`}
                   >
                     {plan.popular && (
                       <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -177,18 +218,12 @@ export default function WedmacPlans() {
                         <PlanBadge plan={plan.name} />
                       </div>
                       <div className="space-y-1">
-                        <div className="text-3xl font-bold">
-                          {plan.priceLabel}
-                        </div>
-                        <div className="text-muted-foreground">
-                          {plan.periodLabel}
-                        </div>
+                        <div className="text-3xl font-bold">{plan.priceLabel}</div>
+                        <div className="text-muted-foreground">{plan.periodLabel}</div>
                       </div>
                       <div className="flex items-center justify-center gap-2 mt-2">
                         <Zap className="w-4 h-4 text-primary" />
-                        <span className="font-semibold">
-                          {plan.credits ?? "—"} Credits
-                        </span>
+                        <span className="font-semibold">{plan.credits ?? "—"} Credits</span>
                       </div>
                     </CardHeader>
 
@@ -196,33 +231,30 @@ export default function WedmacPlans() {
                       <ul className="space-y-2">
                         {plan.features.length > 0 ? (
                           plan.features.map((feature, index) => (
-                            <li
-                              key={index}
-                              className="flex items-start gap-2 text-sm"
-                            >
+                            <li key={index} className="flex items-start gap-2 text-sm">
                               <Check className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                               <span>{feature}</span>
                             </li>
                           ))
                         ) : (
-                          <li className="text-sm text-muted-foreground">
-                            No features listed
-                          </li>
+                          <li className="text-sm text-muted-foreground">No features listed</li>
                         )}
                       </ul>
 
                       <Button
-                        className={`w-full bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white hover:shadow-lg`}
+                        className="w-full bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white hover:shadow-lg"
                         onClick={() => onPurchase(plan)}
                       >
                         Purchase plan
                       </Button>
+
+                      {plan.description && <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>}
                     </CardContent>
                   </Card>
                 ))}
             </div>
 
-            {/* Feature Comparison (keeps the earlier static table — you can optionally generate it from API too) */}
+            {/* Dynamic Feature Comparison Table */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -230,46 +262,73 @@ export default function WedmacPlans() {
                   Feature Comparison
                 </CardTitle>
               </CardHeader>
+
               <CardContent>
-                {/* You can generate this table dynamically from plans if preferred.
-                    For now I left your original static table markup so the UI remains similar. */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-collapse border border-gray-200">
                     <thead>
                       <tr className="bg-gray-100 border-b border-gray-300">
-                        <th className="text-left py-3 px-4 border-r border-gray-300">
-                          Features
-                        </th>
-                        <th className="text-center py-3 px-4 border-r border-gray-300">
-                          Basic
-                        </th>
-                        <th className="text-center py-3 px-4 border-r border-gray-300">
-                          Standard
-                        </th>
-                        <th className="text-center py-3 px-4 border-r border-gray-300">
-                          Premium
-                        </th>
-                        <th className="text-center py-3 px-4">Pro</th>
+                        <th className="text-left py-3 px-4 border-r border-gray-300">Feature</th>
+                        {plans?.map((p) => (
+                          <th key={p.id} className="text-center py-3 px-4 border-r border-gray-300">
+                            <div className="flex flex-col items-center">
+                              <div className="font-semibold">{p.name}</div>
+                              <div className="text-xs text-muted-foreground">{p.priceLabel}</div>
+                              <div className="text-xs text-muted-foreground">{p.periodLabel}</div>
+                            </div>
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {/* keep your existing rows here — or map from `plans` */}
+                      {/* Quick metadata rows: Credits and Duration */}
                       <tr className="bg-white">
-                        <td className="py-3 px-4 font-medium border-r border-gray-300">
-                          Validity Period
-                        </td>
-                        <td className="text-center py-3 px-4 border-r border-gray-300">
-                          2 Months
-                        </td>
-                        <td className="text-center py-3 px-4 border-r border-gray-300">
-                          3 Months
-                        </td>
-                        <td className="text-center py-3 px-4 border-r border-gray-300">
-                          3 Months
-                        </td>
-                        <td className="text-center py-3 px-4">6 Months</td>
+                        <td className="py-3 px-4 font-medium border-r border-gray-300">Credits (leads)</td>
+                        {plans?.map((p) => (
+                          <td key={p.id} className="text-center py-3 px-4 border-r border-gray-300">
+                            {p.credits ?? "—"}
+                          </td>
+                        ))}
                       </tr>
-                      {/* ... rest of your static rows */}
+
+                      <tr className="bg-white">
+                        <td className="py-3 px-4 font-medium border-r border-gray-300">Duration</td>
+                        {plans?.map((p) => (
+                          <td key={p.id} className="text-center py-3 px-4 border-r border-gray-300">
+                            {p.periodLabel}
+                          </td>
+                        ))}
+                      </tr>
+
+                      {/* Feature rows generated from union */}
+                      {allFeatures.length === 0 ? (
+                        <tr className="bg-white">
+                          <td colSpan={plans ? plans.length + 1 : 1} className="py-3 px-4 text-center text-muted-foreground">
+                            No features available
+                          </td>
+                        </tr>
+                      ) : (
+                        allFeatures.map((feat, idx) => (
+                          <tr key={idx} className="bg-white">
+                            <td className="py-3 px-4 font-medium border-r border-gray-300">{feat}</td>
+                            {plans?.map((p) => (
+                              <td key={p.id} className="text-center py-3 px-4 border-r border-gray-300">
+                                {renderFeatureCell(p, feat)}
+                              </td>
+                            ))}
+                          </tr>
+                        ))
+                      )}
+
+                      {/* Optionally show descriptions per plan at bottom */}
+                      <tr className="bg-white">
+                        <td className="py-3 px-4 font-medium border-r border-gray-300">Description</td>
+                        {plans?.map((p) => (
+                          <td key={p.id} className="py-3 px-4 border-r border-gray-300 text-sm text-muted-foreground">
+                            {p.description ?? "—"}
+                          </td>
+                        ))}
+                      </tr>
                     </tbody>
                   </table>
                 </div>
