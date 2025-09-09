@@ -82,11 +82,16 @@ const Login = () => {
         }
       );
       const body = await res.json();
-      if (!res.ok) {
-        throw new Error(
-          body.message || "Failed to send OTP, Please Sign In First"
-        );
-      }
+      console.log("DEBUG RESPONSE:", body);
+
+if (!res.ok) {
+  if (body.error === "User is inactive.") {
+    throw new Error("Your Account is Inactive, Please Contact Admin.");
+  }
+  throw new Error(    body.error || body.message || "Failed to send OTP, Please Sign In First"
+);
+}
+
       setStep("otp");
     } catch (err: unknown) {
       if (err instanceof Error) {

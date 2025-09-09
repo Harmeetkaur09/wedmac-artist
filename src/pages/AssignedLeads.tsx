@@ -265,6 +265,7 @@ const renderValue = (v: unknown) => {
     <TableHead>Event Info</TableHead>
     <TableHead>Requested Artist</TableHead> {/* 👈 new */}
     <TableHead>Assigned Date</TableHead>
+    <TableHead>Event Date</TableHead>
     <TableHead>Budget</TableHead>
     <TableHead>Actions</TableHead>
   </TableRow>
@@ -334,6 +335,8 @@ const renderValue = (v: unknown) => {
         {/* Actions */}
         <TableCell>
           <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
+
             <Button
               size="sm"
               variant="outline"
@@ -355,82 +358,86 @@ const url = buildWhatsAppUrl(lead.requested_artist?.phone);
             >
               <MessageSquare className="w-3 h-3 mr-1" /> WhatsApp
             </Button>
-              <Button
-                  size="sm"
-                  variant="default"
-                  disabled={lead.status === "booked"} // disable if already booked
-                  onClick={async () => {
-                    try {
-                      const token = sessionStorage.getItem("accessToken");
-                      const res = await fetch(
-                        `https://api.wedmacindia.com/api/leads/${lead.id}/claim/`,
-                        {
-                          method: "POST",
-                          headers: {
-                            Authorization: token ? `Bearer ${token}` : "",
-                            "Content-Type": "application/json",
-                          },
-                        }
-                      );
-            
-                      if (!res.ok) {
-                        throw new Error("Failed to book lead");
-                      }
-            
-                      // Update local state to reflect booked status
-                      setLeads((prev) =>
-                        prev.map((l) =>
-                          l.id === lead.id ? { ...l, status: "booked" } : l
-                        )
-                      );
-            
-                      alert("Lead successfully booked!");
-                    } catch (err: unknown) {
-                      console.error(err);
-                      alert((err as Error).message || "Failed to book lead");
-                    }
-                  }}
-                >
-                  Claim
-                </Button>
-               <Button
-                  size="sm"
-                  variant="default"
-                  disabled={lead.status === "booked"} // disable if already booked
-                  onClick={async () => {
-                    try {
-                      const token = sessionStorage.getItem("accessToken");
-                      const res = await fetch(
-                        `https://api.wedmacindia.com/api/leads/${lead.id}/book/`,
-                        {
-                          method: "POST",
-                          headers: {
-                            Authorization: token ? `Bearer ${token}` : "",
-                            "Content-Type": "application/json",
-                          },
-                        }
-                      );
-            
-                      if (!res.ok) {
-                        throw new Error("Failed to book lead");
-                      }
-            
-                      // Update local state to reflect booked status
-                      setLeads((prev) =>
-                        prev.map((l) =>
-                          l.id === lead.id ? { ...l, status: "booked" } : l
-                        )
-                      );
-            
-                      alert("Lead successfully booked!");
-                    } catch (err: unknown) {
-                      console.error(err);
-                      alert((err as Error).message || "Failed to book lead");
-                    }
-                  }}
-                >
-                  Book
-                </Button>
+            </div>
+            <div className="flex flex-col gap-2">
+           <Button
+  size="sm"
+  variant="default"
+  disabled={lead.status === "claimed" || lead.status === "booked"}
+  onClick={async () => {
+    try {
+      const token = sessionStorage.getItem("accessToken");
+      const res = await fetch(
+        `https://api.wedmacindia.com/api/leads/${lead.id}/claim/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to claim lead");
+      }
+
+      // Update status → claimed
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === lead.id ? { ...l, status: "claimed" } : l
+        )
+      );
+
+      alert("Lead successfully claimed!");
+    } catch (err: unknown) {
+      console.error(err);
+      alert((err as Error).message || "Failed to claim lead");
+    }
+  }}
+>
+  Claim
+</Button>
+
+<Button
+  size="sm"
+  variant="default"
+  disabled={lead.status !== "claimed"} // 👈 book sirf claim ke baad enable hoga
+  onClick={async () => {
+    try {
+      const token = sessionStorage.getItem("accessToken");
+      const res = await fetch(
+        `https://api.wedmacindia.com/api/leads/${lead.id}/book/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to book lead");
+      }
+
+      // Update status → booked
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === lead.id ? { ...l, status: "booked" } : l
+        )
+      );
+
+      alert("Lead successfully booked!");
+    } catch (err: unknown) {
+      console.error(err);
+      alert((err as Error).message || "Failed to book lead");
+    }
+  }}
+>
+  Book
+</Button>
+</div>
           </div>
         </TableCell>
       </TableRow>
