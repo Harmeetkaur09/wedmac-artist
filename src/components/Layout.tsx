@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { getMyProfile, MyProfile } from "@/api/profile";
+import TokenCapture from "./TokenCapture";
 interface LayoutProps {
   children: React.ReactNode;
   title: string;
@@ -82,6 +83,8 @@ const avatarUrl =
             </div>
           </header>
           <div className="flex-1 p-6 overflow-auto">
+                    <TokenCapture />
+
             {children}
           </div>
         </main>
