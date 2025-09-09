@@ -96,6 +96,35 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
       setToasts((s) => s.filter((x) => x.id !== id));
     }, 3000);
   };
+// in artist app page component (client-side)
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  const hash = window.location.hash; // like #access=...&refresh=...
+  if (!hash) return;
+
+  try {
+    const cleaned = hash.startsWith("#") ? hash.slice(1) : hash;
+    const params = new URLSearchParams(cleaned);
+    const access = params.get("access");
+    const refresh = params.get("refresh");
+    const userId = params.get("user_id");
+    const role = params.get("role") || "artist";
+
+    if (access) {
+      sessionStorage.setItem("accessToken", access);
+      if (refresh) sessionStorage.setItem("refreshToken", refresh);
+      if (userId) sessionStorage.setItem("user_id", userId);
+      sessionStorage.setItem("role", role);
+      // optionally notify user
+      // toast.success("Signed in via admin switch");
+    }
+  } catch (e) {
+    console.error("Failed to parse token from hash", e);
+  } finally {
+    // remove hash from URL to keep clean (won't reload page)
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
+}, []);
 
   // load saved remarks from localStorage once
   useEffect(() => {
