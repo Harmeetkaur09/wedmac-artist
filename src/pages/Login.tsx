@@ -40,7 +40,23 @@ const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash; // e.g. #access=...&refresh=...
+    if (!hash) return;
 
+    const params = new URLSearchParams(hash.slice(1));
+    const access = params.get("access");
+    const refresh = params.get("refresh");
+
+    if (access) {
+      sessionStorage.setItem("accessToken", access);
+      if (refresh) sessionStorage.setItem("refreshToken", refresh);
+
+      // ✅ redirect to profile/dashboard
+      window.location.href = "/profile";
+    }
+  }, []);
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % sliderImages.length);
