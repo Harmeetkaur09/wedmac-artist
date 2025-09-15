@@ -12,6 +12,8 @@ import {
   MapPin,
   ClockArrowUp,
   IndianRupee,
+  Workflow,
+  PartyPopper,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMyProfile, MyProfile } from "@/api/profile";
@@ -143,6 +145,7 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
 useEffect(() => {
   const fetchAll = async () => {
     try {
+      console.log("Starting fetchAll"); 
       setLoading(true);
       const profileData = await getMyProfile();
       setProfile(profileData);
@@ -150,7 +153,7 @@ useEffect(() => {
       if (profileData?.created_by_admin === true) {
         setIsAdminCreated(true);
         setSubscriptionValid(true);
-        setCreditsAvailable(null);
+  setCreditsAvailable(profileData.available_leads ?? 0); // ✅ leads dikha do
       } else {
         const plan = profileData.current_plan;
         const purchaseDate = profileData.plan_purchase_date
@@ -170,7 +173,7 @@ useEffect(() => {
         setSubscriptionId(plan?.id ?? null);
         setPlanTotalLeads(plan?.total_leads ?? null);
         setSubscriptionExpiresAt(expiryTs); // yaha set ho raha hai
-        setCreditsAvailable(profileData.available_leads ?? 0);
+  setCreditsAvailable(profileData.available_leads ?? 0); // ✅ leads dikha do
 
         const now = Date.now();
         if (plan && profileData.plan_verified && expiryTs && expiryTs > now) {
@@ -179,6 +182,7 @@ useEffect(() => {
           setSubscriptionValid(false);
         }
       }
+      
 
       // 🔹 Leads fetch karo
       const token = sessionStorage.getItem("accessToken");
@@ -201,28 +205,49 @@ useEffect(() => {
 
   fetchAll();
 }, []);
-
 const planInfoText = useMemo(() => {
   if (!profile?.current_plan) return "No active plan";
 
   const planName = profile.current_plan.name || "Unnamed Plan";
+  const purchaseDate = profile.plan_purchase_date
+    ? new Date(profile.plan_purchase_date)
+    : null;
 
-  if (!subscriptionExpiresAt) return `${planName} (N/A)`;
+  const durationDays = profile.current_plan.duration_days || 0;
+  const extendedDays = profile.current_plan.extended_days || 0;
+  const totalDays = durationDays + extendedDays;
+
+  if (!purchaseDate) return `${planName} (No purchase date)`;  
+
+  const expiryDate = new Date(
+    purchaseDate.getTime() + totalDays * 24 * 60 * 60 * 1000
+  );
 
   const now = Date.now();
-  const diff = subscriptionExpiresAt - now;
+  const diff = expiryDate.getTime() - now;
 
-  const expiryDate = new Date(subscriptionExpiresAt).toLocaleDateString("en-IN", {
+  const expiryText = expiryDate.toLocaleDateString("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
 
-  if (diff <= 0) return `${planName} (Expired on ${expiryDate})`;
+  if (diff <= 0) {
+    return `${planName} (Expired on ${expiryText})`;
+  }
 
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  return `${planName} — ${days} day${days > 1 ? "s" : ""} left (expires on ${expiryDate})`;
-}, [profile?.current_plan, subscriptionExpiresAt]);
+  const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  return `${planName} — Purchased: ${purchaseDate.toLocaleDateString(
+    "en-IN"
+  )} → Ends on ${expiryText} (${daysLeft} days left)`;
+}, [profile]);
+
+
+
+
+
+
 
   const visibleLeads = showAll ? leads : leads.slice(0, 3);
 
@@ -400,9 +425,9 @@ const planInfoText = useMemo(() => {
           <p className="text-muted-foreground mt-1">
             Welcome back! Here's your overview
           </p>
-          <div className="mb-4 text-sm text-black">
-  <strong>Plan:</strong> {planInfoText}
-  {/* <strong>Leads:</strong> {profile.available_leads || 0} */}
+   <div className="mb-4 text-sm text-black">
+  <div><strong>Plan:</strong> {planInfoText}</div>
+  <div><strong>Leads:</strong> {creditsAvailable ?? 0}</div>
 </div>
 
         </div>
@@ -511,12 +536,16 @@ const planInfoText = useMemo(() => {
 
                           <div className="flex items-center gap-1">
                             <IndianRupee className="w-3 h-3" />
-                            <span>{lead.budget_range?.label ?? "N/A"}</span>
+                            <span>{lead.budget_range?.min_value ?? "N/A"}</span>
                           </div>
 
                           <div className="flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
                             <span>{lead.location}</span>
+                          </div>
+                           <div className="flex items-center gap-1">
+                            <PartyPopper className="w-3 h-3" />
+                            <span>{lead.event_type}</span>
                           </div>
                         </div>
 <div className="flex items-center w-80 gap-4 text-sm text-muted-foreground">
@@ -576,7 +605,7 @@ const planInfoText = useMemo(() => {
       size="sm"
       onClick={() => navigate("/payments")}
     >
-      Unlock
+      Buy Plan to Claim
     </Button>
   )}
 </div>

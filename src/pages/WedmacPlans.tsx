@@ -5,7 +5,7 @@ import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Zap, Star, Crown } from "lucide-react";
+import { Check, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PlanBadge } from "@/components/PlanBadge";
 
@@ -43,7 +43,6 @@ export default function WedmacPlans() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // helper: safe formatter for currency / numbers
   const formatPrice = (p: any) => {
     if (p == null) return "—";
     const n = Number(typeof p === "string" ? p.replace(/[^\d.-]/g, "") : p);
@@ -51,7 +50,6 @@ export default function WedmacPlans() {
     return n.toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
   };
 
-  // normalize feature value into string
   const normalizeFeature = (f: any) => {
     if (f == null) return "";
     if (typeof f === "string") return f.trim();
@@ -78,9 +76,7 @@ export default function WedmacPlans() {
           "https://api.wedmacindia.com/api/admin/master/list/?type=subscriptions_plan",
           {
             method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
           }
         );
 
@@ -91,48 +87,61 @@ export default function WedmacPlans() {
 
         const data: ApiPlan[] = await resp.json();
 
-        // map API data into UI-friendly shape and normalize features
-        const uiPlans: UiPlan[] = (data || []).map((p) => {
-          const priceLabel = formatPrice(p.price ?? p.plan_price ?? null);
-          const months =
-            typeof p.duration_days === "number" && !Number.isNaN(p.duration_days)
-              ? Math.round(p.duration_days / 30)
-              : null;
-          const periodLabel = months ? `/${months} ${months === 1 ? "month" : "months"}` : "/—";
+   const uiPlans: UiPlan[] = (data || []).map((p) => {
+  const priceLabel = formatPrice(p.price ?? p.plan_price ?? null);
+  const months =
+    typeof p.duration_days === "number" && !Number.isNaN(p.duration_days)
+      ? Math.round(p.duration_days / 30)
+      : null;
+  const periodLabel = months ? `${months} ${months === 1 ? "month" : "months"}` : "—";
+  const rawFeatures = Array.isArray(p.features) ? p.features : [];
+  const features = rawFeatures.map(normalizeFeature).filter(Boolean);
+  const credits = p.total_credit_points ?? p.total_leads ?? null;
 
-          // features might be array of strings or objects; normalize to strings
-          const rawFeatures = Array.isArray(p.features) ? p.features : [];
-          const features = rawFeatures.map(normalizeFeature).filter(Boolean);
+  return {
+    id: String(p.id),
+    name: p.name ?? String(p.id),
+    priceLabel,
+    periodLabel,
+    credits: typeof credits === "number" ? credits : (credits == null ? null : Number(credits)),
+    features,
+    popular: false,
+    description: p.description ?? null,
+    createdAt: p.created_at ?? null,
+    raw: p,
+  };
+});
 
-          // credits prefer total_credit_points, then total_leads
-          const credits = p.total_credit_points ?? p.total_leads ?? null;
+// ✅ sort high → low by price
+const sortedPlans = [...uiPlans].sort((a, b) => {
+  const priceA = Number(
+    typeof a.raw?.price === "string"
+      ? a.raw.price.replace(/[^\d.-]/g, "")
+      : a.raw?.price ?? 0
+  );
+  const priceB = Number(
+    typeof b.raw?.price === "string"
+      ? b.raw.price.replace(/[^\d.-]/g, "")
+      : b.raw?.price ?? 0
+  );
+  return priceB - priceA; // high to low
+});
 
-          return {
-            id: String(p.id),
-            name: p.name ?? String(p.id),
-            priceLabel,
-            periodLabel,
-            credits: typeof credits === "number" ? credits : (credits == null ? null : Number(credits)),
-            features,
-            popular: false,
-            description: p.description ?? null,
-            createdAt: p.created_at ?? null,
-            raw: p,
-          };
-        });
+// ✅ popular flag
+if (sortedPlans.length > 0) {
+  let best = sortedPlans[0];
+  for (const pl of sortedPlans) {
+    if ((pl.features?.length ?? 0) > (best.features?.length ?? 0)) best = pl;
+  }
+  const withFlag = sortedPlans.map((pl) => ({
+    ...pl,
+    popular: pl.id === best.id,
+  }));
+  if (mounted) setPlans(withFlag);
+} else {
+  if (mounted) setPlans(sortedPlans);
+}
 
-        // optional: mark most expensive or most-featured as popular
-        if (uiPlans.length > 0) {
-          // simple heuristic: plan with most features = popular
-          let best = uiPlans[0];
-          for (const pl of uiPlans) {
-            if ((pl.features?.length ?? 0) > (best.features?.length ?? 0)) best = pl;
-          }
-          const withFlag = uiPlans.map((pl) => ({ ...pl, popular: pl.id === best.id }));
-          if (mounted) setPlans(withFlag);
-        } else {
-          if (mounted) setPlans(uiPlans);
-        }
       } catch (err: any) {
         console.error("Fetch plans error:", err);
         if (mounted) setError(err?.message || "Failed to load plans");
@@ -158,27 +167,129 @@ export default function WedmacPlans() {
     });
   };
 
-  // build feature union (unique set) from plans
+  // Feature union & sorting (same as before)
   const allFeatures = useMemo(() => {
     if (!plans) return [];
     const s = new Set<string>();
     for (const p of plans) {
       for (const f of p.features || []) s.add(f);
     }
-    return Array.from(s);
+    const arr = Array.from(s);
+    arr.sort((a, b) => {
+      const score = (str: string) => {
+        const s = str.toLowerCase();
+        if (s.includes("verified lead") || s.includes("leads")) return -100;
+        if (s.includes("valid") || s.includes("month")) return -90;
+        if (s.includes("city")) return -80;
+        if (s.includes("budget")) return -70;
+        if (s.includes("story") || s.includes("post") || s.includes("reel")) return -60;
+        if (s.includes("relationship") || s.includes("manager")) return -50;
+        if (s.includes("profile") || s.includes("recommend")) return -40;
+        if (s.includes("email support") || s.includes("support")) return -30;
+        return 0;
+      };
+      const sa = score(a), sb = score(b);
+      if (sa !== sb) return sa - sb;
+      return a.localeCompare(b);
+    });
+    return arr;
   }, [plans]);
 
-  // helper to render check or value
+  // group features
+  const groupedFeatures = useMemo(() => {
+    const groups: { [k: string]: string[] } = {
+      Core: [],
+      Coverage: [],
+      Marketing: [],
+      Policies: [],
+      Support: [],
+      Extras: [],
+      Other: [],
+    };
+
+    const rules: [string[], string][] = [
+      [["verified lead", "leads", "credit"], "Core"],
+      [["valid", "month", "validity", "duration"], "Core"],
+      [["city access", "city"], "Coverage"],
+      [["budget"], "Core"],
+      [["story", "post", "reel", "webinar"], "Marketing"],
+      [["profile", "recommend", "pin best", "top list", "popular tag"], "Marketing"],
+      [["relationship manager", "manager"], "Support"],
+      [["email support", "support", "follow up", "management"], "Support"],
+      [["reversal", "extension", "policy"], "Policies"],
+      [["guidance", "webinar", "expert"], "Extras"],
+    ];
+
+    for (const f of allFeatures) {
+      const fl = f.toLowerCase();
+      let placed = false;
+      for (const [keys, group] of rules) {
+        for (const k of keys) {
+          if (fl.includes(k)) {
+            groups[group].push(f);
+            placed = true;
+            break;
+          }
+        }
+        if (placed) break;
+      }
+      if (!placed) groups.Other.push(f);
+    }
+
+    const ordered: { group: string; features: string[] }[] = [];
+    // const order = ["Core", "Coverage", "Marketing", "Policies", "Support", "Extras", "Other"];
+    // for (const g of order) {
+    //   if (groups[g] && groups[g].length > 0) {
+    //     ordered.push({ group: g, features: groups[g] });
+    //   }
+    // }
+    return ordered;
+  }, [allFeatures]);
+
   const renderFeatureCell = (plan: UiPlan, feature: string) => {
-    if (!plan || !feature) return "-";
-    return plan.features.includes(feature) ? (
+    if (!plan || !feature) return "—";
+    const has = plan.features.some((f) => f === feature);
+    return has ? (
       <div className="flex items-center justify-center">
-        <Check className="w-4 h-4 text-green-500" />
+        <Check className="w-4 h-4 text-green-600" />
       </div>
     ) : (
       <span className="text-muted-foreground">—</span>
     );
   };
+
+  // ---------- NEW: helpers to extract plan-specific attribute strings ----------
+  const findFeatureByKeywords = (plan: UiPlan | null, keywords: string[]) => {
+    if (!plan) return null;
+    const low = plan.features.map((f) => (f || "").toLowerCase());
+    for (const k of keywords) {
+      for (const f of low) {
+        if (f.includes(k)) return f; // return first matching feature string (lowercased)
+      }
+    }
+    return null;
+  };
+
+  const extractCity = (plan: UiPlan | null) =>
+    findFeatureByKeywords(plan, ["city access", "city"]);
+
+  const extractBudget = (plan: UiPlan | null) =>
+    findFeatureByKeywords(plan, ["budget", "leads budget", "higher leads budget", "higer leads budget", "max budget", "below"]);
+
+  const extractSocial = (plan: UiPlan | null) =>
+    findFeatureByKeywords(plan, ["story", "post", "reel", "social", "webinar"]);
+
+  const extractCoverage = (plan: UiPlan | null) =>
+    findFeatureByKeywords(plan, ["unlimited city", "city access", "city"]);
+
+  const extractSupport = (plan: UiPlan | null) =>
+    findFeatureByKeywords(plan, ["relationship manager", "manager", "email support", "support", "follow up", "management"]);
+
+  const extractExtras = (plan: UiPlan | null) =>
+    findFeatureByKeywords(plan, ["profile", "pin best", "recommend", "follow up", "inbound", "pin best review", "dedicated", "profile management", "guidance"]);
+
+  // Which index is the 4th plan? JS index: 3
+  const highlightIndex = 3;
 
   return (
     <Layout title="Wedmac Plans">
@@ -198,6 +309,7 @@ export default function WedmacPlans() {
           </Card>
         ) : (
           <>
+            {/* Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {plans &&
                 plans.map((plan) => (
@@ -222,13 +334,14 @@ export default function WedmacPlans() {
                         <div className="text-muted-foreground">{plan.periodLabel}</div>
                       </div>
                       <div className="flex items-center justify-center gap-2 mt-2">
-                        <Zap className="w-4 h-4 text-primary" />
-                        <span className="font-semibold">{plan.credits ?? "—"} Credits</span>
+                        <Star className="w-4 h-4 text-yellow-500" />
+                        <span className="font-semibold">{plan.credits ?? "—"} Leads</span>
                       </div>
+                      {plan.description && <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>}
                     </CardHeader>
 
                     <CardContent className="space-y-4">
-                      <ul className="space-y-2">
+                      <ul className="space-y-2 h-full pr-2">
                         {plan.features.length > 0 ? (
                           plan.features.map((feature, index) => (
                             <li key={index} className="flex items-start gap-2 text-sm">
@@ -247,14 +360,12 @@ export default function WedmacPlans() {
                       >
                         Purchase plan
                       </Button>
-
-                      {plan.description && <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>}
                     </CardContent>
                   </Card>
                 ))}
             </div>
 
-            {/* Dynamic Feature Comparison Table */}
+            {/* Feature Comparison Table */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -264,13 +375,21 @@ export default function WedmacPlans() {
               </CardHeader>
 
               <CardContent>
+                <div className="mb-3 text-sm text-muted-foreground">
+                  <strong>Legend:</strong>{" "}
+                  <span className="inline-flex items-center gap-1">
+                    <Check className="w-4 h-4 text-green-600" /> Available
+                  </span>{" "}
+                  — Not included
+                </div>
+
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm border-collapse border border-gray-200">
+                  <table className="min-w-[720px] w-full text-sm border-collapse">
                     <thead>
-                      <tr className="bg-gray-100 border-b border-gray-300">
-                        <th className="text-left py-3 px-4 border-r border-gray-300">Feature</th>
+                      <tr className="bg-gray-100 border-b">
+                        <th className="text-left py-3 px-4 border-r">Feature</th>
                         {plans?.map((p) => (
-                          <th key={p.id} className="text-center py-3 px-4 border-r border-gray-300">
+                          <th key={p.id} className="text-center py-3 px-4 border-r">
                             <div className="flex flex-col items-center">
                               <div className="font-semibold">{p.name}</div>
                               <div className="text-xs text-muted-foreground">{p.priceLabel}</div>
@@ -280,51 +399,122 @@ export default function WedmacPlans() {
                         ))}
                       </tr>
                     </thead>
+
                     <tbody>
-                      {/* Quick metadata rows: Credits and Duration */}
+                      {/* ---------- NEW: Sample Lead rows (City, Budget, Social Media, Coverage, Support, Extras) ---------- */}
                       <tr className="bg-white">
-                        <td className="py-3 px-4 font-medium border-r border-gray-300">Credits (leads)</td>
+                        <td className="py-3 px-4 font-medium border-r">Sample Lead (City)</td>
+                        {plans?.map((p, i) => (
+                          <td
+                            key={p.id}
+                            className={`text-center py-3 px-4 border-r ${i === highlightIndex ? "bg-yellow-50" : ""}`}
+                          >
+                            {extractCity(p) ? extractCity(p) : "—"}
+                            {i === highlightIndex && <div className="text-xs text-muted-foreground mt-1">← 4th plan</div>}
+                          </td>
+                        ))}
+                      </tr>
+
+                      <tr className="bg-white">
+                        <td className="py-3 px-4 font-medium border-r">Sample Lead (Budget)</td>
+                        {plans?.map((p, i) => (
+                          <td key={p.id} className={`text-center py-3 px-4 border-r ${i === highlightIndex ? "bg-yellow-50" : ""}`}>
+                            {extractBudget(p) ? extractBudget(p) : "—"}
+                          </td>
+                        ))}
+                      </tr>
+
+                      <tr className="bg-white">
+                        <td className="py-3 px-4 font-medium border-r">Social Media (story/post/reel)</td>
+                        {plans?.map((p, i) => (
+                          <td key={p.id} className={`text-center py-3 px-4 border-r ${i === highlightIndex ? "bg-yellow-50" : ""}`}>
+                            {extractSocial(p) ? extractSocial(p) : "—"}
+                          </td>
+                        ))}
+                      </tr>
+
+                      <tr className="bg-white">
+                        <td className="py-3 px-4 font-medium border-r">Coverage</td>
+                        {plans?.map((p, i) => (
+                          <td key={p.id} className={`text-center py-3 px-4 border-r ${i === highlightIndex ? "bg-yellow-50" : ""}`}>
+                            {extractCoverage(p) ? extractCoverage(p) : "—"}
+                          </td>
+                        ))}
+                      </tr>
+
+                      <tr className="bg-white">
+                        <td className="py-3 px-4 font-medium border-r">Support</td>
+                        {plans?.map((p, i) => (
+                          <td key={p.id} className={`text-center py-3 px-4 border-r ${i === highlightIndex ? "bg-yellow-50" : ""}`}>
+                            {extractSupport(p) ? extractSupport(p) : "—"}
+                          </td>
+                        ))}
+                      </tr>
+
+                      <tr className="bg-white">
+                        <td className="py-3 px-4 font-medium border-r">Extras</td>
+                        {plans?.map((p, i) => (
+                          <td key={p.id} className={`text-center py-3 px-4 border-r ${i === highlightIndex ? "bg-yellow-50" : ""}`}>
+                            {extractExtras(p) ? extractExtras(p) : "—"}
+                          </td>
+                        ))}
+                      </tr>
+
+                      {/* ---------- Quick metadata: Credits / Duration / Price (kept below sample) ---------- */}
+                      <tr className="bg-white">
+                        <td className="py-3 px-4 font-medium border-r">Leads (credits)</td>
                         {plans?.map((p) => (
-                          <td key={p.id} className="text-center py-3 px-4 border-r border-gray-300">
+                          <td key={p.id} className="text-center py-3 px-4 border-r">
                             {p.credits ?? "—"}
                           </td>
                         ))}
                       </tr>
 
                       <tr className="bg-white">
-                        <td className="py-3 px-4 font-medium border-r border-gray-300">Duration</td>
+                        <td className="py-3 px-4 font-medium border-r">Duration</td>
                         {plans?.map((p) => (
-                          <td key={p.id} className="text-center py-3 px-4 border-r border-gray-300">
+                          <td key={p.id} className="text-center py-3 px-4 border-r">
                             {p.periodLabel}
                           </td>
                         ))}
                       </tr>
 
-                      {/* Feature rows generated from union */}
-                      {allFeatures.length === 0 ? (
-                        <tr className="bg-white">
-                          <td colSpan={plans ? plans.length + 1 : 1} className="py-3 px-4 text-center text-muted-foreground">
-                            No features available
-                          </td>
-                        </tr>
-                      ) : (
-                        allFeatures.map((feat, idx) => (
-                          <tr key={idx} className="bg-white">
-                            <td className="py-3 px-4 font-medium border-r border-gray-300">{feat}</td>
-                            {plans?.map((p) => (
-                              <td key={p.id} className="text-center py-3 px-4 border-r border-gray-300">
-                                {renderFeatureCell(p, feat)}
-                              </td>
-                            ))}
-                          </tr>
-                        ))
-                      )}
-
-                      {/* Optionally show descriptions per plan at bottom */}
                       <tr className="bg-white">
-                        <td className="py-3 px-4 font-medium border-r border-gray-300">Description</td>
+                        <td className="py-3 px-4 font-medium border-r">Price</td>
                         {plans?.map((p) => (
-                          <td key={p.id} className="py-3 px-4 border-r border-gray-300 text-sm text-muted-foreground">
+                          <td key={p.id} className="text-center py-3 px-4 border-r">
+                            {p.priceLabel}
+                          </td>
+                        ))}
+                      </tr>
+
+                      {/* grouped features (as before) */}
+                      {groupedFeatures.map((grp) => (
+                        <React.Fragment key={grp.group}>
+                          <tr className="bg-gray-50">
+                            <td colSpan={plans ? plans.length + 1 : 1} className="py-2 px-4 text-sm font-semibold border-t">
+                              {grp.group}
+                            </td>
+                          </tr>
+
+                          {grp.features.map((feat) => (
+                            <tr key={feat} className="bg-white">
+                              <td className="py-3 px-4 border-r">{feat}</td>
+                              {plans?.map((p) => (
+                                <td key={p.id} className="text-center py-3 px-4 border-r">
+                                  {renderFeatureCell(p, feat)}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </React.Fragment>
+                      ))}
+
+                      {/* Descriptions row */}
+                      <tr className="bg-white">
+                        <td className="py-3 px-4 font-medium border-r">Description</td>
+                        {plans?.map((p) => (
+                          <td key={p.id} className="py-3 px-4 border-r text-sm text-muted-foreground">
                             {p.description ?? "—"}
                           </td>
                         ))}
