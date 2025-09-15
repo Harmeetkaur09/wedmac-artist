@@ -1,4 +1,5 @@
 // ./pages/ReceiveToken.tsx
+import { useAuth } from "@/contexts/AuthContext";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -9,6 +10,7 @@ const ALLOWED_ADMIN_ORIGINS = [
 
 export default function ReceiveToken() {
   const navigate = useNavigate();
+    const { login } = useAuth(); 
 
   useEffect(() => {
     // Tell opener (admin) that this window is ready to receive tokens
@@ -21,38 +23,33 @@ export default function ReceiveToken() {
       console.warn("Could not notify opener:", err);
     }
 
- function processTokenData(data: any) {
-  console.log("🔎 processTokenData called with:", data);
+function processTokenData(data: any) {
+      const access = data.access || data.accessToken || null;
+      const refresh = data.refresh || data.refreshToken || null;
+      const userId = data.user_id ?? data.userId ?? null;
 
-  if (!data || typeof data !== "object") {
-    console.warn("❌ Invalid message data:", data);
-    return false;
-  }
+      if (!access) {
+        console.warn("❌ No access token in message payload:", data);
+        return false;
+      }
 
-  const access = data.access || data.accessToken || null;
-  const refresh = data.refresh || data.refreshToken || null;
-  const userId = data.user_id ?? data.userId ?? null;
+      // Save in sessionStorage
+      sessionStorage.setItem("accessToken", String(access));
+      if (refresh) sessionStorage.setItem("refreshToken", String(refresh));
+      if (userId) sessionStorage.setItem("user_id", String(userId));
+      sessionStorage.setItem("role", "artist");
 
-  if (!access) {
-    console.warn("❌ No access token in message payload:", data);
-    return false;
-  }
+      // 🔑 Also update AuthContext
+      login({
+        access,
+        refresh,
+        user: { id: String(userId), email: "", role: "artist" },
+      });
 
-  sessionStorage.setItem("accessToken", String(access));
-  if (refresh) sessionStorage.setItem("refreshToken", String(refresh));
-  if (userId) sessionStorage.setItem("user_id", String(userId));
-
-  sessionStorage.setItem("role", "artist");
-
-  console.log("✅ Tokens saved from admin message:", {
-    access,
-    refresh,
-    userId,
-  });
-
-  navigate("/", { replace: true });
-  return true;
-}
+      console.log("✅ Tokens saved + context updated");
+      navigate("/", { replace: true });
+      return true;
+    }
 
 
 function handleMessage(e: MessageEvent) {
