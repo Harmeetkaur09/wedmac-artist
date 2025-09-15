@@ -1,4 +1,5 @@
 // ./pages/ReceiveToken.tsx
+import { useAuth } from "@/contexts/AuthContext";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -9,7 +10,8 @@ const ALLOWED_ADMIN_ORIGINS = [
 
 export default function ReceiveToken() {
   const navigate = useNavigate();
-
+    const { login } = useAuth();
+    
   useEffect(() => {
     // Tell opener (admin) that this window is ready to receive tokens
     try {
@@ -20,21 +22,25 @@ export default function ReceiveToken() {
     } catch (err) {
       console.warn("Could not notify opener:", err);
     }
+function processTokenData(data: any) {
+    const access = data.access || data.accessToken || null;
+    if (!access) return false;
 
-    function processTokenData(data: any) {
-      const access = data.access || data.accessToken || null;
-      if (!access) {
-        console.warn("No access token in message:", data);
-        return false;
-      }
-      if (data.access) sessionStorage.setItem("accessToken", String(data.access));
-      if (data.refresh) sessionStorage.setItem("refreshToken", String(data.refresh));
-      if (data.user_id || data.userId) sessionStorage.setItem("user_id", String(data.user_id ?? data.userId));
-      sessionStorage.setItem("role", "artist");
-      console.log("✅ Tokens saved from admin message");
-      navigate("/", { replace: true });
-      return true;
-    }
+    const payload = {
+      access: String(data.access),
+      refresh: data.refresh ? String(data.refresh) : undefined,
+      user: {
+        id: String(data.user_id ?? data.userId ?? ""),
+        role: "artist",
+        email: data.email ?? "", // agar server bhejta ho
+      },
+    };
+
+    login(payload); // 👈 update AuthContext state
+    console.log("✅ Tokens saved and AuthContext updated");
+    navigate("/", { replace: true });
+    return true;
+  }
 
 function handleMessage(e: MessageEvent) {
   console.log("🔔 ReceiveToken got message");
@@ -44,10 +50,12 @@ function handleMessage(e: MessageEvent) {
   console.log("  → allowed origins:", ALLOWED_ADMIN_ORIGINS);
 
   // Ignore self-origin noise
-  if (e.origin === window.location.origin) {
-    console.log("Ignored self-origin message");
-    return;
-  }
+// Allow both admin and self-origin (because admin may be served from same host)
+if (!ALLOWED_ADMIN_ORIGINS.includes(e.origin) && e.origin !== window.location.origin) {
+  console.warn("❌ Rejected message from origin:", e.origin);
+  return;
+}
+
 
   // Allow only known admin origins
   if (!ALLOWED_ADMIN_ORIGINS.includes(e.origin)) {
