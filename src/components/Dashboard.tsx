@@ -137,23 +137,6 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
       console.error("Failed to save claimedMap:", err);
     }
   };
-const planInfoText = useMemo(() => {
-  if (!profile?.current_plan) return "No active plan";
-
-  const planName = profile.current_plan.name || "Unnamed Plan";
-
-  if (!subscriptionExpiresAt) return `${planName} (N/A)`;
-
-  const now = Date.now();
-  const diff = subscriptionExpiresAt - now;
-
-  if (diff <= 0) return `${planName} (Expired)`;
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const expiryDate = new Date(subscriptionExpiresAt).toLocaleDateString("en-IN");
-
-  return `${planName} — ${days} day${days > 1 ? "s" : ""} left (expires on ${expiryDate})`;
-}, [profile?.current_plan, subscriptionExpiresAt]);
 
   
   // fetch profile + leads + credits history
@@ -169,20 +152,24 @@ useEffect(() => {
         setSubscriptionValid(true);
         setCreditsAvailable(null);
       } else {
-        // 🔹 Plan check direct profile se
         const plan = profileData.current_plan;
         const purchaseDate = profileData.plan_purchase_date
           ? new Date(profileData.plan_purchase_date).getTime()
           : null;
+
         const durationDays = plan?.duration_days || 0;
+        const extendedDays = plan?.extended_days || 0; // agar backend bhejta hai
+        const totalDays = durationDays + extendedDays;
+
+        // 🔹 expiry calculate
         const expiryTs =
-          purchaseDate && durationDays
-            ? purchaseDate + durationDays * 24 * 60 * 60 * 1000
+          purchaseDate && totalDays
+            ? purchaseDate + totalDays * 24 * 60 * 60 * 1000
             : null;
 
         setSubscriptionId(plan?.id ?? null);
         setPlanTotalLeads(plan?.total_leads ?? null);
-        setSubscriptionExpiresAt(expiryTs);
+        setSubscriptionExpiresAt(expiryTs); // yaha set ho raha hai
         setCreditsAvailable(profileData.available_leads ?? 0);
 
         const now = Date.now();
@@ -193,17 +180,14 @@ useEffect(() => {
         }
       }
 
-      // 🔹 Leads hamesha fetch karo
+      // 🔹 Leads fetch karo
       const token = sessionStorage.getItem("accessToken");
-      const leadsRes = await fetch(
-        "https://api.wedmacindia.com/api/leads/all-leads/",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const leadsRes = await fetch("https://api.wedmacindia.com/api/leads/all-leads/", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
       if (!leadsRes.ok) throw new Error("Failed to fetch leads");
       const leadsData = await leadsRes.json();
       setSummary(leadsData.summary);
@@ -217,6 +201,28 @@ useEffect(() => {
 
   fetchAll();
 }, []);
+
+const planInfoText = useMemo(() => {
+  if (!profile?.current_plan) return "No active plan";
+
+  const planName = profile.current_plan.name || "Unnamed Plan";
+
+  if (!subscriptionExpiresAt) return `${planName} (N/A)`;
+
+  const now = Date.now();
+  const diff = subscriptionExpiresAt - now;
+
+  const expiryDate = new Date(subscriptionExpiresAt).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
+  if (diff <= 0) return `${planName} (Expired on ${expiryDate})`;
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  return `${planName} — ${days} day${days > 1 ? "s" : ""} left (expires on ${expiryDate})`;
+}, [profile?.current_plan, subscriptionExpiresAt]);
 
   const visibleLeads = showAll ? leads : leads.slice(0, 3);
 
@@ -396,6 +402,7 @@ useEffect(() => {
           </p>
           <div className="mb-4 text-sm text-black">
   <strong>Plan:</strong> {planInfoText}
+  <strong>Leads:</strong> {profile.available_leads || 0}
 </div>
 
         </div>
