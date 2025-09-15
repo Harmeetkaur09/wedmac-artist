@@ -402,7 +402,7 @@ const planInfoText = useMemo(() => {
           </p>
           <div className="mb-4 text-sm text-black">
   <strong>Plan:</strong> {planInfoText}
-  <strong>Leads:</strong> {profile.available_leads || 0}
+  {/* <strong>Leads:</strong> {profile.available_leads || 0} */}
 </div>
 
         </div>
