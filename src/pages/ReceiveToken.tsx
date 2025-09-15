@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const ALLOWED_ADMIN_ORIGINS = [
-  "https://admin.wedmac.com", // <-- put your admin origin(s) here
+ "https://wed-mac-admin.vercel.app/login",  // <-- put your admin origin(s) here
   "http://localhost:3000"     // <-- local dev
 ];
 
@@ -36,17 +36,23 @@ export default function ReceiveToken() {
       return true;
     }
 
-    function handleMessage(e: MessageEvent) {
-      console.log("ReceiveToken got message", e.origin, e.data);
-      // Validate origin
-      if (!ALLOWED_ADMIN_ORIGINS.includes(e.origin)) {
-        console.warn("Rejected message from origin:", e.origin);
-        // For local testing you might want to allow it — uncomment next lines if necessary:
-        // if (process.env.NODE_ENV === "development") return processTokenData(e.data);
-        return;
-      }
-      processTokenData(e.data);
-    }
+ function handleMessage(e: MessageEvent) {
+  console.log("ReceiveToken got message", e.origin, e.data);
+
+  // Ignore self-origin noise
+  if (e.origin === window.location.origin) {
+    return;
+  }
+
+  // Allow only known admin origins
+  if (!ALLOWED_ADMIN_ORIGINS.includes(e.origin)) {
+    console.warn("Rejected message from origin:", e.origin);
+    return;
+  }
+
+  processTokenData(e.data);
+}
+
 
     window.addEventListener("message", handleMessage, false);
 
