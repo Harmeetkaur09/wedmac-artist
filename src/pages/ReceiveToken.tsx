@@ -2,71 +2,78 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
+const ALLOWED_ADMIN_ORIGINS = [
+  "https://admin.wedmac.com", // <-- put your admin origin(s) here
+  "http://localhost:3000"     // <-- local dev
+];
+
 export default function ReceiveToken() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const ADMIN_ORIGIN = "https://your-admin-domain.com"; // <-- CHANGE THIS to your admin origin
+    // Tell opener (admin) that this window is ready to receive tokens
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type: "receive-ready" }, "*");
+        console.log("Sent receive-ready to opener");
+      }
+    } catch (err) {
+      console.warn("Could not notify opener:", err);
+    }
+
+    function processTokenData(data: any) {
+      const access = data.access || data.accessToken || null;
+      if (!access) {
+        console.warn("No access token in message:", data);
+        return false;
+      }
+      if (data.access) sessionStorage.setItem("accessToken", String(data.access));
+      if (data.refresh) sessionStorage.setItem("refreshToken", String(data.refresh));
+      if (data.user_id || data.userId) sessionStorage.setItem("user_id", String(data.user_id ?? data.userId));
+      sessionStorage.setItem("role", "artist");
+      console.log("✅ Tokens saved from admin message");
+      navigate("/", { replace: true });
+      return true;
+    }
 
     function handleMessage(e: MessageEvent) {
-      // SECURITY: accept only from your admin origin
-      if (e.origin !== ADMIN_ORIGIN) {
-        console.warn("Ignored message from origin:", e.origin);
+      console.log("ReceiveToken got message", e.origin, e.data);
+      // Validate origin
+      if (!ALLOWED_ADMIN_ORIGINS.includes(e.origin)) {
+        console.warn("Rejected message from origin:", e.origin);
+        // For local testing you might want to allow it — uncomment next lines if necessary:
+        // if (process.env.NODE_ENV === "development") return processTokenData(e.data);
         return;
       }
-
-      const data = e.data || {};
-      const access = data.access || data?.accessToken || null;
-      const refresh = data.refresh || data?.refreshToken || null;
-      const userId = data.user_id || data?.userId || null;
-
-      if (!access) {
-        console.warn("Message did not contain access token", data);
-        return;
-      }
-
-      // Save tokens and basic info
-      sessionStorage.setItem("accessToken", String(access));
-      if (refresh) sessionStorage.setItem("refreshToken", String(refresh));
-      if (userId) sessionStorage.setItem("user_id", String(userId));
-      sessionStorage.setItem("role", "artist");
-
-      console.log("✅ Tokens saved from postMessage");
-      // Navigate to app root (ProtectedRoute should now allow)
-      navigate("/", { replace: true });
+      processTokenData(e.data);
     }
 
     window.addEventListener("message", handleMessage, false);
 
-    // Fallback: parse hash fragment if admin used fragment fallback
-    const tryParseHash = () => {
+    // fallback: parse hash if admin used fragment fallback
+    const parsed = (() => {
       try {
         const h = window.location.hash;
         if (!h) return false;
-        const params = new URLSearchParams(h.substring(1));
-        const a = params.get("access");
+        const p = new URLSearchParams(h.substring(1));
+        const a = p.get("access");
         if (!a) return false;
         sessionStorage.setItem("accessToken", a);
-        const r = params.get("refresh");
+        const r = p.get("refresh");
         if (r) sessionStorage.setItem("refreshToken", r);
-        const uid = params.get("user_id");
+        const uid = p.get("user_id");
         if (uid) sessionStorage.setItem("user_id", uid);
         sessionStorage.setItem("role", "artist");
-        console.log("✅ Tokens saved from hash");
+        console.log("✅ Tokens saved from hash fallback");
         navigate("/", { replace: true });
         return true;
       } catch (err) {
         return false;
       }
-    };
-
-    // Try immediate hash parse (covers case admin opened receive-token#access=... directly)
-    tryParseHash();
+    })();
 
     // cleanup
-    return () => {
-      window.removeEventListener("message", handleMessage);
-    };
+    return () => window.removeEventListener("message", handleMessage);
   }, [navigate]);
 
   return (
