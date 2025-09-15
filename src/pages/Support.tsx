@@ -117,6 +117,52 @@ export default function Support() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("open");
   const [loadingTickets, setLoadingTickets] = useState(false);
+const [profile, setProfile] = useState<{
+  plan_name?: string;
+  plan_price?: string;
+  plan_valid_until?: string;
+  total_leads?: number;
+}>({});
+
+
+const fetchProfile = async () => {
+  const token = getToken();
+  if (!token) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/artists/my-profile/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Profile fetch failed");
+    const data = await res.json();
+
+    const plan = data.current_plan;
+
+    setProfile({
+      plan_name: plan?.name || "—",
+      plan_price: plan?.price
+        ? `₹${Number(plan.price).toLocaleString()}`
+        : "—",
+      total_leads: plan?.total_leads ?? 0,
+plan_valid_until: plan
+  ? new Date(
+      new Date(data.plan_purchase_date).setDate(
+        new Date(data.plan_purchase_date).getDate() + plan.duration_days
+      )
+    ).toLocaleDateString()
+  : undefined,
+
+    });
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+
+
+useEffect(() => {
+  fetchProfile();
+}, []);
 
   // helper: robust token detection
   const getToken = () => {
@@ -161,6 +207,8 @@ export default function Support() {
     }
   };
 
+
+  
   // fetch credits history and set currentPlan using latest entry (results[0])
   const fetchCreditsHistory = async () => {
     const token = getToken();
@@ -388,20 +436,13 @@ export default function Support() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Plan</p>
-                  <PlanBadge
-                    plan={
-                      (["Basic", "Standard", "Premium", "Pro"].includes(
-                        currentPlan.name
-                      )
-                        ? currentPlan.name
-                        : "Basic") as "Basic" | "Standard" | "Premium" | "Pro"
-                    }
-                  />
+                  <PlanBadge plan={profile.plan_name || "—"} />
+
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Price</p>
                   <p className="text-2xl font-bold text-primary">
-                    {currentPlan.price}
+                    {profile.plan_price}
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -409,13 +450,13 @@ export default function Support() {
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <span className="font-medium">
-                      {currentPlan.validUntil}
+                      {profile.plan_valid_until}
                     </span>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Total Leads</p>
-                  <p className="text-2xl font-bold">{currentPlan.credits}</p>
+                  <p className="text-2xl font-bold">{profile.total_leads}</p>
                 </div>
               </div>
             </CardContent>

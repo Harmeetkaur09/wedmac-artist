@@ -13,6 +13,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PlanBadge } from "@/components/PlanBadge";
+import { getMyProfile, MyProfile } from "@/api/profile";
+
 import {
   Dialog,
   DialogContent,
@@ -125,77 +127,97 @@ export default function PaymentsPlan(): JSX.Element {
     !loading &&
     Boolean(selectedPlanData && Object.keys(selectedPlanData).length > 0);
 
-  useEffect(() => {
-    const fetchPayments = async () => {
+    useEffect(() => {
+    const fetchProfile = async () => {
       try {
-        setLoadingPayments(true);
+        const profile = await getMyProfile();
 
-        const token = sessionStorage.getItem("accessToken") ?? "";
+        const plan = profile?.current_plan;
+    if (plan) {
+  const purchaseDate = profile.plan_purchase_date
+    ? new Date(profile.plan_purchase_date).getTime()
+    : null;
 
-        const res = await fetch(
-          "https://api.wedmacindia.com/api/artists/payments/history/",
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : "",
-              "Content-Type": "application/json",
-            },
-          }
-        );
+  const durationDays = plan.duration_days ?? 0;
+  const extendedDays = profile.extended_days ?? 0;
+  const totalDays = durationDays + extendedDays;
 
-        if (!res.ok) throw new Error("Failed to fetch payment history");
+  const expiryTs =
+    purchaseDate && totalDays
+      ? purchaseDate + totalDays * 24 * 60 * 60 * 1000
+      : null;
 
-        const data = await res.json();
+  console.log("🟢 purchase_date:", profile.plan_purchase_date);
+  console.log("🟢 duration_days:", durationDays);
+  console.log("🟢 extended_days:", extendedDays);
+  console.log("🟢 expiry date:", expiryTs ? new Date(expiryTs) : null);
 
-        // typed results
-        const results = (data.results || []) as PaymentApiItem[];
+  setCurrentPlan({
+    name: plan.name,
+    price: plan.price ? `₹${plan.price}` : undefined,
+    validUntil: expiryTs
+      ? new Date(expiryTs).toLocaleDateString("en-IN", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        })
+      : undefined,
+    credits: profile.available_leads ?? 0,
+  });
+}
 
-        // transform for table
-        const transformed: Payment[] = results.map((item) => ({
-          id: item.id,
-          date: item.dates?.created_at ?? "",
-          description: item.plan?.name ?? "N/A",
-          amount: item.plan?.price ? `₹${item.plan.price}` : "-",
-          status: item.payment?.status === "success" ? "Completed" : "Pending",
-          method: "Razorpay",
-        }));
-
-        setPaymentHistory(transformed);
-
-        // find latest completed subscription
-        const completed = results
-          .filter((p) => p.payment?.status === "success")
-          .sort((a, b) => {
-            const ta = a.dates?.created_at
-              ? new Date(a.dates.created_at!).getTime()
-              : 0;
-            const tb = b.dates?.created_at
-              ? new Date(b.dates.created_at!).getTime()
-              : 0;
-            return tb - ta;
-          })[0];
-
-        if (completed) {
-          setCurrentPlan({
-            name: completed.plan?.name,
-            price: completed.plan?.price
-              ? `₹${completed.plan.price}`
-              : undefined,
-            validUntil: completed.dates?.end_date
-              ? new Date(completed.dates.end_date).toLocaleDateString()
-              : undefined,
-            credits: completed.usage?.remaining_leads ?? 0,
-          });
-        }
-      } catch (err: unknown) {
-        if (err instanceof Error) setErrorPayments(err.message);
-        else setErrorPayments(String(err));
-      } finally {
-        setLoadingPayments(false);
+      } catch (err) {
+        console.error("❌ Failed to fetch profile:", err);
       }
     };
 
-    fetchPayments();
+    fetchProfile();
   }, []);
+
+
+useEffect(() => {
+  const fetchPayments = async () => {
+    try {
+      setLoadingPayments(true);
+
+      const token = sessionStorage.getItem("accessToken") ?? "";
+      const res = await fetch(
+        "https://api.wedmacindia.com/api/artists/payments/history/",
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to fetch payment history");
+      const data = await res.json();
+
+      const results = (data.results || []) as PaymentApiItem[];
+
+      const transformed: Payment[] = results.map((item) => ({
+        id: item.id,
+        date: item.dates?.created_at ?? "",
+        description: item.plan?.name ?? "N/A",
+        amount: item.plan?.price ? `₹${item.plan.price}` : "-",
+        status: item.payment?.status === "success" ? "Completed" : "Pending",
+        method: "Razorpay",
+      }));
+
+      setPaymentHistory(transformed);
+    } catch (err: unknown) {
+      if (err instanceof Error) setErrorPayments(err.message);
+      else setErrorPayments(String(err));
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
+
+  fetchPayments();
+}, []);
+
+
 
   useEffect(() => {
     const fetchPlans = async () => {

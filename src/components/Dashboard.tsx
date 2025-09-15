@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, ReactNode } from "react";
+import React, { useEffect, useRef, useState, ReactNode, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "./StatCard";
@@ -18,17 +18,26 @@ import { getMyProfile, MyProfile } from "@/api/profile";
 import { useNavigate } from "react-router-dom";
 
 interface Lead {
-  created_at: string | ReactNode;
-  budget_range: BudgetRange;
-  requirements: string;
   id: number;
-  client_name: string;
-  status: string;
-  service: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  email: string;
+  event_type: string;
   booking_date: string;
   location: string;
-  phone: string;
+  requirements: string;
+  budget_range: {
+    id: number;
+    label: string;
+    min_value: string;
+    max_value: string;
+  } | null;
+  service: string | null;
+  status: string;
+  created_at: string;
 }
+
 
 interface Summary {
   new_this_week: number;
@@ -128,43 +137,66 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
       console.error("Failed to save claimedMap:", err);
     }
   };
+const planInfoText = useMemo(() => {
+  if (!profile?.current_plan) return "No active plan";
 
+  const planName = profile.current_plan.name || "Unnamed Plan";
+
+  if (!subscriptionExpiresAt) return `${planName} (N/A)`;
+
+  const now = Date.now();
+  const diff = subscriptionExpiresAt - now;
+
+  if (diff <= 0) return `${planName} (Expired)`;
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const expiryDate = new Date(subscriptionExpiresAt).toLocaleDateString("en-IN");
+
+  return `${planName} — ${days} day${days > 1 ? "s" : ""} left (expires on ${expiryDate})`;
+}, [profile?.current_plan, subscriptionExpiresAt]);
+
+  
   // fetch profile + leads + credits history
-  useEffect(() => {
-   const fetchAll = async () => {
-  try {
-    setLoading(true);
-    const profileData = await getMyProfile();
-    setProfile(profileData);
+useEffect(() => {
+  const fetchAll = async () => {
+    try {
+      setLoading(true);
+      const profileData = await getMyProfile();
+      setProfile(profileData);
 
-    if (profileData?.created_by_admin === true) {
-      setIsAdminCreated(true);
-      // agar admin created hai → subscription always valid, credits irrelevant
-      setSubscriptionValid(true);
-      setCreditsAvailable(null);
-    }
+      if (profileData?.created_by_admin === true) {
+        setIsAdminCreated(true);
+        setSubscriptionValid(true);
+        setCreditsAvailable(null);
+      } else {
+        // 🔹 Plan check direct profile se
+        const plan = profileData.current_plan;
+        const purchaseDate = profileData.plan_purchase_date
+          ? new Date(profileData.plan_purchase_date).getTime()
+          : null;
+        const durationDays = plan?.duration_days || 0;
+        const expiryTs =
+          purchaseDate && durationDays
+            ? purchaseDate + durationDays * 24 * 60 * 60 * 1000
+            : null;
 
-    const token = sessionStorage.getItem("accessToken");
+        setSubscriptionId(plan?.id ?? null);
+        setPlanTotalLeads(plan?.total_leads ?? null);
+        setSubscriptionExpiresAt(expiryTs);
+        setCreditsAvailable(profileData.available_leads ?? 0);
 
-    // 1) fetch recent leads (✅ admin ke liye bhi chalega)
-    const leadsRes = await fetch(
-      "https://api.wedmacindia.com/api/leads/artist/recent-leads/",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        const now = Date.now();
+        if (plan && profileData.plan_verified && expiryTs && expiryTs > now) {
+          setSubscriptionValid(true);
+        } else {
+          setSubscriptionValid(false);
+        }
       }
-    );
-    if (!leadsRes.ok) throw new Error("Failed to fetch leads");
-    const leadsData = await leadsRes.json();
-    setSummary(leadsData.summary);
-    setLeads(leadsData.leads);
 
-    // 2) fetch credits/history (❌ admin ke liye skip karo)
-    if (!profileData?.created_by_admin) {
-      const creditsRes = await fetch(
-        "https://api.wedmacindia.com/api/credits/history/",
+      // 🔹 Leads hamesha fetch karo
+      const token = sessionStorage.getItem("accessToken");
+      const leadsRes = await fetch(
+        "https://api.wedmacindia.com/api/leads/all-leads/",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -172,73 +204,19 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
           },
         }
       );
-
-      if (!creditsRes.ok) {
-        console.warn("Failed to fetch credits history");
-        return;
-      }
-
-      const creditsData = await creditsRes.json();
-      const results = Array.isArray(creditsData.results)
-        ? creditsData.results
-        : [];
-
-      const purchases = results
-        .filter(
-          (r: any) =>
-            r.transaction_type === "purchase" &&
-            r.credit_type === "lead_credit"
-        )
-        .sort(
-          (a: any, b: any) =>
-            new Date(b.created_at).getTime() -
-            new Date(a.created_at).getTime()
-        );
-
-      if (purchases.length === 0) {
-        setSubscriptionValid(false);
-        setCreditsAvailable(0);
-        setLeads([]);
-        return;
-      }
-
-      const latest = purchases[0];
-      const plan = latest.plan_details || null;
-      const createdAt = new Date(latest.created_at).getTime();
-      const durationDays = plan?.duration_days
-        ? Number(plan.duration_days)
-        : 0;
-      const expiryTs =
-        createdAt + durationDays * 24 * 60 * 60 * 1000;
-
-      const creditsAfter =
-        typeof latest.credits_after === "number"
-          ? latest.credits_after
-          : null;
-
-      setSubscriptionExpiresAt(expiryTs);
-      setCreditsAvailable(creditsAfter);
-      setPlanTotalLeads(plan?.total_leads ?? null);
-      setSubscriptionId(latest.subscription_plan ?? null);
-
-      const now = Date.now();
-      if (expiryTs && expiryTs > now) {
-        setSubscriptionValid(true);
-      } else {
-        setSubscriptionValid(false);
-        setLeads([]);
-      }
+      if (!leadsRes.ok) throw new Error("Failed to fetch leads");
+      const leadsData = await leadsRes.json();
+      setSummary(leadsData.summary);
+      setLeads(leadsData.leads || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-
-    fetchAll();
-  }, []);
+  fetchAll();
+}, []);
 
   const visibleLeads = showAll ? leads : leads.slice(0, 3);
 
@@ -416,7 +394,13 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
           <p className="text-muted-foreground mt-1">
             Welcome back! Here's your overview
           </p>
+          <div className="mb-4 text-sm text-black">
+  <strong>Plan:</strong> {planInfoText}
+</div>
+
         </div>
+
+
         <div className="flex items-center gap-3"></div>
       </div>
 
@@ -452,24 +436,7 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
       </div>
 
       {/* Recent Leads / or subscription expired message */}
-      {!subscriptionValid ? (
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">No Active Plan</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="py-6 text-center">
-              <p className="mb-3 text-muted-foreground">
-                Your lead subscription has expired or no purchase found. Purchase/renew a plan to get leads.
-              </p>
-              <div className="flex justify-center gap-3">
-                <Button onClick={() => navigate("/payments")}>Purchase Plan</Button>
-                <Button variant="outline" onClick={() => navigate("/pricing")}>View Plans</Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
+  
         <Card className="shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
@@ -510,7 +477,7 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
                       <div className="space-y-2">
                         <div className="flex items-center gap-3">
                           <h3 className="font-medium text-foreground">
-                            {lead.client_name}
+                            {lead.first_name} {lead.last_name}
                           </h3>
                         </div>
 
@@ -526,7 +493,13 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
                           {/* Created At */}
                           <div className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            <span>Created: {lead.created_at}</span>
+<span>
+  Created: {new Date(lead.created_at).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })}
+</span>
                           </div>
 
                           <div className="flex items-center gap-1">
@@ -554,44 +527,43 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 relative">
-                     {subscriptionValid ? (
-  <>
-    {/* Claim / Call Button */}
-    <Button
-      size="sm"
-      disabled={contactDisabled || claimingLeadId === lead.id}
-      onClick={() => {
-        if (contactDisabled) return;
-        claimLead(lead.id);
-      }}
-      className={`px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 ${
-        contactDisabled
-          ? "cursor-not-allowed"
-          : "hover:bg-primary/10 hover:text-primary"
-      }`}
-    >
-      <Phone className="w-4 h-4 inline" />
-      {claimingLeadId === lead.id
-        ? "Claiming..."
-        : contactDisabled
-        ? "Claimed"
-        : "Claim"}
-    </Button>
+                   <div className="flex items-center gap-2 relative">
+  {subscriptionValid ? (
+    <>
+      {/* Claim / Call Button */}
+      <Button
+        size="sm"
+        disabled={contactDisabled || claimingLeadId === lead.id}
+        onClick={() => {
+          if (contactDisabled) return;
+          claimLead(lead.id);
+        }}
+        className={`px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 ${
+          contactDisabled
+            ? "cursor-not-allowed"
+            : "hover:bg-primary/10 hover:text-primary"
+        }`}
+      >
+        <Phone className="w-4 h-4 inline" />
+        {claimingLeadId === lead.id
+          ? "Claiming..."
+          : contactDisabled
+          ? "Claimed"
+          : "Claim"}
+      </Button>
 
-    {/* Upgrade Button */}
-    <Button
-      variant="outline"
-      size="sm"
-      className="hover:bg-primary/10 hover:text-primary"
-      onClick={() => navigate("/payments")}
-    >
-      <ClockArrowUp className="w-4 h-4 mr-1" />
-      Upgrade
-    </Button>
-  </>
-) : (
-  profile?.payment_status === "pending" && (
+      {/* WhatsApp Button */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          if (lead.phone) window.open(`https://wa.me/${lead.phone}`, "_blank");
+        }}
+      >
+        WhatsApp
+      </Button>
+    </>
+  ) : (
     <Button
       variant="default"
       size="sm"
@@ -599,11 +571,9 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
     >
       Unlock
     </Button>
-  )
-)}
+  )}
+</div>
 
-                      
-                      </div>
                     </div>
                   );
                 })}
@@ -611,7 +581,7 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
             )}
           </CardContent>
         </Card>
-      )}
+      
 
       {/* Quick Actions */}
     </div>
