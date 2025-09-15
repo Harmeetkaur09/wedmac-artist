@@ -36,22 +36,28 @@ export default function ReceiveToken() {
       return true;
     }
 
- function handleMessage(e: MessageEvent) {
-  console.log("ReceiveToken got message", e.origin, e.data);
+function handleMessage(e: MessageEvent) {
+  console.log("🔔 ReceiveToken got message");
+  console.log("  → origin:", e.origin);
+  console.log("  → data:", e.data);
+  console.log("  → my location.origin:", window.location.origin);
+  console.log("  → allowed origins:", ALLOWED_ADMIN_ORIGINS);
 
   // Ignore self-origin noise
   if (e.origin === window.location.origin) {
+    console.log("Ignored self-origin message");
     return;
   }
 
   // Allow only known admin origins
   if (!ALLOWED_ADMIN_ORIGINS.includes(e.origin)) {
-    console.warn("Rejected message from origin:", e.origin);
+    console.warn("❌ Rejected message from origin:", e.origin);
     return;
   }
 
   processTokenData(e.data);
 }
+    
 
 
     window.addEventListener("message", handleMessage, false);
