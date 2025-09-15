@@ -22,6 +22,7 @@ import SignUp from "./pages/SignUp";
 import OTPVerification from "./pages/OTPVerification";
 import NotFound from "./pages/NotFound";
 import AssignedLeads from "./pages/AssignedLeads";
+import ReceiveToken from "./pages/ReceiveToken";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,8 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+           <Route path="/receive-token" element={<ReceiveToken />} />
+
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/otp-verification" element={<OTPVerification />} />
