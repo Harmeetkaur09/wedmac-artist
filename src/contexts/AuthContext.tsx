@@ -52,30 +52,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const [initialized, setInitialized] = useState<boolean>(false);
 
-useEffect(() => {
-  const token = sessionStorage.getItem("accessToken");
-  const storedUser = sessionStorage.getItem("user");
-  if (token) {
-    setIsAuthenticated(true);
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        setUser(null);
-      }
+  useEffect(() => {
+    setInitialized(true);
+    const token = sessionStorage.getItem("accessToken");
+    if (!isTokenPresent(token)) {
+      setIsAuthenticated(false);
     } else {
-      // Agar ReceiveToken ne sirf id save ki hai
-      const uid = sessionStorage.getItem("user_id");
-      if (uid) {
-        setUser({ id: uid, email: "", role: "artist" });
-      }
+      setIsAuthenticated(true);
     }
-  } else {
-    setIsAuthenticated(false);
-  }
-  setInitialized(true);
-}, []);
-
+  }, []);
 
   const login = (data: { access: string; refresh?: string; user?: User }) => {
     if (data.access) {
