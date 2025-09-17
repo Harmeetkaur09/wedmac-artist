@@ -147,7 +147,7 @@ const fetchProfile = async () => {
 plan_valid_until: plan
   ? new Date(
       new Date(data.plan_purchase_date).setDate(
-        new Date(data.plan_purchase_date).getDate() + plan.duration_days
+        new Date(data.plan_purchase_date).getDate() + plan.duration_days + data.extended_days || 0
       )
     ).toLocaleDateString()
   : undefined,
