@@ -214,7 +214,7 @@ const planInfoText = useMemo(() => {
     : null;
 
   const durationDays = profile.current_plan.duration_days || 0;
-  const extendedDays = profile.current_plan.extended_days || 0;
+  const extendedDays = profile.extended_days || 0;
   const totalDays = durationDays + extendedDays;
 
   if (!purchaseDate) return `${planName} (No purchase date)`;  

@@ -26,11 +26,16 @@ export interface SocialLinks {
 
 export interface MyProfile {
   duration_days: number;
-  purchase_date: any;
+  purchase_date: string;
   extended_days: number;
-  plan_verified: any;
-  current_plan: any;
-  plan_purchase_date: any;
+  plan_verified: boolean;
+  current_plan: {
+    id: number;
+    name: string;
+    duration_days: number;
+    total_leads: number;
+  } | null;
+  plan_purchase_date: string | null;
   available_leads: number;
   created_by_admin: boolean;
   status: string;
