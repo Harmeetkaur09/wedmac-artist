@@ -282,6 +282,12 @@ export default function MyProfile() {
         if (Array.isArray(data.id_documents_data)) {
           setIdDocs(data.id_documents_data);
         }
+            if (typeof window !== "undefined") {
+        if (data.id !== undefined && data.id !== null) {
+          sessionStorage.setItem("user_Id", String(data.id));
+        }
+     
+      }
       } catch (err) {
         const msg = await parseErrorMessage(err);
         console.error(err);
@@ -471,27 +477,27 @@ export default function MyProfile() {
                     <div className="flex space-x-4">
                       <div>
                         <RadioGroupItem value="female" id="gender-f" />
-                        <Label htmlFor="gender-f">Female</Label>
+                        <Label htmlFor="gender-f"> Female</Label>
                       </div>
                       <div>
                         <RadioGroupItem value="male" id="gender-m" />
-                        <Label htmlFor="gender-m">Male</Label>
+                        <Label htmlFor="gender-m"> Male</Label>
                       </div>
                       <div>
                         <RadioGroupItem value="other" id="gender-o" />
-                        <Label htmlFor="gender-o">Other</Label>
+                        <Label htmlFor="gender-o"> Other</Label>
                       </div>
                     </div>
                   </RadioGroup>
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label>Date of Birth</Label>
                   <Input
                     type="date"
                     value={dob}
                     onChange={(e) => setDob(e.target.value)}
                   />
-                </div>
+                </div> */}
                 <div className="space-y-2">
                   <Label>Referral Code</Label>
                   <Input
@@ -499,13 +505,13 @@ export default function MyProfile() {
                     onChange={(e) => setReferralCode(e.target.value)}
                   />
                 </div>
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label>Offer Chosen</Label>
                   <Input
                     value={chosenOffer}
                     onChange={(e) => setChosenOffer(e.target.value)}
                   />
-                </div>
+                </div> */}
                 <div className="space-y-2">
                   <Label>Price Range</Label>
                   <Input
@@ -529,8 +535,9 @@ export default function MyProfile() {
           {/* Payment Methods */}
           <Card>
             <CardHeader>
-              <CardTitle>
+                <CardTitle className="flex items-center gap-2">
                 <CreditCard />
+                Payment Type
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -593,11 +600,11 @@ export default function MyProfile() {
                   <div className="flex gap-4">
                     <div>
                       <RadioGroupItem value="true" id="trial-yes" />
-                      <Label htmlFor="trial-yes">Yes</Label>
+                      <Label htmlFor="trial-yes"> Yes</Label>
                     </div>
                     <div>
                       <RadioGroupItem value="false" id="trial-no" />
-                      <Label htmlFor="trial-no">No</Label>
+                      <Label htmlFor="trial-no"> No</Label>
                     </div>
                   </div>
                 </RadioGroup>
@@ -614,11 +621,11 @@ export default function MyProfile() {
                     <div className="flex gap-4 items-center">
                       <div>
                         <RadioGroupItem value="free" id="trial-free" />
-                        <Label htmlFor="trial-free">Free</Label>
+                        <Label htmlFor="trial-free"> Free</Label>
                       </div>
                       <div>
                         <RadioGroupItem value="paid" id="trial-paid" />
-                        <Label htmlFor="trial-paid">Paid</Label>
+                        <Label htmlFor="trial-paid"> Partially Paid</Label>
                       </div>
                     </div>
                   </RadioGroup>

@@ -55,7 +55,7 @@ export function AppSidebar() {
   useEffect(() => {
     getMyProfile()
       .then((profile) => {
-        const dob = profile?.date_of_birth;
+        const dob = profile?.gender;
         const paymentStatus = profile?.payment_status;
         const adminFlag = profile?.created_by_admin;
 

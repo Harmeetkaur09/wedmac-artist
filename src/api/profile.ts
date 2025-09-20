@@ -25,6 +25,7 @@ export interface SocialLinks {
 }
 
 export interface MyProfile {
+  id: number;
   duration_days: number;
   purchase_date: string;
   extended_days: number;
@@ -92,6 +93,8 @@ export interface CompleteProfilePayload {
   };
   id_documents: number[];
   supporting_images: number[];
+  files?: number[]; // 👈 new optional field
+  featured_portfolio?: number[]; // 👈 new optional field
 }
 export interface MyProfile {
   first_name: string;

@@ -22,15 +22,25 @@ useEffect(() => {
     try {
       setLoadingProfile(true);
       const p = await getMyProfile();
-      if (mounted) setProfile(p);
+      if (mounted) {
+        setProfile(p);
+
+        // Save profile ID to sessionStorage
+        if (p?.id) {
+          sessionStorage.setItem("user_Id", String(p.id));
+        }
+      }
     } catch (err) {
       console.error("Failed to load profile:", err);
     } finally {
       if (mounted) setLoadingProfile(false);
     }
   })();
-  return () => { mounted = false; };
+  return () => {
+    mounted = false;
+  };
 }, []);
+
 
 const displayName =
   profile?.first_name || profile?.last_name

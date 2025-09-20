@@ -313,16 +313,12 @@ const SignUp = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-black/0 via-black/30 to-black/0" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 flex flex-col items-center justify-center h-full">
-          <h1 className="text-5xl md:text-7xl font-gilroy-bold mb-6">
-            Style That Turns Heads <br />
-            Every Special Day
-          </h1>
-          <p className="text-md md:text-xl font-gilroy font-400 opacity-90">
-            Make your presence unforgettable with premium beauty and fashion
-            services
-            <br />
-            designed for life’s most special moments
-          </p>
+        <h1 className="text-[2.5rem] md:text-[3.5rem] Gilroy">
+             Be the Reason They Can’t<br/>Take Their Eyes Off You
+            </h1>
+            <p className="text-lg md:text-xl font-gilroy font-400 opacity-90">
+         From weddings to celebrations, we design looks that turn admiration into memories.
+            </p>
         </div>
       </section>
 

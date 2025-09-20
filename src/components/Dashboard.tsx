@@ -364,6 +364,7 @@ const planInfoText = useMemo(() => {
       }
 
       // ✅ show success toast
+      window.location.reload();
       addToast("Lead contact successfully", "success");
     } catch (err: any) {
       console.error("Claim error:", err);
@@ -567,26 +568,16 @@ const planInfoText = useMemo(() => {
   {subscriptionValid ? (
     <>
       {/* Claim / Call Button */}
-      <Button
-        size="sm"
-        disabled={contactDisabled || claimingLeadId === lead.id}
-        onClick={() => {
-          if (contactDisabled) return;
-          claimLead(lead.id);
-        }}
-        className={`px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 ${
-          contactDisabled
-            ? "cursor-not-allowed"
-            : "hover:bg-primary/10 hover:text-primary"
-        }`}
-      >
-        <Phone className="w-4 h-4 inline" />
-        {claimingLeadId === lead.id
-          ? "Claiming..."
-          : contactDisabled
-          ? "Claimed"
-          : "Claim"}
-      </Button>
+<Button
+  size="sm"
+  onClick={() => claimLead(lead.id)}
+  className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
+>
+  <Phone className="w-4 h-4 inline" />
+  {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
+</Button>
+
+
 
       {/* WhatsApp Button */}
       <Button

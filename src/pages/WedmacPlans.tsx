@@ -217,7 +217,7 @@ if (sortedPlans.length > 0) {
       [["relationship manager", "manager"], "Support"],
       [["email support", "support", "follow up", "management"], "Support"],
       [["reversal", "extension", "policy"], "Policies"],
-      [["guidance", "webinar", "expert"], "Extras"],
+      [["guidance", "webinar", "expert","Inbound","Name","Profile"], "Extras"],
     ];
 
     for (const f of allFeatures) {
@@ -259,34 +259,42 @@ if (sortedPlans.length > 0) {
   };
 
   // ---------- NEW: helpers to extract plan-specific attribute strings ----------
-  const findFeatureByKeywords = (plan: UiPlan | null, keywords: string[]) => {
-    if (!plan) return null;
-    const low = plan.features.map((f) => (f || "").toLowerCase());
+const findFeaturesByKeywords = (plan: UiPlan | null, keywords: string[]) => {
+  if (!plan) return [];
+  const matches: string[] = [];
+  const low = plan.features.map((f) => (f || "").toLowerCase());
+
+  for (const f of plan.features) {
+    const fl = (f || "").toLowerCase();
     for (const k of keywords) {
-      for (const f of low) {
-        if (f.includes(k)) return f; // return first matching feature string (lowercased)
+      if (fl.includes(k.toLowerCase())) {
+        matches.push(f);
+        break; // move to next feature once matched
       }
     }
-    return null;
-  };
+  }
+
+  return matches;
+};
+
 
   const extractCity = (plan: UiPlan | null) =>
-    findFeatureByKeywords(plan, ["city access", "city"]);
+    findFeaturesByKeywords(plan, ["city access", "city"]);
 
   const extractBudget = (plan: UiPlan | null) =>
-    findFeatureByKeywords(plan, ["budget", "leads budget", "higher leads budget", "higer leads budget", "max budget", "below"]);
+    findFeaturesByKeywords(plan, ["budget", "leads budget", "higher leads budget", "higer leads budget", "max budget", "below"]);
 
   const extractSocial = (plan: UiPlan | null) =>
-    findFeatureByKeywords(plan, ["story", "post", "reel", "social", "webinar"]);
+    findFeaturesByKeywords(plan, ["story", "post", "reel", "social", "webinar"]);
 
   const extractCoverage = (plan: UiPlan | null) =>
-    findFeatureByKeywords(plan, ["unlimited city", "city access", "city"]);
+    findFeaturesByKeywords(plan, ["unlimited city", "city access", "city"]);
 
   const extractSupport = (plan: UiPlan | null) =>
-    findFeatureByKeywords(plan, ["relationship manager", "manager", "email support", "support", "follow up", "management"]);
+    findFeaturesByKeywords(plan, ["relationship manager", "manager", "email support", "support", "follow up", "management"]);
 
   const extractExtras = (plan: UiPlan | null) =>
-    findFeatureByKeywords(plan, ["profile", "pin best", "recommend", "follow up", "inbound", "pin best review", "dedicated", "profile management", "guidance"]);
+    findFeaturesByKeywords(plan, ["profile", "pin best", "recommend", "follow up", "inbound", "pin best review", "dedicated", "profile management", "guidance","Inbound","Name","Profile"]);
 
   // Which index is the 4th plan? JS index: 3
   const highlightIndex = 3;
@@ -433,14 +441,7 @@ if (sortedPlans.length > 0) {
                         ))}
                       </tr>
 
-                      <tr className="bg-white">
-                        <td className="py-3 px-4 font-medium border-r">Coverage</td>
-                        {plans?.map((p, i) => (
-                          <td key={p.id} className={`text-center py-3 px-4 border-r ${i === highlightIndex ? "bg-yellow-50" : ""}`}>
-                            {extractCoverage(p) ? extractCoverage(p) : "—"}
-                          </td>
-                        ))}
-                      </tr>
+                  
 
                       <tr className="bg-white">
                         <td className="py-3 px-4 font-medium border-r">Support</td>
@@ -453,11 +454,15 @@ if (sortedPlans.length > 0) {
 
                       <tr className="bg-white">
                         <td className="py-3 px-4 font-medium border-r">Extras</td>
-                        {plans?.map((p, i) => (
-                          <td key={p.id} className={`text-center py-3 px-4 border-r ${i === highlightIndex ? "bg-yellow-50" : ""}`}>
-                            {extractExtras(p) ? extractExtras(p) : "—"}
-                          </td>
-                        ))}
+                    {plans?.map((p, i) => {
+  const extras = extractExtras(p);
+  return (
+    <td key={p.id} className={`text-center py-3 px-4 border-r ${i === highlightIndex ? "bg-yellow-50" : ""}`}>
+      {extras.length > 0 ? extras.join(", ") : "—"}
+    </td>
+  );
+})}
+
                       </tr>
 
                       {/* ---------- Quick metadata: Credits / Duration / Price (kept below sample) ---------- */}

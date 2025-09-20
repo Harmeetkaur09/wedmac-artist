@@ -36,6 +36,8 @@ type ApiLead = {
   updated_at?: string | null;
   budget_range?: string | null;
   location?: string | null;
+  claimed_artists?: { id: number; first_name: string; last_name: string }[] | null;  // 👈 array
+  booked_artists?: { id: number; first_name: string; last_name: string }[] | null;  // 👈 array 
   assigned_to?: {
     id: number;
     first_name: string;
@@ -63,6 +65,27 @@ export default function AssignedLeads() {
 
   const statusOptions = ["assigned", "booked", "contacted", "pending"];
   const eventOptions = ["wedding", "engagement", "party", "reception", "haldi", "sangeet", "mehendi", "other"];
+  const [uiStatus, setUiStatus] = useState<{ [id: number]: string }>({});
+const currentArtistId = Number(sessionStorage.getItem("user_Id") || 0);
+const isAlreadyClaimedByMe = (lead: ApiLead, artistId: number) => {
+  return lead.claimed_artists?.some((a) => Number(a.id) === Number(artistId)) ?? false;
+  
+};
+
+const isAlreadyBookedByMe = (lead: ApiLead, artistId: number) => {
+  return lead.booked_artists?.some((a) => Number(a.id) === Number(artistId)) ?? false;
+};
+
+
+
+
+
+
+
+
+// inside fetchLeads
+
+
 // safe renderer for values that may be string | number | object | null
 const renderValue = (v: unknown) => {
   if (v === null || v === undefined) return "-";
@@ -77,6 +100,7 @@ const renderValue = (v: unknown) => {
  
     if ("price" in v && (v as any).price != null) return `₹${(v as any).price}`;
     // fallback: try JSON (short)
+    
     try {
       return JSON.stringify(v);
     } catch {
@@ -90,6 +114,7 @@ const renderValue = (v: unknown) => {
   // fetch assigned leads
   useEffect(() => {
     const fetchLeads = async () => {
+      
       setLoading(true);
       setError(null);
       try {
@@ -107,6 +132,12 @@ const renderValue = (v: unknown) => {
 
         const data = await res.json();
         setLeads(Array.isArray(data.leads) ? data.leads : []);
+        setLeads(data.leads);
+const statusMap: { [id: number]: string } = {};
+data.leads.forEach((l: ApiLead) => {
+  statusMap[l.id] = l.status ?? "pending";
+});
+setUiStatus(statusMap);
       } catch (err: unknown) {
         console.error(err);
         setError((err as Error)?.message || "Failed to fetch leads");
@@ -265,7 +296,6 @@ const renderValue = (v: unknown) => {
     <TableHead>Event Info</TableHead>
     <TableHead>Requested Artist</TableHead> {/* 👈 new */}
     <TableHead>Assigned Date</TableHead>
-    <TableHead>Event Date</TableHead>
     <TableHead>Budget</TableHead>
     <TableHead>Actions</TableHead>
   </TableRow>
@@ -360,11 +390,13 @@ const url = buildWhatsAppUrl(lead.requested_artist?.phone);
             </Button>
             </div>
             <div className="flex flex-col gap-2">
-           <Button
+         <Button
   size="sm"
   variant="default"
-  disabled={lead.status === "claimed" || lead.status === "booked"}
+  disabled={isAlreadyClaimedByMe(lead, currentArtistId)}
   onClick={async () => {
+    console.log("CurrentArtistId:", currentArtistId, "Lead:", lead.id, "Claimed:", lead.claimed_artists);
+
     try {
       const token = sessionStorage.getItem("accessToken");
       const res = await fetch(
@@ -378,14 +410,13 @@ const url = buildWhatsAppUrl(lead.requested_artist?.phone);
         }
       );
 
-      if (!res.ok) {
-        throw new Error("Failed to claim lead");
-      }
+      if (!res.ok) throw new Error("Failed to claim lead");
 
-      // Update status → claimed
       setLeads((prev) =>
         prev.map((l) =>
-          l.id === lead.id ? { ...l, status: "claimed" } : l
+          l.id === lead.id
+            ? { ...l, status: "claimed", claimed_artists: [...(l.claimed_artists ?? []), { id: currentArtistId, first_name: "You", last_name: "" }] }
+            : l
         )
       );
 
@@ -399,10 +430,11 @@ const url = buildWhatsAppUrl(lead.requested_artist?.phone);
   Claim
 </Button>
 
+
 <Button
   size="sm"
   variant="default"
-  disabled={lead.status !== "claimed"} // 👈 book sirf claim ke baad enable hoga
+  disabled={isAlreadyBookedByMe(lead, currentArtistId)}
   onClick={async () => {
     try {
       const token = sessionStorage.getItem("accessToken");
@@ -417,14 +449,25 @@ const url = buildWhatsAppUrl(lead.requested_artist?.phone);
         }
       );
 
+      const data = await res.json(); // parse JSON always
+
       if (!res.ok) {
-        throw new Error("Failed to book lead");
+        // backend ka exact error msg show karo
+        throw new Error(data.error || `Failed to book lead: ${res.status}`);
       }
 
-      // Update status → booked
       setLeads((prev) =>
         prev.map((l) =>
-          l.id === lead.id ? { ...l, status: "booked" } : l
+          l.id === lead.id
+            ? {
+                ...l,
+                status: "booked",
+                booked_artists: [
+                  ...(l.booked_artists ?? []),
+                  { id: currentArtistId, first_name: "You", last_name: "" },
+                ],
+              }
+            : l
         )
       );
 
@@ -437,6 +480,8 @@ const url = buildWhatsAppUrl(lead.requested_artist?.phone);
 >
   Book
 </Button>
+
+
 </div>
           </div>
         </TableCell>
