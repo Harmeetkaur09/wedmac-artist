@@ -54,9 +54,7 @@ const displayName =
     : user?.name ?? "User";
 
 const avatarUrl =
-  profile?.profile_picture_data?.file_url ??
-  profile?.id_documents_data?.[0]?.file_url 
- 
+  profile?.profile_picture_data?.file_url  
   const handleLogout = () => {
     logout();
   };

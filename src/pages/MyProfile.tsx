@@ -302,33 +302,36 @@ export default function MyProfile() {
     };
   }, []);
 
-  const handleFileUpload = async (
-    files: FileList | null,
-    tag: "profile-photo" | "portfolio" | "certificate" | "id-document"
-  ) => {
-    if (!files?.length) return;
-    setLoading(true);
-    try {
-      const file = files[0];
+ const handleFileUpload = async (
+  files: FileList | null,
+  tag: "profile-photo" | "portfolio" | "certificate" | "id-document"
+) => {
+  if (!files?.length) return;
+  setLoading(true);
+  try {
+    const uploadedDocs: DocumentData[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const newDoc = await uploadDocument(
         file,
         file.type.startsWith("image") ? "image" : "pdf",
         tag
       );
-      if (newDoc.tag === "profile-photo") setProfilePhoto(newDoc);
-      if (newDoc.tag === "portfolio") setPortfolioDocs((d) => [...d, newDoc]);
-      if (newDoc.tag === "certificate") setCertDocs((d) => [...d, newDoc]);
-      if (newDoc.tag === "id-document") setIdDocs((d) => [...d, newDoc]);
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError("An unknown error occurred");
-      }
-    } finally {
-      setLoading(false);
+      uploadedDocs.push(newDoc);
     }
-  };
+
+    if (tag === "profile-photo") setProfilePhoto(uploadedDocs[0]);
+    if (tag === "portfolio") setPortfolioDocs((d) => [...d, ...uploadedDocs]);
+    if (tag === "certificate") setCertDocs((d) => [...d, ...uploadedDocs]);
+    if (tag === "id-document") setIdDocs((d) => [...d, ...uploadedDocs]);
+  } catch (e: unknown) {
+    if (e instanceof Error) setError(e.message);
+    else setError("An unknown error occurred");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleSave = async () => {
     if (!profile_picture_data) {
@@ -739,6 +742,7 @@ export default function MyProfile() {
                     <input
                       type="file"
                       accept="image/*"
+                      multiple
                       className="hidden"
                       onChange={(e) =>
                         handleFileUpload(e.target.files, "portfolio")
@@ -790,6 +794,7 @@ export default function MyProfile() {
                     <input
                       type="file"
                       accept="image/*,application/pdf"
+                      multiple
                       className="hidden"
                       onChange={(e) =>
                         handleFileUpload(e.target.files, "certificate")
