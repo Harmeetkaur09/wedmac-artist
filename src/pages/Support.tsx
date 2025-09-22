@@ -121,7 +121,6 @@ const [profile, setProfile] = useState<{
   plan_name?: string;
   plan_price?: string;
   plan_valid_until?: string;
-  total_leads?: number;
   available_leads?: number;
 }>({});
 
@@ -144,7 +143,7 @@ const fetchProfile = async () => {
       plan_price: plan?.price
         ? `₹${Number(plan.price).toLocaleString()}`
         : "—",
-      total_leads: plan?.total_leads ?? 0,
+      available_leads: data?.available_leads ?? 0,
 plan_valid_until: plan
   ? new Date(
       new Date(data.plan_purchase_date).setDate(
