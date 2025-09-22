@@ -122,6 +122,7 @@ const [profile, setProfile] = useState<{
   plan_price?: string;
   plan_valid_until?: string;
   total_leads?: number;
+  available_leads?: number;
 }>({});
 
 
@@ -456,7 +457,7 @@ useEffect(() => {
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Total Leads</p>
-                  <p className="text-2xl font-bold">{profile.total_leads}</p>
+                  <p className="text-2xl font-bold">{profile.available_leads}</p>
                 </div>
               </div>
             </CardContent>
