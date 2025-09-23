@@ -580,7 +580,7 @@ const planInfoText = useMemo(() => {
 
 
       {/* WhatsApp Button */}
-      <Button
+      {/* <Button
         variant="outline"
         size="sm"
         onClick={() => {
@@ -588,7 +588,7 @@ const planInfoText = useMemo(() => {
         }}
       >
         WhatsApp
-      </Button>
+      </Button> */}
     </>
   ) : (
     <Button
