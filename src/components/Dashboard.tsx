@@ -442,30 +442,23 @@ const planInfoText = useMemo(() => {
         <StatCard
           title="Week New Leads"
           value={summary?.new_this_week || 0}
-          subtitle="Since midnight"
           icon={TrendingUp}
-          trend={{ value: "+12%", isPositive: true }}
         />
         <StatCard
           title="Total Leads"
           value={summary?.total_this_month || 0}
-          subtitle="This month"
           icon={Users}
-          trend={{ value: "+8%", isPositive: true }}
         />
         <StatCard
           title="Claimed Leads"
           value={claimedFromApiCount}
-          subtitle="From API (status: claimed)"
           icon={Coins}
         />
         <StatCard
           title="Bookings"
           value={0}
-          subtitle="Confirmed this month"
           icon={Calendar}
-          trend={{ value: "+15%", isPositive: true }}
-        />
+       />
       </div>
 
       {/* Recent Leads / or subscription expired message */}
