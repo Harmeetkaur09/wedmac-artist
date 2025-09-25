@@ -236,7 +236,7 @@ export default function ReportedLeads() {
     <Layout title="Reported Leads">
       <div className="space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4 flex items-center gap-3">
               <div className="p-2 bg-red-100 rounded-lg"><Flag className="w-5 h-5 text-red-600" /></div>
@@ -264,7 +264,7 @@ export default function ReportedLeads() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
 
         {/* Report New Lead Form */}
         <Card>

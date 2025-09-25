@@ -93,10 +93,12 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
 
   // claimed map: { "<leadId>": timestampMs }  (kept for legacy 24h-visibility if needed)
   const [claimedMap, setclaimedMap] = useState<Record<string, number>>({});
+const [searchQuery, setSearchQuery] = useState("");
 
   // Toast stateUp
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastId = useRef(1);
+
 
   // Adds a toast and auto-removes after 3s
   const addToast = (message: string, type: ToastType = "success") => {
@@ -250,6 +252,15 @@ const planInfoText = useMemo(() => {
 
 
   const visibleLeads = showAll ? leads : leads.slice(0, 3);
+  const filteredLeads = useMemo(() => {
+  if (!searchQuery) return visibleLeads;
+  const q = searchQuery.toLowerCase();
+  return visibleLeads.filter((lead) =>
+    `${lead.first_name} ${lead.last_name}`.toLowerCase().includes(q) ||
+    lead.location?.toLowerCase().includes(q) ||
+    lead.event_type?.toLowerCase().includes(q)
+  );
+}, [visibleLeads, searchQuery]);
 
   // Save remark locally (localStorage)
   const submitRemark = (leadId: number) => {
@@ -438,28 +449,28 @@ const planInfoText = useMemo(() => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Week New Leads"
-          value={summary?.new_this_week || 0}
-          icon={TrendingUp}
-        />
-        <StatCard
-          title="Total Leads"
-          value={summary?.total_this_month || 0}
-          icon={Users}
-        />
-        <StatCard
-          title="Claimed Leads"
-          value={claimedFromApiCount}
-          icon={Coins}
-        />
-        <StatCard
-          title="Bookings"
-          value={0}
-          icon={Calendar}
-       />
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+  {/* New Leads This Week */}
+  <StatCard
+    title="Week New Leads"
+    value={leads.filter((lead) => {
+      const createdAt = new Date(lead.created_at);
+      const now = new Date();
+      const weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      return createdAt >= weekAgo;
+    }).length}
+    icon={TrendingUp}
+  />
+
+  {/* Total Leads (from frontend leads array) */}
+  <StatCard
+    title="Total Leads"
+    value={leads.length}
+    icon={Users}
+  />
+</div>
+
 
       {/* Recent Leads / or subscription expired message */}
   
@@ -479,6 +490,16 @@ const planInfoText = useMemo(() => {
                 </Button>
               )}
             </div>
+            <div className="mb-4">
+  <input
+    type="text"
+    placeholder="Search by name, location, or event type..."
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+  />
+</div>
+
           </CardHeader>
 
           <CardContent>
@@ -492,7 +513,7 @@ const planInfoText = useMemo(() => {
               </p>
             ) : (
               <div className="space-y-4">
-                {visibleLeads.map((lead) => {
+{filteredLeads.map((lead) => {
                   const phoneVisible = isContactVisible(lead);
                   const contactDisabled = isLeadContactDisabled(lead);
                   return (
