@@ -587,7 +587,6 @@ const planInfoText = useMemo(() => {
   onClick={() => claimLead(lead.id)}
   className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
 >
-  <Phone className="w-4 h-4 inline" />
   {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
 </Button>
 

@@ -378,44 +378,48 @@ useEffect(() => {
     </Button>
 
     {/* Book Button */}
-    <Button
-      size="sm"
-      variant="default"
-      disabled={lead.status === "booked"} // disable if already booked
-      onClick={async () => {
-        try {
-          const token = sessionStorage.getItem("accessToken");
-          const res = await fetch(
-            `https://api.wedmacindia.com/api/leads/${lead.id}/book/`,
-            {
-              method: "POST",
-              headers: {
-                Authorization: token ? `Bearer ${token}` : "",
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          if (!res.ok) {
-            throw new Error("Failed to book lead");
-          }
-
-          // Update local state to reflect booked status
-          setLeads((prev) =>
-            prev.map((l) =>
-              l.id === lead.id ? { ...l, status: "booked" } : l
-            )
-          );
-
-          alert("Lead successfully booked!");
-        } catch (err: any) {
-          console.error(err);
-          alert(err.message || "Failed to book lead");
+  <Button
+  size="sm"
+  variant="default"
+  disabled={lead.status === "booked"} // disable if already booked
+  onClick={async () => {
+    try {
+      const token = sessionStorage.getItem("accessToken");
+      const res = await fetch(
+        `https://api.wedmacindia.com/api/leads/${lead.id}/book/`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+            "Content-Type": "application/json",
+          },
         }
-      }}
-    >
-      Book
-    </Button>
+      );
+
+      const data = await res.json(); // response ko parse karo
+
+      if (!res.ok) {
+        // agar API error bhej rahi h to wahi dikhao
+        throw new Error(data.error || "Failed to book lead");
+      }
+
+      // success case
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === lead.id ? { ...l, status: "booked" } : l
+        )
+      );
+
+      alert("Lead successfully booked!");
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Failed to book lead");
+    }
+  }}
+>
+  Book
+</Button>
+
   </div>
 </TableCell>
 
