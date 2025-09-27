@@ -514,109 +514,138 @@ const planInfoText = useMemo(() => {
             ) : (
               <div className="space-y-4">
 {filteredLeads.map((lead) => {
-                  const phoneVisible = isContactVisible(lead);
-                  const contactDisabled = isLeadContactDisabled(lead);
-                  return (
-                    <div
-                      key={lead.id}
-                      className="relative block md:flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <h3 className="font-medium text-foreground">
-                            {lead.first_name} {lead.last_name}
-                          </h3>
-                        </div>
+  const phoneVisible = isContactVisible(lead);
+  const contactDisabled = isLeadContactDisabled(lead);
 
-                        <div className="block md:flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{lead.service}</span>
+  return (
+    <div
+      key={lead.id}
+      className="relative block md:flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
+    >
+      {subscriptionValid ? (
+        // ✅ Subscription Active: Full Lead Details
+        <>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <h3 className="font-medium text-foreground">
+                {lead.first_name} {lead.last_name}
+              </h3>
+            </div>
 
-                          {/* Booking Date */}
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            <span>Booking: {lead.booking_date}</span>
-                          </div>
+            <div className="block md:flex items-center gap-4 text-sm text-muted-foreground">
+              <span>{lead.service}</span>
 
-                          {/* Created At */}
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-<span>
-  Created: {new Date(lead.created_at).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })}
-</span>
-                          </div>
+              {/* Booking Date */}
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                <span>Booking: {lead.booking_date}</span>
+              </div>
 
-                          <div className="flex items-center gap-1">
-                            <IndianRupee className="w-3 h-3" />
-                            <span>{lead.budget_range?.min_value ?? "N/A"}</span>
-                          </div>
+              {/* Created At */}
+              <div className="flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                <span>
+                  Created:{" "}
+                  {new Date(lead.created_at).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+              </div>
 
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            <span>{lead.location}</span>
-                          </div>
-                           <div className="flex items-center gap-1">
-                            <PartyPopper className="w-3 h-3" />
-                            <span>{lead.event_type}</span>
-                          </div>
-                        </div>
-<div className="flex items-center w-80 gap-4 text-sm text-muted-foreground">
-  <span className="break-words whitespace-normal min-w-0">
-    {lead.requirements}
-  </span>
-</div>
+              <div className="flex items-center gap-1">
+                <IndianRupee className="w-3 h-3" />
+                <span>{lead.budget_range?.min_value ?? "N/A"}</span>
+              </div>
 
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                <span>{lead.location}</span>
+              </div>
 
-                        {/* Show saved remark if exists */}
-                        {remarks[lead.id] && (
-                          <div className="mt-2 text-sm text-muted-foreground italic">
-                            <strong>Remark:</strong> {remarks[lead.id]}
-                          </div>
-                        )}
-                      </div>
+              <div className="flex items-center gap-1">
+                <PartyPopper className="w-3 h-3" />
+                <span>{lead.event_type}</span>
+              </div>
+            </div>
 
-                   <div className="flex items-center gap-2 relative">
-  {subscriptionValid ? (
-    <>
-      {/* Claim / Call Button */}
-<Button
-  size="sm"
-  onClick={() => claimLead(lead.id)}
-  className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
->
-  {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
-</Button>
+            <div className="flex items-center w-80 gap-4 text-sm text-muted-foreground">
+              <span className="break-words whitespace-normal min-w-0">
+                {lead.requirements}
+              </span>
+            </div>
 
+            {/* Saved Remark */}
+            {remarks[lead.id] && (
+              <div className="mt-2 text-sm text-muted-foreground italic">
+                <strong>Remark:</strong> {remarks[lead.id]}
+              </div>
+            )}
+          </div>
 
+          {/* Claim Button */}
+          <div className="flex items-center gap-2 relative">
+            <Button
+              size="sm"
+              onClick={() => claimLead(lead.id)}
+              className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
+            >
+              {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
+            </Button>
+          </div>
+        </>
+      ) : (
+        // ❌ Subscription Inactive: Limited Details
+        
+<div className="flex items-start justify-between gap-4 w-full">
+  {/* Left Side (details) */}
+  <div className="flex flex-col gap-2">
+    {/* First row: Name, Booking, Location */}
+    <div className="flex flex-wrap items-center gap-4">
+      <h3 className="font-medium text-foreground">
+        {lead.first_name} {lead.last_name}
+      </h3>
 
-      {/* WhatsApp Button */}
-      {/* <Button
-        variant="outline"
-        size="sm"
-        onClick={() => {
-          if (lead.phone) window.open(`https://wa.me/${lead.phone}`, "_blank");
-        }}
-      >
-        WhatsApp
-      </Button> */}
-    </>
-  ) : (
+      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+        <Calendar className="w-3 h-3" />
+        <span>Booking: {lead.booking_date}</span>
+      </div>
+
+      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+        <MapPin className="w-3 h-3" />
+        <span>{lead.location}</span>
+      </div>
+    </div>
+
+    {/* Second row: Requirements */}
+    <div className="text-sm text-muted-foreground max-w-md">
+      <span className="break-words whitespace-normal">
+        {lead.requirements}
+      </span>
+    </div>
+  </div>
+
+  {/* Right Side (button) */}
+  <div className="flex items-center">
     <Button
       variant="default"
       size="sm"
       onClick={() => navigate("/payments")}
+      className="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/80"
     >
       Buy Plan to Claim
     </Button>
-  )}
+  </div>
 </div>
 
-                    </div>
-                  );
-                })}
+
+
+      )}
+    </div>
+  );
+})}
+
               </div>
             )}
           </CardContent>
