@@ -87,61 +87,74 @@ export default function WedmacPlans() {
 
         const data: ApiPlan[] = await resp.json();
 
-   const uiPlans: UiPlan[] = (data || []).map((p) => {
-  const priceLabel = formatPrice(p.price ?? p.plan_price ?? null);
-  const months =
-    typeof p.duration_days === "number" && !Number.isNaN(p.duration_days)
-      ? Math.round(p.duration_days / 30)
-      : null;
-  const periodLabel = months ? `${months} ${months === 1 ? "month" : "months"}` : "—";
-  const rawFeatures = Array.isArray(p.features) ? p.features : [];
-  const features = rawFeatures.map(normalizeFeature).filter(Boolean);
-  const credits = p.total_credit_points ?? p.total_leads ?? null;
+        const uiPlans: UiPlan[] = (data || []).map((p) => {
+          const priceLabel = formatPrice(p.price ?? p.plan_price ?? null);
+   // replace the months/periodLabel logic with this robust logic
+const rawDays = p.duration_days;
+const days = typeof rawDays === "number"
+  ? rawDays
+  : (typeof rawDays === "string" && rawDays && (rawDays as string).trim() !== "" ? Number(rawDays) : NaN);
 
-  return {
-    id: String(p.id),
-    name: p.name ?? String(p.id),
-    priceLabel,
-    periodLabel,
-    credits: typeof credits === "number" ? credits : (credits == null ? null : Number(credits)),
-    features,
-    popular: false,
-    description: p.description ?? null,
-    createdAt: p.created_at ?? null,
-    raw: p,
-  };
-});
-
-// ✅ sort high → low by price
-const sortedPlans = [...uiPlans].sort((a, b) => {
-  const priceA = Number(
-    typeof a.raw?.price === "string"
-      ? a.raw.price.replace(/[^\d.-]/g, "")
-      : a.raw?.price ?? 0
-  );
-  const priceB = Number(
-    typeof b.raw?.price === "string"
-      ? b.raw.price.replace(/[^\d.-]/g, "")
-      : b.raw?.price ?? 0
-  );
-  return priceB - priceA; // high to low
-});
-
-// ✅ popular flag
-if (sortedPlans.length > 0) {
-  let best = sortedPlans[0];
-  for (const pl of sortedPlans) {
-    if ((pl.features?.length ?? 0) > (best.features?.length ?? 0)) best = pl;
-  }
-  const withFlag = sortedPlans.map((pl) => ({
-    ...pl,
-    popular: pl.id === best.id,
-  }));
-  if (mounted) setPlans(withFlag);
+let periodLabel: string;
+if (!Number.isFinite(days)) {
+  periodLabel = "—";
+} else if (days < 30 && days >= 1) {
+  // show days if less than 30
+  periodLabel = `${days} ${days === 1 ? "day" : "days"}`;
+} else if (days === 0) {
+  periodLabel = "0 days";
 } else {
-  if (mounted) setPlans(sortedPlans);
+  const monthsCount = Math.round(days / 30);
+  periodLabel = `${monthsCount} ${monthsCount === 1 ? "month" : "months"}`;
 }
 
+          const rawFeatures = Array.isArray(p.features) ? p.features : [];
+          const features = rawFeatures.map(normalizeFeature).filter(Boolean);
+          const credits = p.total_credit_points ?? p.total_leads ?? null;
+
+          return {
+            id: String(p.id),
+            name: p.name ?? String(p.id),
+            priceLabel,
+            periodLabel,
+            credits: typeof credits === "number" ? credits : (credits == null ? null : Number(credits)),
+            features,
+            popular: false,
+            description: p.description ?? null,
+            createdAt: p.created_at ?? null,
+            raw: p,
+          };
+        });
+
+        // ✅ sort high → low by price
+        const sortedPlans = [...uiPlans].sort((a, b) => {
+          const priceA = Number(
+            typeof a.raw?.price === "string"
+              ? a.raw.price.replace(/[^\d.-]/g, "")
+              : a.raw?.price ?? 0
+          );
+          const priceB = Number(
+            typeof b.raw?.price === "string"
+              ? b.raw.price.replace(/[^\d.-]/g, "")
+              : b.raw?.price ?? 0
+          );
+          return priceB - priceA; // high to low
+        });
+
+        // ✅ popular flag
+        if (sortedPlans.length > 0) {
+          let best = sortedPlans[0];
+          for (const pl of sortedPlans) {
+            if ((pl.features?.length ?? 0) > (best.features?.length ?? 0)) best = pl;
+          }
+          const withFlag = sortedPlans.map((pl) => ({
+            ...pl,
+            popular: pl.id === best.id,
+          }));
+          if (mounted) setPlans(withFlag);
+        } else {
+          if (mounted) setPlans(sortedPlans);
+        }
       } catch (err: any) {
         console.error("Fetch plans error:", err);
         if (mounted) setError(err?.message || "Failed to load plans");
@@ -237,12 +250,9 @@ if (sortedPlans.length > 0) {
     }
 
     const ordered: { group: string; features: string[] }[] = [];
-    // const order = ["Core", "Coverage", "Marketing", "Policies", "Support", "Extras", "Other"];
-    // for (const g of order) {
-    //   if (groups[g] && groups[g].length > 0) {
-    //     ordered.push({ group: g, features: groups[g] });
-    //   }
-    // }
+    // push only non-empty groups (keeps desktop unchanged because this matches previous behavior)
+
+ 
     return ordered;
   }, [allFeatures]);
 
@@ -259,24 +269,23 @@ if (sortedPlans.length > 0) {
   };
 
   // ---------- NEW: helpers to extract plan-specific attribute strings ----------
-const findFeaturesByKeywords = (plan: UiPlan | null, keywords: string[]) => {
-  if (!plan) return [];
-  const matches: string[] = [];
-  const low = plan.features.map((f) => (f || "").toLowerCase());
+  const findFeaturesByKeywords = (plan: UiPlan | null, keywords: string[]) => {
+    if (!plan) return [];
+    const matches: string[] = [];
+    const low = plan.features.map((f) => (f || "").toLowerCase());
 
-  for (const f of plan.features) {
-    const fl = (f || "").toLowerCase();
-    for (const k of keywords) {
-      if (fl.includes(k.toLowerCase())) {
-        matches.push(f);
-        break; // move to next feature once matched
+    for (const f of plan.features) {
+      const fl = (f || "").toLowerCase();
+      for (const k of keywords) {
+        if (fl.includes(k.toLowerCase())) {
+          matches.push(f);
+          break; // move to next feature once matched
+        }
       }
     }
-  }
 
-  return matches;
-};
-
+    return matches;
+  };
 
   const extractCity = (plan: UiPlan | null) =>
     findFeaturesByKeywords(plan, ["city access", "city"]);
@@ -298,6 +307,88 @@ const findFeaturesByKeywords = (plan: UiPlan | null, keywords: string[]) => {
 
   // Which index is the 4th plan? JS index: 3
   const highlightIndex = 3;
+
+  // ---------- MOBILE-FRIENDLY COMPARISON (visible only on small screens) ----------
+  const MobileComparison: React.FC = () => {
+    if (!plans || plans.length === 0) return null;
+
+    // sample rows to show first on mobile
+    const sampleRows = [
+      { key: "sample_city", label: "Sample Lead (City)", extractor: extractCity },
+      { key: "sample_budget", label: "Sample Lead (Budget)", extractor: extractBudget },
+      { key: "sample_social", label: "Social Media (story/post/reel)", extractor: extractSocial },
+      { key: "sample_support", label: "Support", extractor: extractSupport },
+      { key: "sample_extras", label: "Extras", extractor: extractExtras },
+      { key: "credits", label: "Leads (credits)", extractor: (p: UiPlan | null) => p ? [String(p.credits ?? "—")] : [] },
+      { key: "duration", label: "Duration", extractor: (p: UiPlan | null) => p ? [p.periodLabel] : [] },
+      { key: "price", label: "Price", extractor: (p: UiPlan | null) => p ? [p.priceLabel] : [] },
+    ];
+
+    return (
+      <div className="block md:hidden space-y-4">
+        {/* Legend */}
+        <div className="text-sm text-muted-foreground">
+          <strong>Legend:</strong>{" "}
+          <span className="inline-flex items-center gap-1">
+            <Check className="w-4 h-4 text-green-600" /> Available
+          </span>{" "}
+          — Not included
+        </div>
+
+        {/* Sample rows stacked */}
+        {sampleRows.map((row) => (
+          <div key={row.key} className="bg-white border rounded-md p-3">
+            <div className="font-medium mb-2">{row.label}</div>
+            <div className="space-y-2">
+              {plans.map((p, i) => (
+                <div key={p.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="font-semibold text-sm">{p.name}</div>
+                    <div className="text-xs text-muted-foreground">{p.priceLabel} · {p.periodLabel}</div>
+                  </div>
+                  <div className="text-sm text-right">
+                    {row.extractor(p).length > 0 ? row.extractor(p).join(", ") : "—"}
+                    {i === highlightIndex && row.key.startsWith("sample") && (
+                      <div className="text-xs text-muted-foreground mt-1">← 4th plan</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {/* All features collapsible list */}
+        <div className="space-y-2">
+     
+        </div>
+
+        {/* grouped features (if any) */}
+        {groupedFeatures.length > 0 && (
+          <div className="space-y-2">
+            {groupedFeatures.map((grp) => (
+              <div key={grp.group} className="border rounded-md bg-white">
+                <div className="px-3 py-2 font-semibold">{grp.group}</div>
+                <div className="px-3 py-2 space-y-2">
+                  {grp.features.map((feat) => (
+                    <div key={feat} className="space-y-1">
+                      <div className="text-sm font-medium">{feat}</div>
+                      {plans.map((p) => (
+                        <div key={p.id} className="flex items-center justify-between text-sm text-muted-foreground">
+                          <div>{p.name}</div>
+                          <div>{renderFeatureCell(p, feat)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Layout title="Wedmac Plans">
@@ -326,7 +417,8 @@ const findFeaturesByKeywords = (plan: UiPlan | null, keywords: string[]) => {
                     className={`relative ${plan.popular ? "ring-2 ring-primary shadow-lg" : ""}`}
                   >
                     {plan.popular && (
-                      <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      // responsive badge placement: slightly different top offset on small screens
+                      <div className="absolute md:-top-3 -top-2 left-1/2 transform -translate-x-1/2">
                         <Badge className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white px-3 py-1">
                           Most Popular
                         </Badge>
@@ -349,7 +441,8 @@ const findFeaturesByKeywords = (plan: UiPlan | null, keywords: string[]) => {
                     </CardHeader>
 
                     <CardContent className="space-y-4">
-                      <ul className="space-y-2 h-full pr-2">
+                      {/* mobile: cap list height to avoid huge cards; desktop: no cap */}
+                      <ul className="space-y-2 h-full pr-2 md:max-h-[none] max-h-40 overflow-auto md:overflow-visible">
                         {plan.features.length > 0 ? (
                           plan.features.map((feature, index) => (
                             <li key={index} className="flex items-start gap-2 text-sm">
@@ -391,7 +484,8 @@ const findFeaturesByKeywords = (plan: UiPlan | null, keywords: string[]) => {
                   — Not included
                 </div>
 
-                <div className="overflow-x-auto">
+                {/* Desktop table (unchanged) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="min-w-[720px] w-full text-sm border-collapse">
                     <thead>
                       <tr className="bg-gray-100 border-b">
@@ -441,8 +535,6 @@ const findFeaturesByKeywords = (plan: UiPlan | null, keywords: string[]) => {
                         ))}
                       </tr>
 
-                  
-
                       <tr className="bg-white">
                         <td className="py-3 px-4 font-medium border-r">Support</td>
                         {plans?.map((p, i) => (
@@ -454,15 +546,14 @@ const findFeaturesByKeywords = (plan: UiPlan | null, keywords: string[]) => {
 
                       <tr className="bg-white">
                         <td className="py-3 px-4 font-medium border-r">Extras</td>
-                    {plans?.map((p, i) => {
-  const extras = extractExtras(p);
-  return (
-    <td key={p.id} className={`text-center py-3 px-4 border-r ${i === highlightIndex ? "bg-yellow-50" : ""}`}>
-      {extras.length > 0 ? extras.join(", ") : "—"}
-    </td>
-  );
-})}
-
+                        {plans?.map((p, i) => {
+                          const extras = extractExtras(p);
+                          return (
+                            <td key={p.id} className={`text-center py-3 px-4 border-r ${i === highlightIndex ? "bg-yellow-50" : ""}`}>
+                              {extras.length > 0 ? extras.join(", ") : "—"}
+                            </td>
+                          );
+                        })}
                       </tr>
 
                       {/* ---------- Quick metadata: Credits / Duration / Price (kept below sample) ---------- */}
@@ -526,6 +617,11 @@ const findFeaturesByKeywords = (plan: UiPlan | null, keywords: string[]) => {
                       </tr>
                     </tbody>
                   </table>
+                </div>
+
+                {/* Mobile-friendly comparison (visible only on small screens) */}
+                <div className="block md:hidden">
+                  <MobileComparison />
                 </div>
               </CardContent>
             </Card>
