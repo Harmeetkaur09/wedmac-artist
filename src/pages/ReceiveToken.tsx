@@ -41,57 +41,32 @@ export default function ReceiveToken() {
       return true;
     }
 
-    function handleMessage(e: MessageEvent) {
-      console.log("🔔 ReceiveToken got message");
-      console.log("  → origin:", e.origin);
-      console.log("  → data:", e.data);
-      console.log("  → source:", e.source);
-      console.log("  → my location.origin:", window.location.origin);
-      console.log("  → allowed origins:", ALLOWED_ADMIN_ORIGINS);
+  function handleMessage(e: MessageEvent) {
+  console.log("🔔 ReceiveToken got message", e.origin, e.data, "opener:", !!window.opener);
 
-      // 1) Accept only messages FROM THE OPENER (if opener exists).
-      if (window.opener && e.source !== window.opener) {
-        console.warn(
-          "🔸 Ignored: sender is not the opener (probably an extension/other script).",
-          e.origin,
-          e.data
-        );
-        return;
-      }
+  // Accept messages from allowed admin origins
+  if (!ALLOWED_ADMIN_ORIGINS.includes(e.origin)) {
+    console.warn("❌ Rejected message from origin:", e.origin);
+    return;
+  }
 
-      // 2) Basic origin check for extra safety
-      if (
-        !ALLOWED_ADMIN_ORIGINS.includes(e.origin) &&
-        e.origin !== window.location.origin
-      ) {
-        console.warn("❌ Rejected message from origin:", e.origin);
-        return;
-      }
+  // We accept object payloads that contain token fields
+  if (!e.data || typeof e.data !== "object") {
+    console.warn("🔸 Ignored non-object message:", e.data);
+    return;
+  }
 
-      // 3) We only accept object payloads with token fields
-      if (!e.data || typeof e.data !== "object") {
-        console.warn(
-          "🔸 Ignored non-object message (likely internal/extension):",
-          e.data
-        );
-        return;
-      }
+  // process token payload if present
+  if (e.data.access || e.data.accessToken || e.data.refresh || e.data.user_id) {
+    processTokenData(e.data);
+  } else if (e.data.type === "ping") {
+    // a harmless handshake — ignore or reply
+    console.log("ping from admin");
+  } else {
+    console.warn("🔸 Received object but no tokens found — ignored:", e.data);
+  }
+}
 
-      // 4) Finally, process if it has token fields
-      if (
-        e.data.access ||
-        e.data.accessToken ||
-        e.data.refresh ||
-        e.data.user_id
-      ) {
-        processTokenData(e.data);
-      } else {
-        console.warn(
-          "🔸 Received object but no tokens found — ignored:",
-          e.data
-        );
-      }
-    }
 
     // IMPORTANT: register listener BEFORE telling opener we're ready.
     window.addEventListener("message", handleMessage, false);
