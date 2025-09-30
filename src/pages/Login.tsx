@@ -50,8 +50,8 @@ const Login = () => {
     const refresh = params.get("refresh");
 
     if (access) {
-      sessionStorage.setItem("accessToken", access);
-      if (refresh) sessionStorage.setItem("refreshToken", refresh);
+      localstorage.setItem("accessToken", access);
+      if (refresh) localstorage.setItem("refreshToken", refresh);
 
       // ✅ redirect to profile/dashboard
       window.location.href = "/profile";
@@ -84,13 +84,16 @@ const Login = () => {
       const body = await res.json();
       console.log("DEBUG RESPONSE:", body);
 
-if (!res.ok) {
-  if (body.error === "User is inactive.") {
-    throw new Error("Your Account is Inactive, Please Contact Admin.");
-  }
-  throw new Error(    body.error || body.message || "Failed to send OTP, Please Sign In First"
-);
-}
+      if (!res.ok) {
+        if (body.error === "User is inactive.") {
+          throw new Error("Your Account is Inactive, Please Contact Admin.");
+        }
+        throw new Error(
+          body.error ||
+            body.message ||
+            "Failed to send OTP, Please Sign In First"
+        );
+      }
 
       setStep("otp");
     } catch (err: unknown) {
@@ -120,10 +123,10 @@ if (!res.ok) {
       const body = await res.json();
       if (!res.ok) throw new Error(body.message || "Invalid OTP");
 
-      sessionStorage.setItem("accessToken", body.access);
-      sessionStorage.setItem("refreshToken", body.refresh);
-      sessionStorage.setItem("userRole", body.role);
-      sessionStorage.setItem("userId", String(body.user_id));
+      localstorage.setItem("accessToken", body.access);
+      localstorage.setItem("refreshToken", body.refresh);
+      localstorage.setItem("userRole", body.role);
+      localstorage.setItem("userId", String(body.user_id));
       login({
         access: body.access,
         refresh: body.refresh,
@@ -326,12 +329,15 @@ if (!res.ok) {
         <div className="absolute inset-0 bg-gradient-to-r from-black/0 via-black/30 to-black/0" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 flex flex-col items-center justify-center h-full">
-      <h1 className="text-[2.5rem] md:text-[3.5rem] Gilroy">
-             Be the Reason They Can’t<br/>Take Their Eyes Off You
-            </h1>
-            <p className="text-lg md:text-xl font-gilroy font-400 opacity-90">
-         From weddings to celebrations, we design looks that turn admiration into memories.
-            </p>
+          <h1 className="text-[2.5rem] md:text-[3.5rem] Gilroy">
+            Be the Reason They Can’t
+            <br />
+            Take Their Eyes Off You
+          </h1>
+          <p className="text-lg md:text-xl font-gilroy font-400 opacity-90">
+            From weddings to celebrations, we design looks that turn admiration
+            into memories.
+          </p>
         </div>
       </section>
 

@@ -282,12 +282,11 @@ export default function MyProfile() {
         if (Array.isArray(data.id_documents_data)) {
           setIdDocs(data.id_documents_data);
         }
-            if (typeof window !== "undefined") {
-        if (data.id !== undefined && data.id !== null) {
-          sessionStorage.setItem("user_Id", String(data.id));
+        if (typeof window !== "undefined") {
+          if (data.id !== undefined && data.id !== null) {
+            localstorage.setItem("user_Id", String(data.id));
+          }
         }
-     
-      }
       } catch (err) {
         const msg = await parseErrorMessage(err);
         console.error(err);
@@ -302,36 +301,35 @@ export default function MyProfile() {
     };
   }, []);
 
- const handleFileUpload = async (
-  files: FileList | null,
-  tag: "profile-photo" | "portfolio" | "certificate" | "id-document"
-) => {
-  if (!files?.length) return;
-  setLoading(true);
-  try {
-    const uploadedDocs: DocumentData[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const newDoc = await uploadDocument(
-        file,
-        file.type.startsWith("image") ? "image" : "pdf",
-        tag
-      );
-      uploadedDocs.push(newDoc);
+  const handleFileUpload = async (
+    files: FileList | null,
+    tag: "profile-photo" | "portfolio" | "certificate" | "id-document"
+  ) => {
+    if (!files?.length) return;
+    setLoading(true);
+    try {
+      const uploadedDocs: DocumentData[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const newDoc = await uploadDocument(
+          file,
+          file.type.startsWith("image") ? "image" : "pdf",
+          tag
+        );
+        uploadedDocs.push(newDoc);
+      }
+
+      if (tag === "profile-photo") setProfilePhoto(uploadedDocs[0]);
+      if (tag === "portfolio") setPortfolioDocs((d) => [...d, ...uploadedDocs]);
+      if (tag === "certificate") setCertDocs((d) => [...d, ...uploadedDocs]);
+      if (tag === "id-document") setIdDocs((d) => [...d, ...uploadedDocs]);
+    } catch (e: unknown) {
+      if (e instanceof Error) setError(e.message);
+      else setError("An unknown error occurred");
+    } finally {
+      setLoading(false);
     }
-
-    if (tag === "profile-photo") setProfilePhoto(uploadedDocs[0]);
-    if (tag === "portfolio") setPortfolioDocs((d) => [...d, ...uploadedDocs]);
-    if (tag === "certificate") setCertDocs((d) => [...d, ...uploadedDocs]);
-    if (tag === "id-document") setIdDocs((d) => [...d, ...uploadedDocs]);
-  } catch (e: unknown) {
-    if (e instanceof Error) setError(e.message);
-    else setError("An unknown error occurred");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const handleSave = async () => {
     if (!profile_picture_data) {
@@ -538,7 +536,7 @@ export default function MyProfile() {
           {/* Payment Methods */}
           <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2">
                 <CreditCard />
                 Payment Type
               </CardTitle>
@@ -871,11 +869,12 @@ export default function MyProfile() {
                 value={facebookLink}
                 onChange={(e) => setFacebookLink(e.target.value)}
               />
-                <Input
+              <Input
                 placeholder="YouTube URL"
                 value={ytLink}
                 onChange={(e) => setYTLink(e.target.value)}
-              />  <Input
+              />{" "}
+              <Input
                 placeholder="Twitter URL"
                 value={twitterLink}
                 onChange={(e) => setTwitterLink(e.target.value)}

@@ -117,70 +117,65 @@ export default function Support() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("open");
   const [loadingTickets, setLoadingTickets] = useState(false);
-const [profile, setProfile] = useState<{
-  plan_name?: string;
-  plan_price?: string;
-  plan_valid_until?: string;
-  available_leads?: number;
-}>({});
+  const [profile, setProfile] = useState<{
+    plan_name?: string;
+    plan_price?: string;
+    plan_valid_until?: string;
+    available_leads?: number;
+  }>({});
 
+  const fetchProfile = async () => {
+    const token = getToken();
+    if (!token) return;
 
-const fetchProfile = async () => {
-  const token = getToken();
-  if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/artists/my-profile/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Profile fetch failed");
+      const data = await res.json();
 
-  try {
-    const res = await fetch(`${API_BASE}/api/artists/my-profile/`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error("Profile fetch failed");
-    const data = await res.json();
+      const plan = data.current_plan;
 
-    const plan = data.current_plan;
+      setProfile({
+        plan_name: plan?.name || "—",
+        plan_price: plan?.price
+          ? `₹${Number(plan.price).toLocaleString()}`
+          : "—",
+        available_leads: data?.available_leads ?? 0,
+        plan_valid_until: plan
+          ? new Date(
+              new Date(data.plan_purchase_date).setDate(
+                new Date(data.plan_purchase_date).getDate() +
+                  plan.duration_days +
+                  data.extended_days || 0
+              )
+            ).toLocaleDateString()
+          : undefined,
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-    setProfile({
-      plan_name: plan?.name || "—",
-      plan_price: plan?.price
-        ? `₹${Number(plan.price).toLocaleString()}`
-        : "—",
-      available_leads: data?.available_leads ?? 0,
-plan_valid_until: plan
-  ? new Date(
-      new Date(data.plan_purchase_date).setDate(
-        new Date(data.plan_purchase_date).getDate() + plan.duration_days + data.extended_days || 0
-      )
-    ).toLocaleDateString()
-  : undefined,
-
-    });
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-
-
-useEffect(() => {
-  fetchProfile();
-}, []);
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   // helper: robust token detection
   const getToken = () => {
     try {
       const anyWindow = window as any;
-      // sessionStorage.authData (object)
-      if (
-        anyWindow.sessionStorage &&
-        (anyWindow.sessionStorage as any).authData
-      ) {
-        const maybe = (anyWindow.sessionStorage as any).authData;
+      // localstorage.authData (object)
+      if (anyWindow.localstorage && (anyWindow.localstorage as any).authData) {
+        const maybe = (anyWindow.localstorage as any).authData;
         if (maybe && typeof maybe === "object" && maybe.token)
           return maybe.token;
       }
       // common keys
       const candidates = ["authData", "accessToken", "token"];
       for (const key of candidates) {
-        const raw = window.sessionStorage.getItem(key);
+        const raw = window.localstorage.getItem(key);
         if (!raw) continue;
         // try parse JSON
         try {
@@ -207,8 +202,6 @@ useEffect(() => {
     }
   };
 
-
-  
   // fetch credits history and set currentPlan using latest entry (results[0])
   const fetchCreditsHistory = async () => {
     const token = getToken();
@@ -437,7 +430,6 @@ useEffect(() => {
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Plan</p>
                   <PlanBadge plan={profile.plan_name || "—"} />
-
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Price</p>
@@ -456,7 +448,9 @@ useEffect(() => {
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Total Leads</p>
-                  <p className="text-2xl font-bold">{profile.available_leads}</p>
+                  <p className="text-2xl font-bold">
+                    {profile.available_leads}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -529,39 +523,51 @@ useEffect(() => {
               />
             </div>
 
-           <Button
-      className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
-      onClick={handleCreateTicket}
-      disabled={creating}
-    >
-      {creating ? "Submitting..." : "Submit Ticket"}
-    </Button>
+            <Button
+              className="bg-gradient-to-r from-[#FF577F] to-[#E6447A] text-white"
+              onClick={handleCreateTicket}
+              disabled={creating}
+            >
+              {creating ? "Submitting..." : "Submit Ticket"}
+            </Button>
 
-    {/* Company Info Section */}
-    <div className="pt-6 border-t mt-6 text-sm text-muted-foreground">
-      <p className="font-semibold">Company: 
-      <span> Wedmac India</span></p>
+            {/* Company Info Section */}
+            <div className="pt-6 border-t mt-6 text-sm text-muted-foreground">
+              <p className="font-semibold">
+                Company:
+                <span> Wedmac India</span>
+              </p>
 
-      <p className="font-semibold mt-2">Website:
-      <span>
-      <a
-        href="https://www.wedmacindia.com"
-        target="_blank"
-        rel="noreferrer"
-        className="text-primary underline"
-      > https://wed-mac-qsxz.vercel.app/
-      </a></span></p>
+              <p className="font-semibold mt-2">
+                Website:
+                <span>
+                  <a
+                    href="https://www.wedmacindia.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary underline"
+                  >
+                    {" "}
+                    https://wed-mac-qsxz.vercel.app/
+                  </a>
+                </span>
+              </p>
 
-      <p className="font-semibold mt-2">Email:
-      <span>
-      <a
-        href="mailto:support@wedmacindia.com"
-        className="text-primary underline"
-      > support@wedmacindia.com
-      </a></span></p>
-    </div>
-  </CardContent>
-</Card>
+              <p className="font-semibold mt-2">
+                Email:
+                <span>
+                  <a
+                    href="mailto:support@wedmacindia.com"
+                    className="text-primary underline"
+                  >
+                    {" "}
+                    support@wedmacindia.com
+                  </a>
+                </span>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
         {/* Tickets list */}
         <Card>
           <CardHeader>

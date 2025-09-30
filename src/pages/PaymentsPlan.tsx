@@ -127,45 +127,44 @@ export default function PaymentsPlan(): JSX.Element {
     !loading &&
     Boolean(selectedPlanData && Object.keys(selectedPlanData).length > 0);
 
-    useEffect(() => {
+  useEffect(() => {
     const fetchProfile = async () => {
       try {
         const profile = await getMyProfile();
 
         const plan = profile?.current_plan;
-    if (plan) {
-  const purchaseDate = profile.plan_purchase_date
-    ? new Date(profile.plan_purchase_date).getTime()
-    : null;
+        if (plan) {
+          const purchaseDate = profile.plan_purchase_date
+            ? new Date(profile.plan_purchase_date).getTime()
+            : null;
 
-  const durationDays = plan.duration_days ?? 0;
-  const extendedDays = profile.extended_days ?? 0;
-  const totalDays = durationDays + extendedDays;
+          const durationDays = plan.duration_days ?? 0;
+          const extendedDays = profile.extended_days ?? 0;
+          const totalDays = durationDays + extendedDays;
 
-  const expiryTs =
-    purchaseDate && totalDays
-      ? purchaseDate + totalDays * 24 * 60 * 60 * 1000
-      : null;
+          const expiryTs =
+            purchaseDate && totalDays
+              ? purchaseDate + totalDays * 24 * 60 * 60 * 1000
+              : null;
 
-  console.log("🟢 purchase_date:", profile.plan_purchase_date);
-  console.log("🟢 duration_days:", durationDays);
-  console.log("🟢 extended_days:", extendedDays);
-  console.log("🟢 expiry date:", expiryTs ? new Date(expiryTs) : null);
+          console.log("🟢 purchase_date:", profile.plan_purchase_date);
+          console.log("🟢 duration_days:", durationDays);
+          console.log("🟢 extended_days:", extendedDays);
+          console.log("🟢 expiry date:", expiryTs ? new Date(expiryTs) : null);
 
-  setCurrentPlan({
-    name: plan.name,
-    price: plan.price ? `₹${plan.price}` : undefined,
-    validUntil: expiryTs
-      ? new Date(expiryTs).toLocaleDateString("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })
-      : undefined,
-    credits: profile.available_leads ?? 0,
-  });
-}
-
+          setCurrentPlan({
+            name: plan.name,
+            price: plan.price ? `₹${plan.price}` : undefined,
+            validUntil: expiryTs
+              ? new Date(expiryTs).toLocaleDateString("en-IN", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+              : undefined,
+            credits: profile.available_leads ?? 0,
+          });
+        }
       } catch (err) {
         console.error("❌ Failed to fetch profile:", err);
       }
@@ -174,50 +173,47 @@ export default function PaymentsPlan(): JSX.Element {
     fetchProfile();
   }, []);
 
+  useEffect(() => {
+    const fetchPayments = async () => {
+      try {
+        setLoadingPayments(true);
 
-useEffect(() => {
-  const fetchPayments = async () => {
-    try {
-      setLoadingPayments(true);
+        const token = localstorage.getItem("accessToken") ?? "";
+        const res = await fetch(
+          "https://api.wedmacindia.com/api/artists/payments/history/",
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              "Content-Type": "application/json",
+            },
+          }
+        );
 
-      const token = sessionStorage.getItem("accessToken") ?? "";
-      const res = await fetch(
-        "https://api.wedmacindia.com/api/artists/payments/history/",
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            "Content-Type": "application/json",
-          },
-        }
-      );
+        if (!res.ok) throw new Error("Failed to fetch payment history");
+        const data = await res.json();
 
-      if (!res.ok) throw new Error("Failed to fetch payment history");
-      const data = await res.json();
+        const results = (data.results || []) as PaymentApiItem[];
 
-      const results = (data.results || []) as PaymentApiItem[];
+        const transformed: Payment[] = results.map((item) => ({
+          id: item.id,
+          date: item.dates?.created_at ?? "",
+          description: item.plan?.name ?? "N/A",
+          amount: item.plan?.price ? `₹${item.plan.price}` : "-",
+          status: item.payment?.status === "success" ? "Completed" : "Pending",
+          method: "Razorpay",
+        }));
 
-      const transformed: Payment[] = results.map((item) => ({
-        id: item.id,
-        date: item.dates?.created_at ?? "",
-        description: item.plan?.name ?? "N/A",
-        amount: item.plan?.price ? `₹${item.plan.price}` : "-",
-        status: item.payment?.status === "success" ? "Completed" : "Pending",
-        method: "Razorpay",
-      }));
+        setPaymentHistory(transformed);
+      } catch (err: unknown) {
+        if (err instanceof Error) setErrorPayments(err.message);
+        else setErrorPayments(String(err));
+      } finally {
+        setLoadingPayments(false);
+      }
+    };
 
-      setPaymentHistory(transformed);
-    } catch (err: unknown) {
-      if (err instanceof Error) setErrorPayments(err.message);
-      else setErrorPayments(String(err));
-    } finally {
-      setLoadingPayments(false);
-    }
-  };
-
-  fetchPayments();
-}, []);
-
-
+    fetchPayments();
+  }, []);
 
   useEffect(() => {
     const fetchPlans = async () => {
@@ -265,7 +261,7 @@ useEffect(() => {
       let rzpScript: HTMLScriptElement | null = null;
 
       try {
-        const token = sessionStorage.getItem("accessToken") ?? "";
+        const token = localstorage.getItem("accessToken") ?? "";
 
         const res = await fetch(
           `https://api.wedmacindia.com/api/artists/plans/${planId}/purchase/`,
@@ -485,7 +481,6 @@ useEffect(() => {
               onClick={() => {
                 setShowQR(false);
                 alert("Payment completed successfully!");
-
               }}
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
@@ -647,10 +642,11 @@ useEffect(() => {
                       </TableCell>
                       <TableCell>{payment.method}</TableCell>
                       <TableCell>
-                      <Badge className={getStatusColor(payment.status)}>
-  {payment.status === "Pending" ? "Failed" : payment.status}
-</Badge>
-
+                        <Badge className={getStatusColor(payment.status)}>
+                          {payment.status === "Pending"
+                            ? "Failed"
+                            : payment.status}
+                        </Badge>
                       </TableCell>
                     </TableRow>
                   ))}

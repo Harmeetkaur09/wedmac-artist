@@ -40,7 +40,6 @@ interface Lead {
   created_at: string;
 }
 
-
 interface Summary {
   new_this_week: number;
   total_this_month: number;
@@ -70,17 +69,21 @@ export function Dashboard({ phone }: { phone?: string }) {
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-const [isAdminCreated, setIsAdminCreated] = useState(false);
+  const [isAdminCreated, setIsAdminCreated] = useState(false);
 
   // subscription / credits state
   const [subscriptionValid, setSubscriptionValid] = useState<boolean>(true);
   const [creditsAvailable, setCreditsAvailable] = useState<number | null>(null);
-  const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<number | null>(null);
+  const [subscriptionExpiresAt, setSubscriptionExpiresAt] = useState<
+    number | null
+  >(null);
   const [planTotalLeads, setPlanTotalLeads] = useState<number | null>(null);
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
 
   // per-lead UI state
-  const [selectedContactId, setSelectedContactId] = useState<number | null>(null);
+  const [selectedContactId, setSelectedContactId] = useState<number | null>(
+    null
+  );
   const [remarkingLeadId, setRemarkingLeadId] = useState<number | null>(null);
   const [remarkText, setRemarkText] = useState("");
 
@@ -93,12 +96,11 @@ const [isAdminCreated, setIsAdminCreated] = useState(false);
 
   // claimed map: { "<leadId>": timestampMs }  (kept for legacy 24h-visibility if needed)
   const [claimedMap, setclaimedMap] = useState<Record<string, number>>({});
-const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Toast stateUp
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastId = useRef(1);
-
 
   // Adds a toast and auto-removes after 3s
   const addToast = (message: string, type: ToastType = "success") => {
@@ -142,125 +144,121 @@ const [searchQuery, setSearchQuery] = useState("");
     }
   };
 
-  
   // fetch profile + leads + credits history
-useEffect(() => {
-  const fetchAll = async () => {
-    try {
-      console.log("Starting fetchAll"); 
-      setLoading(true);
-      const profileData = await getMyProfile();
-      setProfile(profileData);
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        console.log("Starting fetchAll");
+        setLoading(true);
+        const profileData = await getMyProfile();
+        setProfile(profileData);
 
-      if (profileData?.created_by_admin === true) {
-        setIsAdminCreated(true);
-        setSubscriptionValid(true);
-  setCreditsAvailable(profileData.available_leads ?? 0); // ✅ leads dikha do
-      } else {
-        const plan = profileData.current_plan;
-        const purchaseDate = profileData.plan_purchase_date
-          ? new Date(profileData.plan_purchase_date).getTime()
-          : null;
-
-        const durationDays = plan?.duration_days || 0;
-        const extendedDays = plan?.extended_days || 0; // agar backend bhejta hai
-        const totalDays = durationDays + extendedDays;
-
-        // 🔹 expiry calculate
-        const expiryTs =
-          purchaseDate && totalDays
-            ? purchaseDate + totalDays * 24 * 60 * 60 * 1000
+        if (profileData?.created_by_admin === true) {
+          setIsAdminCreated(true);
+          setSubscriptionValid(true);
+          setCreditsAvailable(profileData.available_leads ?? 0); // ✅ leads dikha do
+        } else {
+          const plan = profileData.current_plan;
+          const purchaseDate = profileData.plan_purchase_date
+            ? new Date(profileData.plan_purchase_date).getTime()
             : null;
 
-        setSubscriptionId(plan?.id ?? null);
-        setPlanTotalLeads(plan?.total_leads ?? null);
-        setSubscriptionExpiresAt(expiryTs); // yaha set ho raha hai
-  setCreditsAvailable(profileData.available_leads ?? 0); // ✅ leads dikha do
+          const durationDays = plan?.duration_days || 0;
+          const extendedDays = plan?.extended_days || 0; // agar backend bhejta hai
+          const totalDays = durationDays + extendedDays;
 
-        const now = Date.now();
-        if (plan && profileData.plan_verified && expiryTs && expiryTs > now) {
-          setSubscriptionValid(true);
-        } else {
-          setSubscriptionValid(false);
+          // 🔹 expiry calculate
+          const expiryTs =
+            purchaseDate && totalDays
+              ? purchaseDate + totalDays * 24 * 60 * 60 * 1000
+              : null;
+
+          setSubscriptionId(plan?.id ?? null);
+          setPlanTotalLeads(plan?.total_leads ?? null);
+          setSubscriptionExpiresAt(expiryTs); // yaha set ho raha hai
+          setCreditsAvailable(profileData.available_leads ?? 0); // ✅ leads dikha do
+
+          const now = Date.now();
+          if (plan && profileData.plan_verified && expiryTs && expiryTs > now) {
+            setSubscriptionValid(true);
+          } else {
+            setSubscriptionValid(false);
+          }
         }
+
+        // 🔹 Leads fetch karo
+        const token = localstorage.getItem("accessToken");
+        const leadsRes = await fetch(
+          "https://api.wedmacindia.com/api/leads/all-leads/",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (!leadsRes.ok) throw new Error("Failed to fetch leads");
+        const leadsData = await leadsRes.json();
+        setSummary(leadsData.summary);
+        setLeads(leadsData.leads || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-      
+    };
 
-      // 🔹 Leads fetch karo
-      const token = sessionStorage.getItem("accessToken");
-      const leadsRes = await fetch("https://api.wedmacindia.com/api/leads/all-leads/", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-      if (!leadsRes.ok) throw new Error("Failed to fetch leads");
-      const leadsData = await leadsRes.json();
-      setSummary(leadsData.summary);
-      setLeads(leadsData.leads || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+    fetchAll();
+  }, []);
+  const planInfoText = useMemo(() => {
+    if (!profile?.current_plan) return "No active plan";
+
+    const planName = profile.current_plan.name || "Unnamed Plan";
+    const purchaseDate = profile.plan_purchase_date
+      ? new Date(profile.plan_purchase_date)
+      : null;
+
+    const durationDays = profile.current_plan.duration_days || 0;
+    const extendedDays = profile.extended_days || 0;
+    const totalDays = durationDays + extendedDays;
+
+    if (!purchaseDate) return `${planName} (No purchase date)`;
+
+    const expiryDate = new Date(
+      purchaseDate.getTime() + totalDays * 24 * 60 * 60 * 1000
+    );
+
+    const now = Date.now();
+    const diff = expiryDate.getTime() - now;
+
+    const expiryText = expiryDate.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+
+    if (diff <= 0) {
+      return `${planName} (Expired on ${expiryText})`;
     }
-  };
 
-  fetchAll();
-}, []);
-const planInfoText = useMemo(() => {
-  if (!profile?.current_plan) return "No active plan";
+    const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-  const planName = profile.current_plan.name || "Unnamed Plan";
-  const purchaseDate = profile.plan_purchase_date
-    ? new Date(profile.plan_purchase_date)
-    : null;
-
-  const durationDays = profile.current_plan.duration_days || 0;
-  const extendedDays = profile.extended_days || 0;
-  const totalDays = durationDays + extendedDays;
-
-  if (!purchaseDate) return `${planName} (No purchase date)`;  
-
-  const expiryDate = new Date(
-    purchaseDate.getTime() + totalDays * 24 * 60 * 60 * 1000
-  );
-
-  const now = Date.now();
-  const diff = expiryDate.getTime() - now;
-
-  const expiryText = expiryDate.toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
-  if (diff <= 0) {
-    return `${planName} (Expired on ${expiryText})`;
-  }
-
-  const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-  return `${planName} — Purchased: ${purchaseDate.toLocaleDateString(
-    "en-IN"
-  )} → Ends on ${expiryText} (${daysLeft} days left)`;
-}, [profile]);
-
-
-
-
-
-
+    return `${planName} — Purchased: ${purchaseDate.toLocaleDateString(
+      "en-IN"
+    )} → Ends on ${expiryText} (${daysLeft} days left)`;
+  }, [profile]);
 
   const visibleLeads = showAll ? leads : leads.slice(0, 3);
   const filteredLeads = useMemo(() => {
-  if (!searchQuery) return visibleLeads;
-  const q = searchQuery.toLowerCase();
-  return visibleLeads.filter((lead) =>
-    `${lead.first_name} ${lead.last_name}`.toLowerCase().includes(q) ||
-    lead.location?.toLowerCase().includes(q) ||
-    lead.event_type?.toLowerCase().includes(q)
-  );
-}, [visibleLeads, searchQuery]);
+    if (!searchQuery) return visibleLeads;
+    const q = searchQuery.toLowerCase();
+    return visibleLeads.filter(
+      (lead) =>
+        `${lead.first_name} ${lead.last_name}`.toLowerCase().includes(q) ||
+        lead.location?.toLowerCase().includes(q) ||
+        lead.event_type?.toLowerCase().includes(q)
+    );
+  }, [visibleLeads, searchQuery]);
 
   // Save remark locally (localStorage)
   const submitRemark = (leadId: number) => {
@@ -290,7 +288,8 @@ const planInfoText = useMemo(() => {
   const claimLead = async (leadId: number) => {
     // guard: subscription must be valid
     if (!subscriptionValid) {
-      const msg = "Your subscription is expired. Purchase a plan to continue claiming leads.";
+      const msg =
+        "Your subscription is expired. Purchase a plan to continue claiming leads.";
       setClaimErrors((prev) => ({ ...prev, [leadId]: msg }));
       addToast(msg, "error");
       return;
@@ -299,8 +298,12 @@ const planInfoText = useMemo(() => {
     // guard: credits must be available
     // Note: we assume each lead costs 1 credit. Change requiredCreditsPerLead if different.
     const requiredCreditsPerLead = 1;
-    if (creditsAvailable !== null && creditsAvailable < requiredCreditsPerLead) {
-      const msg = "Insufficient lead credits. Purchase/renew plan to get more leads.";
+    if (
+      creditsAvailable !== null &&
+      creditsAvailable < requiredCreditsPerLead
+    ) {
+      const msg =
+        "Insufficient lead credits. Purchase/renew plan to get more leads.";
       setClaimErrors((prev) => ({ ...prev, [leadId]: msg }));
       addToast(msg, "error");
       return;
@@ -311,7 +314,7 @@ const planInfoText = useMemo(() => {
     setClaimingLeadId(leadId);
 
     try {
-      const token = sessionStorage.getItem("accessToken");
+      const token = localstorage.getItem("accessToken");
       const res = await fetch(
         `https://api.wedmacindia.com/api/leads/${leadId}/claim/`,
         {
@@ -367,11 +370,15 @@ const planInfoText = useMemo(() => {
           setCreditsAvailable((data as any).credits_after);
         } else {
           // otherwise decrement local creditsAvailable by requiredCreditsPerLead
-          setCreditsAvailable((prev) => (prev !== null ? prev - requiredCreditsPerLead : prev));
+          setCreditsAvailable((prev) =>
+            prev !== null ? prev - requiredCreditsPerLead : prev
+          );
         }
       } else {
         // decrement local creditsAvailable by requiredCreditsPerLead
-        setCreditsAvailable((prev) => (prev !== null ? prev - requiredCreditsPerLead : prev));
+        setCreditsAvailable((prev) =>
+          prev !== null ? prev - requiredCreditsPerLead : prev
+        );
       }
 
       // ✅ show success toast
@@ -437,220 +444,222 @@ const planInfoText = useMemo(() => {
           <p className="text-muted-foreground mt-1">
             Welcome back! Here's your overview
           </p>
-   <div className="mb-4 text-sm text-black">
-  <div><strong>Plan:</strong> {planInfoText}</div>
-  <div><strong>Leads:</strong> {creditsAvailable ?? 0}</div>
-</div>
-
+          <div className="mb-4 text-sm text-black">
+            <div>
+              <strong>Plan:</strong> {planInfoText}
+            </div>
+            <div>
+              <strong>Leads:</strong> {creditsAvailable ?? 0}
+            </div>
+          </div>
         </div>
-
 
         <div className="flex items-center gap-3"></div>
       </div>
 
       {/* Stats Grid */}
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-  {/* New Leads This Week */}
-  <StatCard
-    title="Week New Leads"
-    value={leads.filter((lead) => {
-      const createdAt = new Date(lead.created_at);
-      const now = new Date();
-      const weekAgo = new Date();
-      weekAgo.setDate(now.getDate() - 7);
-      return createdAt >= weekAgo;
-    }).length}
-    icon={TrendingUp}
-  />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+        {/* New Leads This Week */}
+        <StatCard
+          title="Week New Leads"
+          value={
+            leads.filter((lead) => {
+              const createdAt = new Date(lead.created_at);
+              const now = new Date();
+              const weekAgo = new Date();
+              weekAgo.setDate(now.getDate() - 7);
+              return createdAt >= weekAgo;
+            }).length
+          }
+          icon={TrendingUp}
+        />
 
-  {/* Total Leads (from frontend leads array) */}
-  <StatCard
-    title="Total Leads"
-    value={leads.length}
-    icon={Users}
-  />
-</div>
-
+        {/* Total Leads (from frontend leads array) */}
+        <StatCard title="Total Leads" value={leads.length} icon={Users} />
+      </div>
 
       {/* Recent Leads / or subscription expired message */}
-  
-        <Card className="shadow-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-semibold">Recent Leads</CardTitle>
-              {!loading && leads.length > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="hover:bg-primary/10 hover:text-primary"
-                  onClick={() => setShowAll((prev) => !prev)}
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  {showAll ? "Show Less" : "View All"}
-                </Button>
-              )}
-            </div>
-            <div className="mb-4">
-  <input
-    type="text"
-    placeholder="Search by name, location, or event type..."
-    value={searchQuery}
-    onChange={(e) => setSearchQuery(e.target.value)}
-    className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-  />
-</div>
 
-          </CardHeader>
-
-          <CardContent>
-            {loading ? (
-              <p className="text-center text-muted-foreground py-6">
-                ⏳ Loading leads...
-              </p>
-            ) : leads.length === 0 ? (
-              <p className="text-center text-muted-foreground py-6">
-                No leads available.
-              </p>
-            ) : (
-              <div className="space-y-4">
-{filteredLeads.map((lead) => {
-  const phoneVisible = isContactVisible(lead);
-  const contactDisabled = isLeadContactDisabled(lead);
-
-  return (
-    <div
-      key={lead.id}
-      className="relative block md:flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
-    >
-      {subscriptionValid ? (
-        // ✅ Subscription Active: Full Lead Details
-        <>
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <h3 className="font-medium text-foreground">
-                {lead.first_name} {lead.last_name}
-              </h3>
-            </div>
-
-            <div className="block md:flex items-center gap-4 text-sm text-muted-foreground">
-              <span>{lead.service}</span>
-
-              {/* Booking Date */}
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                <span>Booking: {lead.booking_date}</span>
-              </div>
-
-              {/* Created At */}
-              <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                <span>
-                  Created:{" "}
-                  {new Date(lead.created_at).toLocaleDateString("en-IN", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <IndianRupee className="w-3 h-3" />
-                <span>{lead.budget_range?.min_value ?? "N/A"}</span>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
-                <span>{lead.location}</span>
-              </div>
-
-              <div className="flex items-center gap-1">
-                <PartyPopper className="w-3 h-3" />
-                <span>{lead.event_type}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center w-80 gap-4 text-sm text-muted-foreground">
-              <span className="break-words whitespace-normal min-w-0">
-                {lead.requirements}
-              </span>
-            </div>
-
-            {/* Saved Remark */}
-            {remarks[lead.id] && (
-              <div className="mt-2 text-sm text-muted-foreground italic">
-                <strong>Remark:</strong> {remarks[lead.id]}
-              </div>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl font-semibold">
+              Recent Leads
+            </CardTitle>
+            {!loading && leads.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="hover:bg-primary/10 hover:text-primary"
+                onClick={() => setShowAll((prev) => !prev)}
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                {showAll ? "Show Less" : "View All"}
+              </Button>
             )}
           </div>
-
-          {/* Claim Button */}
-          <div className="flex items-center gap-2 relative">
-            <Button
-              size="sm"
-              onClick={() => claimLead(lead.id)}
-              className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
-            >
-              {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
-            </Button>
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Search by name, location, or event type..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
-        </>
-      ) : (
-        // ❌ Subscription Inactive: Limited Details
-        
-<div className="flex items-start justify-between gap-4 w-full">
-  {/* Left Side (details) */}
-  <div className="flex flex-col gap-2">
-    {/* First row: Name, Booking, Location */}
-    <div className="flex flex-wrap items-center gap-4">
-      <h3 className="font-medium text-foreground">
-        {lead.first_name} {lead.last_name}
-      </h3>
+        </CardHeader>
 
-      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-        <Calendar className="w-3 h-3" />
-        <span>Booking: {lead.booking_date}</span>
-      </div>
+        <CardContent>
+          {loading ? (
+            <p className="text-center text-muted-foreground py-6">
+              ⏳ Loading leads...
+            </p>
+          ) : leads.length === 0 ? (
+            <p className="text-center text-muted-foreground py-6">
+              No leads available.
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {filteredLeads.map((lead) => {
+                const phoneVisible = isContactVisible(lead);
+                const contactDisabled = isLeadContactDisabled(lead);
 
-      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-        <MapPin className="w-3 h-3" />
-        <span>{lead.location}</span>
-      </div>
-    </div>
+                return (
+                  <div
+                    key={lead.id}
+                    className="relative block md:flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
+                  >
+                    {subscriptionValid ? (
+                      // ✅ Subscription Active: Full Lead Details
+                      <>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-medium text-foreground">
+                              {lead.first_name} {lead.last_name}
+                            </h3>
+                          </div>
 
-    {/* Second row: Requirements */}
-    <div className="text-sm text-muted-foreground max-w-md">
-      <span className="break-words whitespace-normal">
-        {lead.requirements}
-      </span>
-    </div>
-  </div>
+                          <div className="block md:flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>{lead.service}</span>
 
-  {/* Right Side (button) */}
-  <div className="flex items-center">
-    <Button
-      variant="default"
-      size="sm"
-      onClick={() => navigate("/payments")}
-      className="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/80"
-    >
-      Buy Plan to Claim
-    </Button>
-  </div>
-</div>
+                            {/* Booking Date */}
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              <span>Booking: {lead.booking_date}</span>
+                            </div>
 
+                            {/* Created At */}
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              <span>
+                                Created:{" "}
+                                {new Date(lead.created_at).toLocaleDateString(
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  }
+                                )}
+                              </span>
+                            </div>
 
+                            <div className="flex items-center gap-1">
+                              <IndianRupee className="w-3 h-3" />
+                              <span>
+                                {lead.budget_range?.min_value ?? "N/A"}
+                              </span>
+                            </div>
 
-      )}
-    </div>
-  );
-})}
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              <span>{lead.location}</span>
+                            </div>
 
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      
+                            <div className="flex items-center gap-1">
+                              <PartyPopper className="w-3 h-3" />
+                              <span>{lead.event_type}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center w-80 gap-4 text-sm text-muted-foreground">
+                            <span className="break-words whitespace-normal min-w-0">
+                              {lead.requirements}
+                            </span>
+                          </div>
+
+                          {/* Saved Remark */}
+                          {remarks[lead.id] && (
+                            <div className="mt-2 text-sm text-muted-foreground italic">
+                              <strong>Remark:</strong> {remarks[lead.id]}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Claim Button */}
+                        <div className="flex items-center gap-2 relative">
+                          <Button
+                            size="sm"
+                            onClick={() => claimLead(lead.id)}
+                            className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
+                          >
+                            {claimingLeadId === lead.id
+                              ? "Claiming..."
+                              : "Claim"}
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      // ❌ Subscription Inactive: Limited Details
+
+                      <div className="flex items-start justify-between gap-4 w-full">
+                        {/* Left Side (details) */}
+                        <div className="flex flex-col gap-2">
+                          {/* First row: Name, Booking, Location */}
+                          <div className="flex flex-wrap items-center gap-4">
+                            <h3 className="font-medium text-foreground">
+                              {lead.first_name} {lead.last_name}
+                            </h3>
+
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Calendar className="w-3 h-3" />
+                              <span>Booking: {lead.booking_date}</span>
+                            </div>
+
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <MapPin className="w-3 h-3" />
+                              <span>{lead.location}</span>
+                            </div>
+                          </div>
+
+                          {/* Second row: Requirements */}
+                          <div className="text-sm text-muted-foreground max-w-md">
+                            <span className="break-words whitespace-normal">
+                              {lead.requirements}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Right Side (button) */}
+                        <div className="flex items-center">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => navigate("/payments")}
+                            className="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/80"
+                          >
+                            Buy Plan to Claim
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Quick Actions */}
     </div>

@@ -20,7 +20,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Lock, Search, Phone, Mail, Calendar, MapPin, MessageSquare } from "lucide-react";
+import {
+  Lock,
+  Search,
+  Phone,
+  Mail,
+  Calendar,
+  MapPin,
+  MessageSquare,
+} from "lucide-react";
 
 type ApiLead = {
   id: number;
@@ -36,8 +44,12 @@ type ApiLead = {
   updated_at?: string | null;
   budget_range?: string | null;
   location?: string | null;
-  claimed_artists?: { id: number; first_name: string; last_name: string }[] | null;  // 👈 array
-  booked_artists?: { id: number; first_name: string; last_name: string }[] | null;  // 👈 array 
+  claimed_artists?:
+    | { id: number; first_name: string; last_name: string }[]
+    | null; // 👈 array
+  booked_artists?:
+    | { id: number; first_name: string; last_name: string }[]
+    | null; // 👈 array
   assigned_to?: {
     id: number;
     first_name: string;
@@ -52,7 +64,6 @@ type ApiLead = {
   } | null;
 };
 
-
 export default function AssignedLeads() {
   const [leads, setLeads] = useState<ApiLead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,61 +75,68 @@ export default function AssignedLeads() {
   const [eventFilter, setEventFilter] = useState<string>("all");
 
   const statusOptions = ["assigned", "booked", "contacted", "pending"];
-  const eventOptions = ["wedding", "engagement", "party", "reception", "haldi", "sangeet", "mehendi", "other"];
+  const eventOptions = [
+    "wedding",
+    "engagement",
+    "party",
+    "reception",
+    "haldi",
+    "sangeet",
+    "mehendi",
+    "other",
+  ];
   const [uiStatus, setUiStatus] = useState<{ [id: number]: string }>({});
-const currentArtistId = Number(sessionStorage.getItem("user_Id") || 0);
-const isAlreadyClaimedByMe = (lead: ApiLead, artistId: number) => {
-  return lead.claimed_artists?.some((a) => Number(a.id) === Number(artistId)) ?? false;
-  
-};
+  const currentArtistId = Number(localstorage.getItem("user_Id") || 0);
+  const isAlreadyClaimedByMe = (lead: ApiLead, artistId: number) => {
+    return (
+      lead.claimed_artists?.some((a) => Number(a.id) === Number(artistId)) ??
+      false
+    );
+  };
 
-const isAlreadyBookedByMe = (lead: ApiLead, artistId: number) => {
-  return lead.booked_artists?.some((a) => Number(a.id) === Number(artistId)) ?? false;
-};
+  const isAlreadyBookedByMe = (lead: ApiLead, artistId: number) => {
+    return (
+      lead.booked_artists?.some((a) => Number(a.id) === Number(artistId)) ??
+      false
+    );
+  };
 
+  // inside fetchLeads
 
+  // safe renderer for values that may be string | number | object | null
+  const renderValue = (v: unknown) => {
+    if (v === null || v === undefined) return "-";
+    if (typeof v === "string" || typeof v === "number") return String(v);
 
+    // if it's an object, try common keys we might want:
+    if (typeof v === "object") {
+      if ("label" in v && typeof (v as any).label === "string")
+        return (v as any).label;
 
+      if ("name" in v && typeof (v as any).name === "string")
+        return (v as any).name;
 
+      if ("price" in v && (v as any).price != null)
+        return `₹${(v as any).price}`;
+      // fallback: try JSON (short)
 
-
-
-// inside fetchLeads
-
-
-// safe renderer for values that may be string | number | object | null
-const renderValue = (v: unknown) => {
-  if (v === null || v === undefined) return "-";
-  if (typeof v === "string" || typeof v === "number") return String(v);
-
-  // if it's an object, try common keys we might want:
-  if (typeof v === "object") {
-  
-    if ("label" in v && typeof (v as any).label === "string") return (v as any).label;
-
-    if ("name" in v && typeof (v as any).name === "string") return (v as any).name;
- 
-    if ("price" in v && (v as any).price != null) return `₹${(v as any).price}`;
-    // fallback: try JSON (short)
-    
-    try {
-      return JSON.stringify(v);
-    } catch {
-      return "[object]";
+      try {
+        return JSON.stringify(v);
+      } catch {
+        return "[object]";
+      }
     }
-  }
 
-  return String(v);
-};
+    return String(v);
+  };
 
   // fetch assigned leads
   useEffect(() => {
     const fetchLeads = async () => {
-      
       setLoading(true);
       setError(null);
       try {
-        const token = sessionStorage.getItem("accessToken");
+        const token = localstorage.getItem("accessToken");
         const res = await fetch(
           "https://api.wedmacindia.com/api/leads/artist/my-assigned-leads/",
           {
@@ -133,11 +151,11 @@ const renderValue = (v: unknown) => {
         const data = await res.json();
         setLeads(Array.isArray(data.leads) ? data.leads : []);
         setLeads(data.leads);
-const statusMap: { [id: number]: string } = {};
-data.leads.forEach((l: ApiLead) => {
-  statusMap[l.id] = l.status ?? "pending";
-});
-setUiStatus(statusMap);
+        const statusMap: { [id: number]: string } = {};
+        data.leads.forEach((l: ApiLead) => {
+          statusMap[l.id] = l.status ?? "pending";
+        });
+        setUiStatus(statusMap);
       } catch (err: unknown) {
         console.error(err);
         setError((err as Error)?.message || "Failed to fetch leads");
@@ -170,12 +188,20 @@ setUiStatus(statusMap);
     return leads.filter((l) => {
       const q = searchQuery.trim().toLowerCase();
       if (q) {
-        const hay = `${l.first_name ?? ""} ${l.last_name ?? ""} ${l.email ?? ""} ${l.phone ?? ""} ${l.event_type ?? ""}`.toLowerCase();
+        const hay = `${l.first_name ?? ""} ${l.last_name ?? ""} ${
+          l.email ?? ""
+        } ${l.phone ?? ""} ${l.event_type ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
-      if (statusFilter !== "all" && (l.status ?? "").toLowerCase() !== statusFilter.toLowerCase())
+      if (
+        statusFilter !== "all" &&
+        (l.status ?? "").toLowerCase() !== statusFilter.toLowerCase()
+      )
         return false;
-      if (eventFilter !== "all" && (l.event_type ?? "").toLowerCase() !== eventFilter.toLowerCase())
+      if (
+        eventFilter !== "all" &&
+        (l.event_type ?? "").toLowerCase() !== eventFilter.toLowerCase()
+      )
         return false;
       return true;
     });
@@ -196,14 +222,20 @@ setUiStatus(statusMap);
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-primary">{leads.length}</div>
+              <div className="text-2xl font-bold text-primary">
+                {leads.length}
+              </div>
               <p className="text-sm text-muted-foreground">Total Assigned</p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-green-600">
-                {leads.filter((l) => (l.status ?? "").toLowerCase() === "booked").length}
+                {
+                  leads.filter(
+                    (l) => (l.status ?? "").toLowerCase() === "booked"
+                  ).length
+                }
               </div>
               <p className="text-sm text-muted-foreground">Booked</p>
             </CardContent>
@@ -211,7 +243,11 @@ setUiStatus(statusMap);
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-blue-600">
-                {leads.filter((l) => (l.status ?? "").toLowerCase() === "contacted").length}
+                {
+                  leads.filter(
+                    (l) => (l.status ?? "").toLowerCase() === "contacted"
+                  ).length
+                }
               </div>
               <p className="text-sm text-muted-foreground">Contacted</p>
             </CardContent>
@@ -219,7 +255,11 @@ setUiStatus(statusMap);
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-yellow-600">
-                {leads.filter((l) => (l.status ?? "").toLowerCase() === "pending").length}
+                {
+                  leads.filter(
+                    (l) => (l.status ?? "").toLowerCase() === "pending"
+                  ).length
+                }
               </div>
               <p className="text-sm text-muted-foreground">Pending</p>
             </CardContent>
@@ -250,10 +290,10 @@ setUiStatus(statusMap);
                 </div>
               </div>
 
-            
-            
-
-              <Select value={eventFilter} onValueChange={(val) => setEventFilter(val)}>
+              <Select
+                value={eventFilter}
+                onValueChange={(val) => setEventFilter(val)}
+              >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue placeholder="Event Type" />
                 </SelectTrigger>
@@ -283,213 +323,278 @@ setUiStatus(statusMap);
             {/* Table */}
             <div className="overflow-x-auto">
               {loading ? (
-                <div className="p-6 text-center text-muted-foreground">⏳ Loading assigned leads…</div>
+                <div className="p-6 text-center text-muted-foreground">
+                  ⏳ Loading assigned leads…
+                </div>
               ) : error ? (
                 <div className="p-6 text-center text-red-400">{error}</div>
               ) : filteredLeads.length === 0 ? (
-                <div className="p-6 text-center text-muted-foreground">No leads found.</div>
+                <div className="p-6 text-center text-muted-foreground">
+                  No leads found.
+                </div>
               ) : (
                 <Table>
-              <TableHeader>
-  <TableRow>
-    <TableHead>Client Details</TableHead>
-    <TableHead>Event Info</TableHead>
-    <TableHead>Requested Artist</TableHead> {/* 👈 new */}
-    <TableHead>Assigned Date</TableHead>
-    <TableHead>Budget</TableHead>
-    <TableHead>Actions</TableHead>
-  </TableRow>
-</TableHeader>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Client Details</TableHead>
+                      <TableHead>Event Info</TableHead>
+                      <TableHead>Requested Artist</TableHead> {/* 👈 new */}
+                      <TableHead>Assigned Date</TableHead>
+                      <TableHead>Budget</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
 
-             <TableBody>
-  {filteredLeads.map((lead) => {
-    const clientName = `${lead.first_name ?? ""}${lead.last_name ? " " + lead.last_name : ""}`;
-    const bookingDate = lead.booking_date ? new Date(lead.booking_date).toLocaleDateString() : "-";
-    const assignedDate = lead.created_at ? new Date(lead.created_at).toLocaleDateString("en-GB") : "-";
+                  <TableBody>
+                    {filteredLeads.map((lead) => {
+                      const clientName = `${lead.first_name ?? ""}${
+                        lead.last_name ? " " + lead.last_name : ""
+                      }`;
+                      const bookingDate = lead.booking_date
+                        ? new Date(lead.booking_date).toLocaleDateString()
+                        : "-";
+                      const assignedDate = lead.created_at
+                        ? new Date(lead.created_at).toLocaleDateString("en-GB")
+                        : "-";
 
-    const requestedArtistName = lead.requested_artist
-      ? `${lead.requested_artist.first_name} ${lead.requested_artist.last_name ?? ""}`
-      : "-";
-    const requestedArtistPhone = lead.requested_artist?.phone ?? "-";
+                      const requestedArtistName = lead.requested_artist
+                        ? `${lead.requested_artist.first_name} ${
+                            lead.requested_artist.last_name ?? ""
+                          }`
+                        : "-";
+                      const requestedArtistPhone =
+                        lead.requested_artist?.phone ?? "-";
 
-    return (
-      <TableRow key={lead.id}>
-        {/* Client Details */}
-        <TableCell>
-          <div className="space-y-1">
-            <div className="font-medium">{clientName}</div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Phone className="w-3 h-3" /> {lead.phone ?? "-"}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Mail className="w-3 h-3" /> {lead.email ?? "-"}
-            </div>
-          </div>
-        </TableCell>
+                      return (
+                        <TableRow key={lead.id}>
+                          {/* Client Details */}
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium">{clientName}</div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Phone className="w-3 h-3" />{" "}
+                                {lead.phone ?? "-"}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Mail className="w-3 h-3" /> {lead.email ?? "-"}
+                              </div>
+                            </div>
+                          </TableCell>
 
-        {/* Event Info */}
-        <TableCell>
-          <div className="space-y-1">
-<div className="font-medium">{renderValue(lead.event_type)}</div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="w-3 h-3" /> {bookingDate}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-  <MapPin className="w-3 h-3" /> {renderValue(lead.location)}
-            </div>
-          </div>
-        </TableCell>
+                          {/* Event Info */}
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium">
+                                {renderValue(lead.event_type)}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Calendar className="w-3 h-3" /> {bookingDate}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <MapPin className="w-3 h-3" />{" "}
+                                {renderValue(lead.location)}
+                              </div>
+                            </div>
+                          </TableCell>
 
-        {/* Requested Artist 👇 */}
-        <TableCell>
-          <div className="space-y-1">
-            <div className="font-medium">{requestedArtistName}</div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Phone className="w-3 h-3" /> {requestedArtistPhone}
-            </div>
-          </div>
-        </TableCell>
+                          {/* Requested Artist 👇 */}
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium">
+                                {requestedArtistName}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Phone className="w-3 h-3" />{" "}
+                                {requestedArtistPhone}
+                              </div>
+                            </div>
+                          </TableCell>
 
-        {/* Assigned Date */}
-        <TableCell>{assignedDate}</TableCell>
+                          {/* Assigned Date */}
+                          <TableCell>{assignedDate}</TableCell>
 
-        {/* Budget */}
-        <TableCell>
-<span className="font-semibold text-primary">{renderValue(lead.budget_range)}</span>
-        </TableCell>
+                          {/* Budget */}
+                          <TableCell>
+                            <span className="font-semibold text-primary">
+                              {renderValue(lead.budget_range)}
+                            </span>
+                          </TableCell>
 
-        {/* Status */}
+                          {/* Status */}
 
+                          {/* Actions */}
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <div className="flex flex-col gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    if (
+                                      lead.phone &&
+                                      lead.requested_artist?.phone
+                                    ) {
+                                      window.location.href = `tel:${lead.requested_artist.phone}`;
+                                    }
+                                  }}
+                                >
+                                  <Phone className="w-3 h-3 mr-1" /> Call
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const url = buildWhatsAppUrl(
+                                      lead.requested_artist?.phone
+                                    );
+                                    if (url) window.open(url, "_blank");
+                                  }}
+                                >
+                                  <MessageSquare className="w-3 h-3 mr-1" />{" "}
+                                  WhatsApp
+                                </Button>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  disabled={isAlreadyClaimedByMe(
+                                    lead,
+                                    currentArtistId
+                                  )}
+                                  onClick={async () => {
+                                    console.log(
+                                      "CurrentArtistId:",
+                                      currentArtistId,
+                                      "Lead:",
+                                      lead.id,
+                                      "Claimed:",
+                                      lead.claimed_artists
+                                    );
 
+                                    try {
+                                      const token =
+                                        localstorage.getItem("accessToken");
+                                      const res = await fetch(
+                                        `https://api.wedmacindia.com/api/leads/${lead.id}/claim/`,
+                                        {
+                                          method: "POST",
+                                          headers: {
+                                            Authorization: token
+                                              ? `Bearer ${token}`
+                                              : "",
+                                            "Content-Type": "application/json",
+                                          },
+                                        }
+                                      );
 
-        {/* Actions */}
-        <TableCell>
-          <div className="flex gap-2">
-            <div className="flex flex-col gap-2">
+                                      if (!res.ok)
+                                        throw new Error("Failed to claim lead");
 
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-if (lead.phone && lead.requested_artist?.phone) {
-  window.location.href = `tel:${lead.requested_artist.phone}`;
-}
-              }}
-            >
-              <Phone className="w-3 h-3 mr-1" /> Call
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-const url = buildWhatsAppUrl(lead.requested_artist?.phone);
-                if (url) window.open(url, "_blank");
-              }}
-            >
-              <MessageSquare className="w-3 h-3 mr-1" /> WhatsApp
-            </Button>
-            </div>
-            <div className="flex flex-col gap-2">
-         <Button
-  size="sm"
-  variant="default"
-  disabled={isAlreadyClaimedByMe(lead, currentArtistId)}
-  onClick={async () => {
-    console.log("CurrentArtistId:", currentArtistId, "Lead:", lead.id, "Claimed:", lead.claimed_artists);
+                                      setLeads((prev) =>
+                                        prev.map((l) =>
+                                          l.id === lead.id
+                                            ? {
+                                                ...l,
+                                                status: "claimed",
+                                                claimed_artists: [
+                                                  ...(l.claimed_artists ?? []),
+                                                  {
+                                                    id: currentArtistId,
+                                                    first_name: "You",
+                                                    last_name: "",
+                                                  },
+                                                ],
+                                              }
+                                            : l
+                                        )
+                                      );
 
-    try {
-      const token = sessionStorage.getItem("accessToken");
-      const res = await fetch(
-        `https://api.wedmacindia.com/api/leads/${lead.id}/claim/`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            "Content-Type": "application/json",
-          },
-        }
-      );
+                                      alert("Lead successfully claimed!");
+                                    } catch (err: unknown) {
+                                      console.error(err);
+                                      alert(
+                                        (err as Error).message ||
+                                          "Failed to claim lead"
+                                      );
+                                    }
+                                  }}
+                                >
+                                  Claim
+                                </Button>
 
-      if (!res.ok) throw new Error("Failed to claim lead");
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  disabled={isAlreadyBookedByMe(
+                                    lead,
+                                    currentArtistId
+                                  )}
+                                  onClick={async () => {
+                                    try {
+                                      const token =
+                                        localstorage.getItem("accessToken");
+                                      const res = await fetch(
+                                        `https://api.wedmacindia.com/api/leads/${lead.id}/book/`,
+                                        {
+                                          method: "POST",
+                                          headers: {
+                                            Authorization: token
+                                              ? `Bearer ${token}`
+                                              : "",
+                                            "Content-Type": "application/json",
+                                          },
+                                        }
+                                      );
 
-      setLeads((prev) =>
-        prev.map((l) =>
-          l.id === lead.id
-            ? { ...l, status: "claimed", claimed_artists: [...(l.claimed_artists ?? []), { id: currentArtistId, first_name: "You", last_name: "" }] }
-            : l
-        )
-      );
+                                      const data = await res.json(); // parse JSON always
 
-      alert("Lead successfully claimed!");
-    } catch (err: unknown) {
-      console.error(err);
-      alert((err as Error).message || "Failed to claim lead");
-    }
-  }}
->
-  Claim
-</Button>
+                                      if (!res.ok) {
+                                        // backend ka exact error msg show karo
+                                        throw new Error(
+                                          data.error ||
+                                            `Failed to book lead: ${res.status}`
+                                        );
+                                      }
 
+                                      setLeads((prev) =>
+                                        prev.map((l) =>
+                                          l.id === lead.id
+                                            ? {
+                                                ...l,
+                                                status: "booked",
+                                                booked_artists: [
+                                                  ...(l.booked_artists ?? []),
+                                                  {
+                                                    id: currentArtistId,
+                                                    first_name: "You",
+                                                    last_name: "",
+                                                  },
+                                                ],
+                                              }
+                                            : l
+                                        )
+                                      );
 
-<Button
-  size="sm"
-  variant="default"
-  disabled={isAlreadyBookedByMe(lead, currentArtistId)}
-  onClick={async () => {
-    try {
-      const token = sessionStorage.getItem("accessToken");
-      const res = await fetch(
-        `https://api.wedmacindia.com/api/leads/${lead.id}/book/`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = await res.json(); // parse JSON always
-
-      if (!res.ok) {
-        // backend ka exact error msg show karo
-        throw new Error(data.error || `Failed to book lead: ${res.status}`);
-      }
-
-      setLeads((prev) =>
-        prev.map((l) =>
-          l.id === lead.id
-            ? {
-                ...l,
-                status: "booked",
-                booked_artists: [
-                  ...(l.booked_artists ?? []),
-                  { id: currentArtistId, first_name: "You", last_name: "" },
-                ],
-              }
-            : l
-        )
-      );
-
-      alert("Lead successfully booked!");
-    } catch (err: unknown) {
-      console.error(err);
-      alert((err as Error).message || "Failed to book lead");
-    }
-  }}
->
-  Book
-</Button>
-
-
-</div>
-          </div>
-        </TableCell>
-      </TableRow>
-    );
-  })}
-</TableBody>
-
+                                      alert("Lead successfully booked!");
+                                    } catch (err: unknown) {
+                                      console.error(err);
+                                      alert(
+                                        (err as Error).message ||
+                                          "Failed to book lead"
+                                      );
+                                    }
+                                  }}
+                                >
+                                  Book
+                                </Button>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
                 </Table>
               )}
             </div>

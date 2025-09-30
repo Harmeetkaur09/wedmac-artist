@@ -34,11 +34,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const storedToken =
-    typeof window !== "undefined"
-      ? sessionStorage.getItem("accessToken")
-      : null;
+    typeof window !== "undefined" ? localstorage.getItem("accessToken") : null;
   const storedUser =
-    typeof window !== "undefined" ? sessionStorage.getItem("user") : null;
+    typeof window !== "undefined" ? localstorage.getItem("user") : null;
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() =>
     isTokenPresent(storedToken)
@@ -54,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     setInitialized(true);
-    const token = sessionStorage.getItem("accessToken");
+    const token = localstorage.getItem("accessToken");
     if (!isTokenPresent(token)) {
       setIsAuthenticated(false);
     } else {
@@ -64,22 +62,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = (data: { access: string; refresh?: string; user?: User }) => {
     if (data.access) {
-      sessionStorage.setItem("accessToken", data.access);
+      localstorage.setItem("accessToken", data.access);
     }
     if (data.refresh) {
-      sessionStorage.setItem("refreshToken", data.refresh);
+      localstorage.setItem("refreshToken", data.refresh);
     }
     if (data.user) {
-      sessionStorage.setItem("user", JSON.stringify(data.user));
+      localstorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
     }
     setIsAuthenticated(true);
   };
 
   const logout = () => {
-    sessionStorage.removeItem("accessToken");
-    sessionStorage.removeItem("refreshToken");
-    sessionStorage.removeItem("user");
+    localstorage.removeItem("accessToken");
+    localstorage.removeItem("refreshToken");
+    localstorage.removeItem("user");
     setUser(null);
     setIsAuthenticated(false);
   };

@@ -47,7 +47,7 @@ export default function Services() {
   const getAuthHeader = () => {
     if (typeof window === "undefined") return {};
     const token =
-      sessionStorage.getItem("accessToken") || sessionStorage.getItem("token");
+      localstorage.getItem("accessToken") || localstorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
@@ -307,29 +307,28 @@ export default function Services() {
     else await handleCreateService();
   };
   // Predefined service options
-const serviceOptions: Record<string, string> = {
-  "Bridal Makeup":
-    "Crafted for the queen of the day – a timeless bridal look that blends tradition with luxury, ensuring every step feels royal and every picture flawless.",
-  "Engagement Makeup":
-    "A dreamy makeover with soft glam and radiant highlights – designed to make you shine like the star of your new beginning.",
-  "Party Makeup":
-    "Trendy strokes, bold vibes, and a glam finish – the kind of makeover that makes every eye turn when you walk in.",
-  "Airbrush Makeup":
-    "Feather-light, poreless, and picture-perfect – an advanced airbrush touch that looks flawless both on-screen and off-screen.",
-  "Haldi Makeup":
-    "Fresh, vibrant, and sunshine-ready – a natural glow makeover that matches the joy and warmth of your Haldi ceremony.",
-  "Mehndi Makeup":
-    "Playful colors with a touch of elegance – a look that celebrates tradition while keeping it chic for your Mehndi celebrations.",
-  "Sangeet Makeup":
-    "Bold eyes, shimmering glam, and unstoppable confidence – perfect for a night full of music, dance, and sparkle.",
-  "Reception Makeup":
-    "A graceful blend of sophistication and glam – designed to make your reception night unforgettable.",
-  "Nude Makeup":
-    "Minimalist yet magical – a soft glam look that whispers elegance while keeping it effortlessly natural.",
-  "Smoky Makeup":
-    "Intense eyes, bold aura, and the drama of perfection – a look that owns the night with confidence and style.",
-};
-
+  const serviceOptions: Record<string, string> = {
+    "Bridal Makeup":
+      "Crafted for the queen of the day – a timeless bridal look that blends tradition with luxury, ensuring every step feels royal and every picture flawless.",
+    "Engagement Makeup":
+      "A dreamy makeover with soft glam and radiant highlights – designed to make you shine like the star of your new beginning.",
+    "Party Makeup":
+      "Trendy strokes, bold vibes, and a glam finish – the kind of makeover that makes every eye turn when you walk in.",
+    "Airbrush Makeup":
+      "Feather-light, poreless, and picture-perfect – an advanced airbrush touch that looks flawless both on-screen and off-screen.",
+    "Haldi Makeup":
+      "Fresh, vibrant, and sunshine-ready – a natural glow makeover that matches the joy and warmth of your Haldi ceremony.",
+    "Mehndi Makeup":
+      "Playful colors with a touch of elegance – a look that celebrates tradition while keeping it chic for your Mehndi celebrations.",
+    "Sangeet Makeup":
+      "Bold eyes, shimmering glam, and unstoppable confidence – perfect for a night full of music, dance, and sparkle.",
+    "Reception Makeup":
+      "A graceful blend of sophistication and glam – designed to make your reception night unforgettable.",
+    "Nude Makeup":
+      "Minimalist yet magical – a soft glam look that whispers elegance while keeping it effortlessly natural.",
+    "Smoky Makeup":
+      "Intense eyes, bold aura, and the drama of perfection – a look that owns the night with confidence and style.",
+  };
 
   return (
     <Layout title="Services">
@@ -425,42 +424,44 @@ const serviceOptions: Record<string, string> = {
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleFormSubmit}>
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-  <div className="space-y-2">
-    <Label htmlFor="serviceName">Service Name</Label>
-    <select
-      id="serviceName"
-      value={name}
-      onChange={(e) => {
-        const selected = e.target.value;
-        setName(selected);
-        setDescription(serviceOptions[selected] || "");
-      }}
-      className="w-full border rounded px-3 py-2"
-    >
-      <option value="">Select a service</option>
-      {Object.keys(serviceOptions).map((service) => (
-        <option key={service} value={service}>
-          {service}
-        </option>
-      ))}
-    </select>
-  </div>
-  <div className="space-y-2">
-    <Label htmlFor="price">Price (₹)</Label>
-    <Input
-      id="price"
-      value={price}
-      onChange={(e) =>
-        setPrice(e.target.value === "" ? "" : Number(e.target.value))
-      }
-      type="number"
-      placeholder="15000"
-    />
-  </div>
-</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="serviceName">Service Name</Label>
+                  <select
+                    id="serviceName"
+                    value={name}
+                    onChange={(e) => {
+                      const selected = e.target.value;
+                      setName(selected);
+                      setDescription(serviceOptions[selected] || "");
+                    }}
+                    className="w-full border rounded px-3 py-2"
+                  >
+                    <option value="">Select a service</option>
+                    {Object.keys(serviceOptions).map((service) => (
+                      <option key={service} value={service}>
+                        {service}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price (₹)</Label>
+                  <Input
+                    id="price"
+                    value={price}
+                    onChange={(e) =>
+                      setPrice(
+                        e.target.value === "" ? "" : Number(e.target.value)
+                      )
+                    }
+                    type="number"
+                    placeholder="15000"
+                  />
+                </div>
+              </div>
 
-{/* <div className="space-y-2 mt-2">
+              {/* <div className="space-y-2 mt-2">
   <Label htmlFor="description">Description</Label>
   <Input
     id="description"
@@ -469,7 +470,6 @@ const serviceOptions: Record<string, string> = {
     placeholder="Short description"
   />
 </div> */}
-
 
               {/* <div className="flex items-center space-x-2 mt-2">
                 <Switch id="trial" checked={trialAvailable} onCheckedChange={(v) => setTrialAvailable(Boolean(v))} />

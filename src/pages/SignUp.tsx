@@ -125,9 +125,9 @@ const SignUp = () => {
       }
 
       // store tokens & user
-      sessionStorage.setItem("accessToken", body.access);
-      sessionStorage.setItem("refreshToken", body.refresh);
-      sessionStorage.setItem("user", JSON.stringify(body.user));
+      localstorage.setItem("accessToken", body.access);
+      localstorage.setItem("refreshToken", body.refresh);
+      localstorage.setItem("user", JSON.stringify(body.user));
 
       // update context & redirect
       login({ access: body.access, refresh: body.refresh, user: body.user });
@@ -313,12 +313,15 @@ const SignUp = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-black/0 via-black/30 to-black/0" />
 
         <div className="relative z-10 max-w-4xl mx-auto px-4 flex flex-col items-center justify-center h-full">
-        <h1 className="text-[2.5rem] md:text-[3.5rem] Gilroy">
-             Be the Reason They Can’t<br/>Take Their Eyes Off You
-            </h1>
-            <p className="text-lg md:text-xl font-gilroy font-400 opacity-90">
-         From weddings to celebrations, we design looks that turn admiration into memories.
-            </p>
+          <h1 className="text-[2.5rem] md:text-[3.5rem] Gilroy">
+            Be the Reason They Can’t
+            <br />
+            Take Their Eyes Off You
+          </h1>
+          <p className="text-lg md:text-xl font-gilroy font-400 opacity-90">
+            From weddings to celebrations, we design looks that turn admiration
+            into memories.
+          </p>
         </div>
       </section>
 

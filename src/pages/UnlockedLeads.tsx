@@ -54,47 +54,65 @@ export default function UnlockedLeads() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [eventFilter, setEventFilter] = useState<string>("all");
   // fixed options
-  const statusOptions = [ "booked", "New"];
-  const eventOptions = ["wedding", "engagement", "party", "Bridal", "Engagement", "Party", "Airbrush", "Haldi", "Mehandi",  "Sangeet",  "Reception",  "Nude",  "Smoky",  "Celebrity",  "Other",  "modernart"];
+  const statusOptions = ["booked", "New"];
+  const eventOptions = [
+    "wedding",
+    "engagement",
+    "party",
+    "Bridal",
+    "Engagement",
+    "Party",
+    "Airbrush",
+    "Haldi",
+    "Mehandi",
+    "Sangeet",
+    "Reception",
+    "Nude",
+    "Smoky",
+    "Celebrity",
+    "Other",
+    "modernart",
+  ];
 
   // fetch claimed/unlocked leads
-useEffect(() => {
-  const fetchLeads = async () => {
-    setLoading(true);
-    setError(null);
+  useEffect(() => {
+    const fetchLeads = async () => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const token = sessionStorage.getItem("accessToken");
-      const res = await fetch(
-        "https://api.wedmacindia.com/api/leads/artist/my-claimed-leads/",
-        {
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            "Content-Type": "application/json",
-          },
+      try {
+        const token = localstorage.getItem("accessToken");
+        const res = await fetch(
+          "https://api.wedmacindia.com/api/leads/artist/my-claimed-leads/",
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(
+            text || `Failed to fetch leads (status ${res.status})`
+          );
         }
-      );
 
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || `Failed to fetch leads (status ${res.status})`);
+        const data = await res.json();
+        console.log("API response:", data);
+
+        setLeads(Array.isArray(data.leads) ? data.leads : []);
+      } catch (err: any) {
+        console.error("Failed to load unlocked leads:", err);
+        setError(err?.message || "Failed to fetch unlocked leads");
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const data = await res.json();
-      console.log("API response:", data);
-
-      setLeads(Array.isArray(data.leads) ? data.leads : []);
-    } catch (err: any) {
-      console.error("Failed to load unlocked leads:", err);
-      setError(err?.message || "Failed to fetch unlocked leads");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchLeads();
-}, []);
-
+    fetchLeads();
+  }, []);
 
   const getStatusColor = (status?: string) => {
     if (!status) return "bg-gray-100 text-gray-800";
@@ -173,8 +191,6 @@ useEffect(() => {
               <p className="text-sm text-muted-foreground">Booked</p>
             </CardContent>
           </Card>
-       
-       
         </div>
 
         {/* Filters */}
@@ -348,81 +364,88 @@ useEffect(() => {
                             </Badge>
                           </TableCell>
 
-                       <TableCell>
-  <div className="flex gap-2">
-    {/* Call Button */}
-    <Button
-      size="sm"
-      variant="outline"
-      onClick={() => {
-        if (!lead.phone) return;
-        window.location.href = `tel:${(lead.phone ?? "").replace(/\s+/g, "")}`;
-      }}
-    >
-      <Phone className="w-3 h-3 mr-1" />
-      Call
-    </Button>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {/* Call Button */}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  if (!lead.phone) return;
+                                  window.location.href = `tel:${(
+                                    lead.phone ?? ""
+                                  ).replace(/\s+/g, "")}`;
+                                }}
+                              >
+                                <Phone className="w-3 h-3 mr-1" />
+                                Call
+                              </Button>
 
-    {/* WhatsApp Button */}
-    <Button
-      size="sm"
-      variant="outline"
-      onClick={() => {
-        const url = buildWhatsAppUrl(lead.phone);
-        if (!url) return;
-        window.open(url, "_blank");
-      }}
-    >
-      <Mail className="w-3 h-3 mr-1" />
-      WhatsApp
-    </Button>
+                              {/* WhatsApp Button */}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  const url = buildWhatsAppUrl(lead.phone);
+                                  if (!url) return;
+                                  window.open(url, "_blank");
+                                }}
+                              >
+                                <Mail className="w-3 h-3 mr-1" />
+                                WhatsApp
+                              </Button>
 
-    {/* Book Button */}
-  <Button
-  size="sm"
-  variant="default"
-  disabled={lead.status === "booked"} // disable if already booked
-  onClick={async () => {
-    try {
-      const token = sessionStorage.getItem("accessToken");
-      const res = await fetch(
-        `https://api.wedmacindia.com/api/leads/${lead.id}/book/`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: token ? `Bearer ${token}` : "",
-            "Content-Type": "application/json",
-          },
-        }
-      );
+                              {/* Book Button */}
+                              <Button
+                                size="sm"
+                                variant="default"
+                                disabled={lead.status === "booked"} // disable if already booked
+                                onClick={async () => {
+                                  try {
+                                    const token =
+                                      localstorage.getItem("accessToken");
+                                    const res = await fetch(
+                                      `https://api.wedmacindia.com/api/leads/${lead.id}/book/`,
+                                      {
+                                        method: "POST",
+                                        headers: {
+                                          Authorization: token
+                                            ? `Bearer ${token}`
+                                            : "",
+                                          "Content-Type": "application/json",
+                                        },
+                                      }
+                                    );
 
-      const data = await res.json(); // response ko parse karo
+                                    const data = await res.json(); // response ko parse karo
 
-      if (!res.ok) {
-        // agar API error bhej rahi h to wahi dikhao
-        throw new Error(data.error || "Failed to book lead");
-      }
+                                    if (!res.ok) {
+                                      // agar API error bhej rahi h to wahi dikhao
+                                      throw new Error(
+                                        data.error || "Failed to book lead"
+                                      );
+                                    }
 
-      // success case
-      setLeads((prev) =>
-        prev.map((l) =>
-          l.id === lead.id ? { ...l, status: "booked" } : l
-        )
-      );
+                                    // success case
+                                    setLeads((prev) =>
+                                      prev.map((l) =>
+                                        l.id === lead.id
+                                          ? { ...l, status: "booked" }
+                                          : l
+                                      )
+                                    );
 
-      alert("Lead successfully booked!");
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Failed to book lead");
-    }
-  }}
->
-  Book
-</Button>
-
-  </div>
-</TableCell>
-
+                                    alert("Lead successfully booked!");
+                                  } catch (err: any) {
+                                    console.error(err);
+                                    alert(err.message || "Failed to book lead");
+                                  }
+                                }}
+                              >
+                                Book
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       );
                     })}

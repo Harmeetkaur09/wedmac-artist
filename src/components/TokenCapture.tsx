@@ -15,13 +15,17 @@ export default function TokenCapture() {
         const refresh = params.get("refresh");
         const userId = params.get("user_id");
         if (access) {
-          sessionStorage.setItem("accessToken", access);
-          if (refresh) sessionStorage.setItem("refreshToken", refresh);
-          if (userId) sessionStorage.setItem("user_id", userId);
-          sessionStorage.setItem("role", "artist");
+          localstorage.setItem("accessToken", access);
+          if (refresh) localstorage.setItem("refreshToken", refresh);
+          if (userId) localstorage.setItem("user_id", userId);
+          localstorage.setItem("role", "artist");
           console.log("✅ Artist token saved from hash");
           // clear fragment and navigate to safe route
-          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          window.history.replaceState(
+            null,
+            "",
+            window.location.pathname + window.location.search
+          );
           return true;
         }
       } catch (err) {

@@ -72,17 +72,14 @@ export default function ReferEarn() {
   const getToken = () => {
     try {
       const anyWindow = window as any;
-      if (
-        anyWindow.sessionStorage &&
-        (anyWindow.sessionStorage as any).authData
-      ) {
-        const maybe = (anyWindow.sessionStorage as any).authData;
+      if (anyWindow.localstorage && (anyWindow.localstorage as any).authData) {
+        const maybe = (anyWindow.localstorage as any).authData;
         if (maybe && typeof maybe === "object" && maybe.token)
           return maybe.token;
       }
       const candidates = ["authData", "accessToken", "token"];
       for (const key of candidates) {
-        const raw = window.sessionStorage.getItem(key);
+        const raw = window.localstorage.getItem(key);
         if (!raw) continue;
         try {
           const parsed = JSON.parse(raw);

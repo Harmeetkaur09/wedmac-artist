@@ -92,9 +92,9 @@ const OTPVerification = () => {
       // parse the JSON payload
       const { access, refresh, role, user_id } = await res.json();
 
-      // persist into sessionStorage
-      sessionStorage.setItem("accessToken", access);
-      sessionStorage.setItem("refreshToken", refresh);
+      // persist into localstorage
+      localstorage.setItem("accessToken", access);
+      localstorage.setItem("refreshToken", refresh);
 
       // now you’re authenticated—go home (or dashboard)
       navigate("/");
