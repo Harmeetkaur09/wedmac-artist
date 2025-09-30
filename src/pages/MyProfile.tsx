@@ -284,7 +284,7 @@ export default function MyProfile() {
         }
         if (typeof window !== "undefined") {
           if (data.id !== undefined && data.id !== null) {
-            localstorage.setItem("user_Id", String(data.id));
+            localStorage.setItem("user_Id", String(data.id));
           }
         }
       } catch (err) {

@@ -166,16 +166,16 @@ export default function Support() {
   const getToken = () => {
     try {
       const anyWindow = window as any;
-      // localstorage.authData (object)
-      if (anyWindow.localstorage && (anyWindow.localstorage as any).authData) {
-        const maybe = (anyWindow.localstorage as any).authData;
+      // localStorage.authData (object)
+      if (anyWindow.localStorage && (anyWindow.localStorage as any).authData) {
+        const maybe = (anyWindow.localStorage as any).authData;
         if (maybe && typeof maybe === "object" && maybe.token)
           return maybe.token;
       }
       // common keys
       const candidates = ["authData", "accessToken", "token"];
       for (const key of candidates) {
-        const raw = window.localstorage.getItem(key);
+        const raw = window.localStorage.getItem(key);
         if (!raw) continue;
         // try parse JSON
         try {

@@ -123,7 +123,7 @@ export interface MyProfile {
 }
 
 async function authHeaders(): Promise<Record<string, string>> {
-  const token = localstorage.getItem("accessToken");
+  const token = localStorage.getItem("accessToken");
   if (!token) throw new Error("No access token found");
   return {
     Authorization: `Bearer ${token}`,

@@ -31,9 +31,9 @@ export function Layout({ children, title }: LayoutProps) {
         if (mounted) {
           setProfile(p);
 
-          // Save profile ID to localstorage
+          // Save profile ID to localStorage
           if (p?.id) {
-            localstorage.setItem("user_Id", String(p.id));
+            localStorage.setItem("user_Id", String(p.id));
           }
         }
       } catch (err) {

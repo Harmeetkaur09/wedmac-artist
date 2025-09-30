@@ -187,7 +187,7 @@ export function Dashboard({ phone }: { phone?: string }) {
         }
 
         // 🔹 Leads fetch karo
-        const token = localstorage.getItem("accessToken");
+        const token = localStorage.getItem("accessToken");
         const leadsRes = await fetch(
           "https://api.wedmacindia.com/api/leads/all-leads/",
           {
@@ -314,7 +314,7 @@ export function Dashboard({ phone }: { phone?: string }) {
     setClaimingLeadId(leadId);
 
     try {
-      const token = localstorage.getItem("accessToken");
+      const token = localStorage.getItem("accessToken");
       const res = await fetch(
         `https://api.wedmacindia.com/api/leads/${leadId}/claim/`,
         {

@@ -15,10 +15,10 @@ export default function TokenCapture() {
         const refresh = params.get("refresh");
         const userId = params.get("user_id");
         if (access) {
-          localstorage.setItem("accessToken", access);
-          if (refresh) localstorage.setItem("refreshToken", refresh);
-          if (userId) localstorage.setItem("user_id", userId);
-          localstorage.setItem("role", "artist");
+          localStorage.setItem("accessToken", access);
+          if (refresh) localStorage.setItem("refreshToken", refresh);
+          if (userId) localStorage.setItem("user_id", userId);
+          localStorage.setItem("role", "artist");
           console.log("✅ Artist token saved from hash");
           // clear fragment and navigate to safe route
           window.history.replaceState(

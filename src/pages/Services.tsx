@@ -47,7 +47,7 @@ export default function Services() {
   const getAuthHeader = () => {
     if (typeof window === "undefined") return {};
     const token =
-      localstorage.getItem("accessToken") || localstorage.getItem("token");
+      localStorage.getItem("accessToken") || localStorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 

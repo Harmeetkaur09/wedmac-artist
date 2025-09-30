@@ -25,10 +25,10 @@ export default function ReceiveToken() {
         return false;
       }
 
-      localstorage.setItem("accessToken", String(access));
-      if (refresh) localstorage.setItem("refreshToken", String(refresh));
-      if (userId) localstorage.setItem("user_id", String(userId));
-      localstorage.setItem("role", "artist");
+      localStorage.setItem("accessToken", String(access));
+      if (refresh) localStorage.setItem("refreshToken", String(refresh));
+      if (userId) localStorage.setItem("user_id", String(userId));
+      localStorage.setItem("role", "artist");
 
       login({
         access,

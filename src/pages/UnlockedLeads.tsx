@@ -81,7 +81,7 @@ export default function UnlockedLeads() {
       setError(null);
 
       try {
-        const token = localstorage.getItem("accessToken");
+        const token = localStorage.getItem("accessToken");
         const res = await fetch(
           "https://api.wedmacindia.com/api/leads/artist/my-claimed-leads/",
           {
@@ -403,7 +403,7 @@ export default function UnlockedLeads() {
                                 onClick={async () => {
                                   try {
                                     const token =
-                                      localstorage.getItem("accessToken");
+                                      localStorage.getItem("accessToken");
                                     const res = await fetch(
                                       `https://api.wedmacindia.com/api/leads/${lead.id}/book/`,
                                       {

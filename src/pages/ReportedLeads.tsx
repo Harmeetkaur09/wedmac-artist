@@ -32,9 +32,9 @@ const getAuthHeader = () => {
   try {
     const token =
       typeof window !== "undefined" &&
-      (localstorage.getItem("accessToken") ||
+      (localStorage.getItem("accessToken") ||
         localStorage.getItem("accessToken") ||
-        localstorage.getItem("token") ||
+        localStorage.getItem("token") ||
         localStorage.getItem("token") ||
         "");
     return token ? { Authorization: `Bearer ${token}` } : {};

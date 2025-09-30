@@ -50,8 +50,8 @@ const Login = () => {
     const refresh = params.get("refresh");
 
     if (access) {
-      localstorage.setItem("accessToken", access);
-      if (refresh) localstorage.setItem("refreshToken", refresh);
+      localStorage.setItem("accessToken", access);
+      if (refresh) localStorage.setItem("refreshToken", refresh);
 
       // ✅ redirect to profile/dashboard
       window.location.href = "/profile";
@@ -123,10 +123,10 @@ const Login = () => {
       const body = await res.json();
       if (!res.ok) throw new Error(body.message || "Invalid OTP");
 
-      localstorage.setItem("accessToken", body.access);
-      localstorage.setItem("refreshToken", body.refresh);
-      localstorage.setItem("userRole", body.role);
-      localstorage.setItem("userId", String(body.user_id));
+      localStorage.setItem("accessToken", body.access);
+      localStorage.setItem("refreshToken", body.refresh);
+      localStorage.setItem("userRole", body.role);
+      localStorage.setItem("userId", String(body.user_id));
       login({
         access: body.access,
         refresh: body.refresh,

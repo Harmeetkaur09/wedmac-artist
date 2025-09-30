@@ -178,7 +178,7 @@ export default function PaymentsPlan(): JSX.Element {
       try {
         setLoadingPayments(true);
 
-        const token = localstorage.getItem("accessToken") ?? "";
+        const token = localStorage.getItem("accessToken") ?? "";
         const res = await fetch(
           "https://api.wedmacindia.com/api/artists/payments/history/",
           {
@@ -261,7 +261,7 @@ export default function PaymentsPlan(): JSX.Element {
       let rzpScript: HTMLScriptElement | null = null;
 
       try {
-        const token = localstorage.getItem("accessToken") ?? "";
+        const token = localStorage.getItem("accessToken") ?? "";
 
         const res = await fetch(
           `https://api.wedmacindia.com/api/artists/plans/${planId}/purchase/`,

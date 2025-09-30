@@ -125,9 +125,9 @@ const SignUp = () => {
       }
 
       // store tokens & user
-      localstorage.setItem("accessToken", body.access);
-      localstorage.setItem("refreshToken", body.refresh);
-      localstorage.setItem("user", JSON.stringify(body.user));
+      localStorage.setItem("accessToken", body.access);
+      localStorage.setItem("refreshToken", body.refresh);
+      localStorage.setItem("user", JSON.stringify(body.user));
 
       // update context & redirect
       login({ access: body.access, refresh: body.refresh, user: body.user });

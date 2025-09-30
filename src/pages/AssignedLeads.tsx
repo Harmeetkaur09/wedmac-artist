@@ -86,7 +86,7 @@ export default function AssignedLeads() {
     "other",
   ];
   const [uiStatus, setUiStatus] = useState<{ [id: number]: string }>({});
-  const currentArtistId = Number(localstorage.getItem("user_Id") || 0);
+  const currentArtistId = Number(localStorage.getItem("user_Id") || 0);
   const isAlreadyClaimedByMe = (lead: ApiLead, artistId: number) => {
     return (
       lead.claimed_artists?.some((a) => Number(a.id) === Number(artistId)) ??
@@ -136,7 +136,7 @@ export default function AssignedLeads() {
       setLoading(true);
       setError(null);
       try {
-        const token = localstorage.getItem("accessToken");
+        const token = localStorage.getItem("accessToken");
         const res = await fetch(
           "https://api.wedmacindia.com/api/leads/artist/my-assigned-leads/",
           {
@@ -474,7 +474,7 @@ export default function AssignedLeads() {
 
                                     try {
                                       const token =
-                                        localstorage.getItem("accessToken");
+                                        localStorage.getItem("accessToken");
                                       const res = await fetch(
                                         `https://api.wedmacindia.com/api/leads/${lead.id}/claim/`,
                                         {
@@ -533,7 +533,7 @@ export default function AssignedLeads() {
                                   onClick={async () => {
                                     try {
                                       const token =
-                                        localstorage.getItem("accessToken");
+                                        localStorage.getItem("accessToken");
                                       const res = await fetch(
                                         `https://api.wedmacindia.com/api/leads/${lead.id}/book/`,
                                         {
