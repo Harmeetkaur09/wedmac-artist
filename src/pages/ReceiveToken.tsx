@@ -4,8 +4,8 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const ALLOWED_ADMIN_ORIGINS = [
-  "https://wed-mac-admin.vercel.app", // <-- put your admin origin(s) here
-  "https://wedmac-artist.vercel.app",
+  "https://admin.wedmacindia.com",
+  "https://artist.wedmacindia.com/",
   "http://localhost:3000", // <-- local dev
 ];
 
