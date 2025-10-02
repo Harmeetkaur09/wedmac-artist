@@ -548,7 +548,7 @@ export default function Support() {
                     className="text-primary underline"
                   >
                     {" "}
-                    https://wed-mac-qsxz.vercel.app/
+                    https://wedmacindia.com/
                   </a>
                 </span>
               </p>

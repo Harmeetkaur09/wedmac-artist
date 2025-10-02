@@ -171,7 +171,7 @@ const Login = () => {
             <div className="flex items-center justify-between h-16">
               {/* Logo */}
               <a
-                href="https://wed-mac-qsxz.vercel.app/"
+                href="https://wedmacindia.com/"
                 className="block w-[140px] h-auto relative"
               >
                 <img
@@ -186,37 +186,37 @@ const Login = () => {
               {/* Desktop Menu */}
               <div className="hidden md:flex items-center space-x-8">
                 <a
-                  href="https://wed-mac-qsxz.vercel.app/"
+                  href="https://wedmacindia.com/"
                   className="text-gray-700 hover:text-rose-500"
                 >
                   Home
                 </a>
                 <a
-                  href="https://wed-mac-qsxz.vercel.app/makeup-artist"
+                  href="https://wedmacindia.com/makeup-artist"
                   className="text-gray-700 hover:text-rose-500"
                 >
                   Wedmac Makeup Artist
                 </a>
                 <a
-                  href="https://wed-mac-qsxz.vercel.app/about"
+                  href="https://wedmacindia.com/about"
                   className="text-gray-700 hover:text-rose-500"
                 >
                   About Us
                 </a>
                 <a
-                  href="https://wed-mac-qsxz.vercel.app/blog"
+                  href="https://wedmacindia.com/blog"
                   className="text-gray-700 hover:text-rose-500"
                 >
                   Blog
                 </a>
                 <a
-                  href="https://wed-mac-qsxz.vercel.app/faq"
+                  href="https://wedmacindia.com/faq"
                   className="text-gray-700 hover:text-rose-500"
                 >
                   FAQ
                 </a>
                 <a
-                  href="https://wed-mac-qsxz.vercel.app/contact"
+                  href="https://wedmacindia.com/contact"
                   className="text-gray-700 hover:text-rose-500"
                 >
                   Contact
@@ -256,7 +256,7 @@ const Login = () => {
           {menuOpen && (
             <div className="md:hidden px-4 pt-4 pb-6 space-y-3 bg-white shadow-lg border-t border-gray-200">
               <a
-                href="https://wed-mac-qsxz.vercel.app/"
+                href="https://wedmacindia.com/"
                 onClick={() => setMenuOpen(false)}
                 className="block text-gray-700 hover:text-rose-500"
               >
@@ -270,28 +270,28 @@ const Login = () => {
                 Wedmac Makeup Artist
               </a>
               <a
-                href="https://wed-mac-qsxz.vercel.app/about"
+                href="https://wedmacindia.com/about"
                 onClick={() => setMenuOpen(false)}
                 className="block text-gray-700 hover:text-rose-500"
               >
                 About Us
               </a>
               <a
-                href="https://wed-mac-qsxz.vercel.app/blog"
+                href="https://wedmacindia.com/blog"
                 onClick={() => setMenuOpen(false)}
                 className="block text-gray-700 hover:text-rose-500"
               >
                 Blog
               </a>
               <a
-                href="https://wed-mac-qsxz.vercel.app/faq"
+                href="https://wedmacindia.com/faq"
                 onClick={() => setMenuOpen(false)}
                 className="block text-gray-700 hover:text-rose-500"
               >
                 FAQ
               </a>
               <a
-                href="https://wed-mac-qsxz.vercel.app/contact"
+                href="https://wedmacindia.com/contact"
                 onClick={() => setMenuOpen(false)}
                 className="block text-gray-700 hover:text-rose-500"
               >
@@ -527,25 +527,25 @@ const Login = () => {
               <h3 className="text-xl font-semibold mb-6">Links</h3>
               <div className="space-y-3">
                 <a
-                  href="https://wed-mac-qsxz.vercel.app/faq"
+                  href="https://wedmacindia.com/faq"
                   className="block hover:underline"
                 >
                   FAQs
                 </a>
                 <a
-                  href="https://wed-mac-qsxz.vercel.app/blog"
+                  href="https://wedmacindia.com/blog"
                   className="block hover:underline"
                 >
                   Blog
                 </a>
                 <a
-                  href="https://wed-mac-qsxz.vercel.app/privacy"
+                  href="https://wedmacindia.com/privacy"
                   className="block hover:underline"
                 >
                   Privacy Policy
                 </a>
                 <a
-                  href="https://wed-mac-qsxz.vercel.app/terms"
+                  href="https://wedmacindia.com/terms"
                   className="block hover:underline"
                 >
                   Terms &amp; Conditions
