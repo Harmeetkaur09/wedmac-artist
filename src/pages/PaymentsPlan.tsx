@@ -338,7 +338,7 @@ export default function PaymentsPlan(): JSX.Element {
                 }
               );
               // alert("Payment Successful!");
-              // window.location.reload();
+              window.location.reload();
             } catch (err) {
               console.error("Verification failed:", err);
               alert(
