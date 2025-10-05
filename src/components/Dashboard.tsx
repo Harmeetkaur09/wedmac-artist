@@ -220,15 +220,20 @@ useEffect(() => {
   const planName = profile?.current_plan?.name?.toLowerCase() || "";
   const locations = profile?.preferred_locations || [];
 
-  let limitedCities = locations;
+  let limitedCities: string[] = [];
+
   if (planName.includes("basic")) {
     limitedCities = locations.slice(0, 2);
   } else if (planName.includes("standard")) {
     limitedCities = locations.slice(0, 5);
+  } else if (planName.includes("premium") || planName.includes("pro")) {
+    // Premium & Pro: all cities allowed
+    limitedCities = locations;
   }
 
   setAllowedCities(limitedCities);
 }, [profile]);
+
 
   const planInfoText = useMemo(() => {
     if (!profile?.current_plan) return "No active plan";
@@ -619,29 +624,39 @@ useEffect(() => {
                         </div>
 
                         {/* Claim Button */}
-                        <div className="flex items-center gap-2 relative">
-{allowedCities.some(
-  city => city.toLowerCase().trim() === (lead.location || "").toLowerCase().trim()
-) ? (
-  <Button
-    size="sm"
-    onClick={() => claimLead(lead.id)}
-    disabled={claimingLeadId === lead.id}
-    className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
-  >
-    {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
-  </Button>
-) : (
-  <Button
-    size="sm"
-    onClick={() => navigate("/payments")}
-    className="px-3 py-1 bg-primary text-white rounded text-sm flex items-center gap-2 hover:bg-primary/80"
-  >
-    Upgrade Plan to Claim
-  </Button>
-)}
+                     <div className="flex items-center gap-2 relative">
+  {(() => {
+    const planName = profile?.current_plan?.name?.toLowerCase() || "";
+    const canClaim =
+      planName.includes("premium") || planName.includes("pro")
+        ? true
+        : allowedCities.some(
+            (city) =>
+              city.toLowerCase().trim() ===
+              (lead.location || "").toLowerCase().trim()
+          );
 
-                        </div>
+    return canClaim ? (
+      <Button
+        size="sm"
+        onClick={() => claimLead(lead.id)}
+        disabled={claimingLeadId === lead.id}
+        className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
+      >
+        {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
+      </Button>
+    ) : (
+      <Button
+        size="sm"
+        onClick={() => navigate("/payments")}
+        className="px-3 py-1 bg-primary text-white rounded text-sm flex items-center gap-2 hover:bg-primary/80"
+      >
+        Upgrade Plan to Claim
+      </Button>
+    );
+  })()}
+</div>
+
                       </>
                     ) : (
                       // ❌ Subscription Inactive: Limited Details
