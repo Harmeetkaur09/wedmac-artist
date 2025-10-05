@@ -522,14 +522,17 @@ export default function MyProfile() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Bio</Label>
-                <Textarea
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  className="min-h-[100px]"
-                />
-              </div>
+    <div className="space-y-2">
+  <Label>Bio</Label>
+  <Textarea
+    value={bio}
+    onChange={(e) => setBio(e.target.value)}
+    placeholder="Example: I'm a professional makeup artist with 5+ years of experience in bridal and fashion makeup. I love creating elegant, natural looks that bring out each client's unique beauty. Based in Delhi, available for weddings, shoots, and special events."
+    className="min-h-[100px]"
+  />
+</div>
+
+
             </CardContent>
           </Card>
 
@@ -740,7 +743,6 @@ export default function MyProfile() {
                     <input
                       type="file"
                       accept="image/*"
-                      multiple
                       className="hidden"
                       onChange={(e) =>
                         handleFileUpload(e.target.files, "portfolio")
@@ -792,7 +794,6 @@ export default function MyProfile() {
                     <input
                       type="file"
                       accept="image/*,application/pdf"
-                      multiple
                       className="hidden"
                       onChange={(e) =>
                         handleFileUpload(e.target.files, "certificate")

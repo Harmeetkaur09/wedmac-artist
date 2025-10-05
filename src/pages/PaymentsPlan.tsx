@@ -338,7 +338,7 @@ export default function PaymentsPlan(): JSX.Element {
                 }
               );
               // alert("Payment Successful!");
-              window.location.reload();
+              // window.location.reload();
             } catch (err) {
               console.error("Verification failed:", err);
               alert(
@@ -347,9 +347,7 @@ export default function PaymentsPlan(): JSX.Element {
             }
           },
           prefill: {
-            name: "Your User Name",
-            email: "user@example.com",
-            contact: "9999999999",
+     
           },
           theme: { color: "#E6447A" },
           modal: {

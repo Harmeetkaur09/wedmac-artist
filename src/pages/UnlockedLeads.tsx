@@ -29,6 +29,7 @@ type ApiLead = {
   phone?: string | null;
   email?: string | null;
   event_type?: string | null;
+
   requirements?: string | null;
   booking_date?: string | null;
   source?: string | null;
@@ -331,7 +332,9 @@ export default function UnlockedLeads() {
 
                           <TableCell>
                             <div className="space-y-1">
-                              <div className="font-medium">{eventType}</div>
+                              <div className="font-medium">{lead.makeup_types?.length
+    ? lead.makeup_types.map((m) => m.name).join(", ")
+    : "-"}</div>
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Calendar className="w-3 h-3" />
                                 {bookingDate}

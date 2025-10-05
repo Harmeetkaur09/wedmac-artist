@@ -26,6 +26,7 @@ interface Lead {
   phone: string;
   email: string;
   event_type: string;
+  makeup_types?: { id: number | string; name: string }[];
   booking_date: string;
   location: string;
   requirements: string;
@@ -164,8 +165,8 @@ export function Dashboard({ phone }: { phone?: string }) {
             : null;
 
           const durationDays = plan?.duration_days || 0;
-          const extendedDays = plan?.extended_days || 0; // agar backend bhejta hai
-          const totalDays = durationDays + extendedDays;
+          // const extendedDays = plan?.extended_days || 0; // agar backend bhejta hai
+          const totalDays = durationDays ;
 
           // 🔹 expiry calculate
           const expiryTs =
@@ -578,7 +579,9 @@ export function Dashboard({ phone }: { phone?: string }) {
 
                             <div className="flex items-center gap-1">
                               <PartyPopper className="w-3 h-3" />
-                              <span>{lead.event_type}</span>
+                              <span>{lead.makeup_types?.length
+    ? lead.makeup_types.map((m) => m.name).join(", ")
+    : "-"}</span>
                             </div>
                           </div>
 
