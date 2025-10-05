@@ -25,6 +25,7 @@ import {
   X,
   Instagram,
   Award,
+  Landmark,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -37,6 +38,46 @@ import {
 import type { MyProfile } from "@/api/profile";
 import { set } from "date-fns";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+// static mapping (extend as needed)
+const STATE_TO_CITIES: Record<string, string[]> = {
+  "Delhi": ["New Delhi", "Dwarka", "Rohini", "Janakpuri", "Pitampura"],
+  "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Thane", "Nashik", "Aurangabad", "Kolhapur", "Solapur"],
+  "Karnataka": ["Bengaluru", "Mysore", "Mangalore", "Hubli", "Davanagere", "Belagavi", "Shimoga"],
+  "Uttar Pradesh": ["Lucknow", "Kanpur", "Varanasi", "Agra", "Noida", "Ghaziabad", "Prayagraj", "Meerut"],
+  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Erode", "Tirunelveli"],
+  "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Gandhinagar", "Bhavnagar", "Jamnagar"],
+  "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Siliguri", "Asansol", "Kharagpur"],
+  "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota", "Bikaner", "Ajmer", "Alwar"],
+  "Haryana": ["Gurugram", "Faridabad", "Panipat", "Ambala", "Yamunanagar", "Hisar", "Karnal"],
+  "Punjab": ["Chandigarh", "Amritsar", "Ludhiana", "Jalandhar", "Patiala", "Bathinda"],
+  "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Darbhanga"],
+  "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain"],
+  "Odisha": ["Bhubaneswar", "Cuttack", "Rourkela", "Sambalpur", "Berhampur"],
+  "Assam": ["Guwahati", "Silchar", "Dibrugarh", "Jorhat", "Tinsukia"],
+  "Chhattisgarh": ["Raipur", "Bhilai", "Durg", "Bilaspur", "Korba"],
+  "Jharkhand": ["Ranchi", "Jamshedpur", "Dhanbad", "Bokaro", "Hazaribagh"],
+  "Kerala": ["Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam"],
+  "Telangana": ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar", "Khammam"],
+  "Andhra Pradesh": ["Vijayawada", "Visakhapatnam", "Guntur", "Nellore", "Tirupati"],
+  "Himachal Pradesh": ["Shimla", "Mandi", "Solan", "Dharamshala", "Kullu"],
+  "Uttarakhand": ["Dehradun", "Haridwar", "Rishikesh", "Haldwani", "Roorkee"],
+  "Goa": ["Panaji", "Margao", "Vasco da Gama", "Mapusa", "Ponda"],
+  "Tripura": ["Agartala", "Udaipur", "Dharmanagar", "Kailasahar", "Belonia"],
+  "Meghalaya": ["Shillong", "Tura", "Jowai", "Nongpoh", "Baghmara"],
+  "Manipur": ["Imphal", "Thoubal", "Kakching", "Churachandpur", "Bishnupur"],
+  "Mizoram": ["Aizawl", "Lunglei", "Serchhip", "Champhai", "Kolasib"],
+  "Nagaland": ["Kohima", "Dimapur", "Mokokchung", "Tuensang", "Wokha"],
+  "Sikkim": ["Gangtok", "Namchi", "Gyalshing", "Mangan", "Rangpo"],
+  "Arunachal Pradesh": ["Itanagar", "Naharlagun", "Pasighat", "Tawang", "Ziro"],
+  "Jammu and Kashmir": ["Srinagar", "Jammu", "Anantnag", "Baramulla", "Kathua"],
+  "Ladakh": ["Leh", "Kargil"],
+  "Puducherry": ["Puducherry", "Karaikal", "Mahe", "Yanam"],
+  "Chandigarh (UT)": ["Chandigarh"],
+  "Andaman and Nicobar Islands": ["Port Blair", "Car Nicobar", "Havelock Island"],
+  "Lakshadweep": ["Kavaratti", "Agatti", "Minicoy"]
+};
+
+
 function LoadingOverlay({
   show,
   message,
@@ -118,6 +159,17 @@ export default function MyProfile() {
   const [chosenOffer, setChosenOffer] = useState("");
   const [bio, setBio] = useState("");
   const [idDocs, setIdDocs] = useState<DocumentData[]>([]);
+  // selected state (derived from profile.location.state or user-chosen)
+const [stateValue, setStateValue] = useState<string>("");
+
+// cities options (derived from local mapping)
+const [citiesOptions, setCitiesOptions] = useState<string[]>([]);
+
+// selected preferred cities (max 5)
+const [preferredCities, setPreferredCities] = useState<string[]>([]);
+const [manualCityInput, setManualCityInput] = useState("");
+
+
   // below your other state hooks
   const [productOptions, setProductOptions] = useState<
     { id: number; name: string }[]
@@ -287,7 +339,31 @@ export default function MyProfile() {
             localStorage.setItem("user_Id", String(data.id));
           }
         }
+          const loc = (data as any).location;
+  // if location is object with state
+  if (loc && typeof loc === "object" && loc.state) {
+    setStateValue(String(loc.state));
+  } else if (typeof loc === "string" && loc.includes(",")) {
+    // optionally parse "City, State" strings
+    const parts = String(loc).split(",").map((s) => s.trim());
+    if (parts.length >= 2) setStateValue(parts[parts.length - 1]);
+  }
+
+  // Try common keys for preferred locations in API response
+  const prefRaw =
+    (data as any).preferred_locations_data ??
+    (data as any).preferred_locations ??
+    (data as any).preferred_locations_list;
+  if (Array.isArray(prefRaw)) {
+    const names = prefRaw
+      .map((x) => (typeof x === "string" ? x : x?.city ?? x?.name ?? ""))
+      .filter(Boolean);
+    setPreferredCities(names.slice(0, 5));
+  }
+
       } catch (err) {
+          console.warn("prefill preferred locations/state:", err);
+
         const msg = await parseErrorMessage(err);
         console.error(err);
         setError(msg || "Could not load your profile");
@@ -300,6 +376,63 @@ export default function MyProfile() {
       mounted = false;
     };
   }, []);
+
+// helper to find matching cities for a given state with fuzzy matching
+function findCitiesForState(rawState?: string): string[] {
+  if (!rawState) return [];
+  const s = String(rawState).trim().toLowerCase();
+
+  // build normalized map (lowercase keys)
+  const normMap: Record<string, string[]> = {};
+  for (const k of Object.keys(STATE_TO_CITIES)) {
+    normMap[k.toLowerCase().trim()] = STATE_TO_CITIES[k] ?? [];
+  }
+
+  // exact normalized match
+  if (normMap[s]) return normMap[s];
+
+  // substring / contains match
+  for (const key of Object.keys(normMap)) {
+    if (key.includes(s) || s.includes(key)) return normMap[key];
+  }
+
+  // token intersection (e.g. "uttar pradesh" vs "uttar pradesh state")
+  const tokens = s.split(/\s+/).filter(Boolean);
+  if (tokens.length > 0) {
+    for (const key of Object.keys(normMap)) {
+      const kTokens = key.split(/\s+/).filter(Boolean);
+      if (tokens.some((t) => kTokens.includes(t)) || kTokens.some((t) => tokens.includes(t))) {
+        return normMap[key];
+      }
+    }
+  }
+
+  // nothing found
+  return [];
+}
+
+useEffect(() => {
+  const list = findCitiesForState(stateValue);
+  setCitiesOptions(list);
+  setPreferredCities((prev) => prev.filter((c) => list.includes(c)).slice(0, 5));
+
+  if (stateValue) {
+    // debug: print what came from API and what keys we have
+    // remove these console.logs in production
+    console.debug("[MyProfile] detected stateValue:", stateValue);
+    if (!list || list.length === 0) {
+      console.warn(
+        `[MyProfile] No cities mapped for state "${stateValue}". Available mapping keys: ${Object.keys(
+          STATE_TO_CITIES
+        ).join(", ")}`
+      );
+    } else {
+      console.debug("[MyProfile] citiesOptions:", list);
+    }
+  }
+}, [stateValue]);
+
+
 
   const handleFileUpload = async (
     files: FileList | null,
@@ -366,6 +499,7 @@ export default function MyProfile() {
         },
         id_documents: idDocs.map((d) => d.id),
         supporting_images: portfolioDocs.map((d) => d.id),
+        preferred_locations: preferredCities,
       };
       const finalPayload = payload as CompleteProfilePayload & {
         trial_type?: "free" | "paid";
@@ -491,6 +625,9 @@ export default function MyProfile() {
                     </div>
                   </RadioGroup>
                 </div>
+
+
+
                 {/* <div className="space-y-2">
                   <Label>Date of Birth</Label>
                   <Input
@@ -535,6 +672,116 @@ export default function MyProfile() {
 
             </CardContent>
           </Card>
+ <Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      <Landmark />
+      Preferred Cities
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2">
+      <Label>Preferred Cities (select up to 5)</Label>
+
+      {/* Priority selection instruction */}
+      <p className="text-xs text-gray-500 -mt-1">
+        Please select cities in order of your priority — your top preference first.
+      </p>
+
+      <div className="text-sm text-gray-500 mb-2">
+        {stateValue ? (
+          <>
+            Cities shown for:{" "}
+            <span className="font-medium text-gray-700">{stateValue}</span>
+          </>
+        ) : (
+          <>State not detected from profile — add cities manually.</>
+        )}
+      </div>
+
+      {citiesOptions && citiesOptions.length > 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {citiesOptions.map((city) => {
+            const selected = preferredCities.includes(city);
+            const disabled = !selected && preferredCities.length >= 5;
+            return (
+              <Badge
+                key={city}
+                onClick={() => {
+                  if (selected) {
+                    setPreferredCities((p) => p.filter((c) => c !== city));
+                  } else if (!disabled) {
+                    setPreferredCities((p) => [...p, city].slice(0, 5));
+                  }
+                }}
+                className={
+                  selected
+                    ? "bg-primary/10 text-primary cursor-pointer"
+                    : `bg-gray-100 text-black cursor-pointer ${
+                        disabled ? "opacity-50 cursor-not-allowed" : ""
+                      }`
+                }
+                title={disabled ? "Maximum 5 cities" : undefined}
+              >
+                {city}
+              </Badge>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-sm text-gray-500">
+            {stateValue
+              ? "No cities configured for your detected state. You can add a city manually."
+              : "No state detected — add cities manually."}
+          </p>
+
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter city name"
+              value={manualCityInput}
+              onChange={(e) => setManualCityInput(e.target.value)}
+            />
+            <Button
+              onClick={() => {
+                const v = (manualCityInput || "").trim();
+                if (!v) return;
+                if (preferredCities.includes(v)) {
+                  setManualCityInput("");
+                  return;
+                }
+                if (preferredCities.length >= 5) return;
+                setPreferredCities((p) => [...p, v]);
+                setManualCityInput("");
+              }}
+              disabled={!manualCityInput || preferredCities.length >= 5}
+            >
+              Add
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <p className="text-xs text-gray-500 mt-1">
+        Selected: {preferredCities.length} / 5
+      </p>
+
+      <div className="flex flex-wrap gap-2 mt-2">
+        {preferredCities.map((c) => (
+          <Badge
+            key={c}
+            onClick={() =>
+              setPreferredCities((p) => p.filter((x) => x !== c))
+            }
+            className="text-xs bg-primary/10 text-primary cursor-pointer"
+          >
+            {c}
+          </Badge>
+        ))}
+      </div>
+    </div>
+  </CardContent>
+</Card>
 
           {/* Payment Methods */}
           <Card>

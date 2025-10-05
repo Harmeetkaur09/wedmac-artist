@@ -211,6 +211,25 @@ export function Dashboard({ phone }: { phone?: string }) {
 
     fetchAll();
   }, []);
+  // Allowed cities based on plan
+const [allowedCities, setAllowedCities] = useState<string[]>([]);
+
+useEffect(() => {
+  if (!profile) return;
+
+  const planName = profile?.current_plan?.name?.toLowerCase() || "";
+  const locations = profile?.preferred_locations || [];
+
+  let limitedCities = locations;
+  if (planName.includes("basic")) {
+    limitedCities = locations.slice(0, 2);
+  } else if (planName.includes("standard")) {
+    limitedCities = locations.slice(0, 5);
+  }
+
+  setAllowedCities(limitedCities);
+}, [profile]);
+
   const planInfoText = useMemo(() => {
     if (!profile?.current_plan) return "No active plan";
 
@@ -568,7 +587,7 @@ export function Dashboard({ phone }: { phone?: string }) {
                             <div className="flex items-center gap-1">
                               <IndianRupee className="w-3 h-3" />
                               <span>
-                                {lead.budget_range?.min_value ?? "N/A"}
+                                {lead.budget_range?.max_value ?? "N/A"}
                               </span>
                             </div>
 
@@ -601,15 +620,27 @@ export function Dashboard({ phone }: { phone?: string }) {
 
                         {/* Claim Button */}
                         <div className="flex items-center gap-2 relative">
-                          <Button
-                            size="sm"
-                            onClick={() => claimLead(lead.id)}
-                            className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
-                          >
-                            {claimingLeadId === lead.id
-                              ? "Claiming..."
-                              : "Claim"}
-                          </Button>
+{allowedCities.some(
+  city => city.toLowerCase().trim() === (lead.location || "").toLowerCase().trim()
+) ? (
+  <Button
+    size="sm"
+    onClick={() => claimLead(lead.id)}
+    disabled={claimingLeadId === lead.id}
+    className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
+  >
+    {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
+  </Button>
+) : (
+  <Button
+    size="sm"
+    onClick={() => navigate("/payments")}
+    className="px-3 py-1 bg-primary text-white rounded text-sm flex items-center gap-2 hover:bg-primary/80"
+  >
+    Upgrade Plan to Claim
+  </Button>
+)}
+
                         </div>
                       </>
                     ) : (

@@ -30,6 +30,7 @@ export interface MyProfile {
   purchase_date: string;
   extended_days: number;
   plan_verified: boolean;
+  preferred_locations: string[];
   current_plan: {
     id: number;
     name: string;
@@ -93,6 +94,7 @@ export interface CompleteProfilePayload {
   };
   id_documents: number[];
   supporting_images: number[];
+  preferred_locations?: string[]; // 👈 new optional field
   files?: number[]; // 👈 new optional field
   featured_portfolio?: number[]; // 👈 new optional field
 }
