@@ -602,7 +602,7 @@ export default function Support() {
                   <TableHead>Status</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Created</TableHead>
-                  <TableHead>Artist ID</TableHead>
+                  <TableHead>Admin Note</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -634,16 +634,13 @@ export default function Support() {
                         </Badge>
                       </TableCell>
                     <TableCell>
-  <div className="flex flex-col">
     <Badge className={getPriorityColor(ticket.priority)}>
       {ticket.priority}
     </Badge>
-    <p className="break-all mt-1">{ticket.admin_response}</p>
-  </div>
 </TableCell>
 
                       <TableCell>{formatDate(ticket.created_at)}</TableCell>
-                      <TableCell>{ticket.artist}</TableCell>
+                      <TableCell className="break-all">{ticket.admin_response}</TableCell>
                     </TableRow>
                   ))
                 )}
