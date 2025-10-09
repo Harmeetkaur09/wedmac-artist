@@ -506,7 +506,7 @@ export default function PaymentsPlan(): JSX.Element {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Plan</p>
-                  <PlanBadge plan={planBadgeName} />
+                 {currentPlan.name ? "-" : "No Plan"}
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Monthly Cost</p>

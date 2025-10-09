@@ -37,6 +37,7 @@ type Ticket = {
   subject: string;
   category: string;
   priority: string;
+  admin_response: string;
   description: string;
   status: string;
   created_at: string; // ISO date
@@ -632,11 +633,15 @@ export default function Support() {
                           {ticket.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        <Badge className={getPriorityColor(ticket.priority)}>
-                          {ticket.priority}
-                        </Badge>
-                      </TableCell>
+                    <TableCell>
+  <div className="flex flex-col">
+    <Badge className={getPriorityColor(ticket.priority)}>
+      {ticket.priority}
+    </Badge>
+    <p className="break-all mt-1">{ticket.admin_response}</p>
+  </div>
+</TableCell>
+
                       <TableCell>{formatDate(ticket.created_at)}</TableCell>
                       <TableCell>{ticket.artist}</TableCell>
                     </TableRow>
