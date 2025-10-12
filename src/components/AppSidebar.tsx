@@ -11,6 +11,7 @@ import {
   CreditCard,
   HelpCircle,
   Check,
+  Logs,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -40,6 +41,7 @@ const allMenuItems = [
   { title: "Wedmac Shop", url: "/shop", icon: ShoppingBag },
   { title: "Refer & Earn", url: "/refer", icon: Share2},
   { title: "Payments / Plan", url: "/payments", icon: CreditCard },
+  { title: "Activity Logs", url: "/activity-logs", icon: Logs },
   { title: "Support / Help", url: "/support", icon: HelpCircle },
 ];
 

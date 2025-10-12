@@ -23,6 +23,7 @@ import OTPVerification from "./pages/OTPVerification";
 import NotFound from "./pages/NotFound";
 import AssignedLeads from "./pages/AssignedLeads";
 import ReceiveToken from "./pages/ReceiveToken";
+import ActivityLogs from "./pages/ActivityLogs";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,11 @@ const App = () => (
              <Route path="/assigned" element={
               <ProtectedRoute>
                 <AssignedLeads />
+              </ProtectedRoute>
+            } />
+             <Route path="/activity-logs" element={
+              <ProtectedRoute>
+                <ActivityLogs />
               </ProtectedRoute>
             } />
             <Route path="/refer" element={

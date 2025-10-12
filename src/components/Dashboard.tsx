@@ -71,6 +71,15 @@ export function Dashboard({ phone }: { phone?: string }) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isAdminCreated, setIsAdminCreated] = useState(false);
+const [filters, setFilters] = useState({
+  location: "",
+  name: "",
+  makeup_type: "",
+});
+
+const [limit, setLimit] = useState(3);
+const [offset, setOffset] = useState(0);
+const [hasMore, setHasMore] = useState(true);
 
   // subscription / credits state
   const [subscriptionValid, setSubscriptionValid] = useState<boolean>(true);
@@ -80,6 +89,10 @@ export function Dashboard({ phone }: { phone?: string }) {
   >(null);
   const [planTotalLeads, setPlanTotalLeads] = useState<number | null>(null);
   const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
+const [loadingMore, setLoadingMore] = useState(false);
+
+
+
 
   // per-lead UI state
   const [selectedContactId, setSelectedContactId] = useState<number | null>(
@@ -144,10 +157,58 @@ export function Dashboard({ phone }: { phone?: string }) {
       console.error("Failed to save claimedMap:", err);
     }
   };
+const fetchLeads = async (reset = false) => {
+  try {
+    setLoading(true);
+    const token = localStorage.getItem("accessToken");
+
+    const params = new URLSearchParams();
+
+    if (filters.location) params.append("location", filters.location);
+    if (filters.name) params.append("name", filters.name);
+    if (filters.makeup_type) params.append("makeup_type", filters.makeup_type);
+
+    // ✅ Only send limit (no offset)
+    params.append("limit", limit.toString());
+
+    const res = await fetch(
+      `https://api.wedmacindia.com/api/leads/all-leads/?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!res.ok) throw new Error("Failed to fetch leads");
+    const data = await res.json();
+
+    // ✅ Replace or append depending on reset flag
+    if (reset) {
+      setLeads(data.leads || []);
+    } else {
+      setLeads((prev) => [...prev, ...(data.leads || [])]);
+    }
+
+    setSummary(data.summary || null);
+    // ✅ If less than limit leads are returned, stop loading more
+    setHasMore((data.leads || []).length === limit);
+  } catch (err) {
+    console.error("Error fetching leads:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+useEffect(() => {
+  fetchLeads(true);
+}, [limit]);
+
+
 
   // fetch profile + leads + credits history
   useEffect(() => {
-    const fetchAll = async () => {
+    const loadData  = async () => {
       try {
         console.log("Starting fetchAll");
         setLoading(true);
@@ -190,7 +251,7 @@ export function Dashboard({ phone }: { phone?: string }) {
         // 🔹 Leads fetch karo
         const token = localStorage.getItem("accessToken");
         const leadsRes = await fetch(
-          "https://api.wedmacindia.com/api/leads/all-leads/",
+          "https://api.wedmacindia.com/api/leads/all-leads/?limit=3",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -209,7 +270,7 @@ export function Dashboard({ phone }: { phone?: string }) {
       }
     };
 
-    fetchAll();
+    loadData();
   }, []);
   // Allowed cities based on plan
 const [allowedCities, setAllowedCities] = useState<string[]>([]);
@@ -286,7 +347,7 @@ const planInfoText = useMemo(() => {
 }, [profile]);
 
 
-  const visibleLeads = showAll ? leads : leads.slice(0, 3);
+const visibleLeads = leads.slice(0, limit);
   const filteredLeads = useMemo(() => {
     if (!searchQuery) return visibleLeads;
     const q = searchQuery.toLowerCase();
@@ -524,7 +585,7 @@ const planInfoText = useMemo(() => {
             <CardTitle className="text-xl font-semibold">
               Recent Leads
             </CardTitle>
-            {!loading && leads.length > 0 && (
+            {/* {!loading && leads.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
@@ -534,16 +595,24 @@ const planInfoText = useMemo(() => {
                 <Eye className="w-4 h-4 mr-2" />
                 {showAll ? "Show Less" : "View All"}
               </Button>
-            )}
+            )} */}
           </div>
           <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Search by name, location, or event type..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+          <input
+  type="text"
+  placeholder="Search by name, location, or event type..."
+  value={searchQuery}
+  onChange={(e) => {
+    const q = e.target.value;
+    setSearchQuery(q);
+    setFilters((prev) => ({
+      ...prev,
+      name: q, // assuming backend supports ?name=
+    }));
+  }}
+  className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+/>
+
           </div>
         </CardHeader>
 
@@ -722,6 +791,22 @@ const planInfoText = useMemo(() => {
           )}
         </CardContent>
       </Card>
+{hasMore && (
+  <div className="text-center mt-4">
+    <Button
+      variant="outline"
+      onClick={async () => {
+        setLoadingMore(true);
+        setLimit((prev) => prev + 3); // ✅ increase by 3
+      }}
+      disabled={loadingMore}
+    >
+      {loadingMore ? "Loading..." : "Load More"}
+    </Button>
+  </div>
+)}
+
+
 
       {/* Quick Actions */}
     </div>
