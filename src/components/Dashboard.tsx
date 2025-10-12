@@ -235,43 +235,56 @@ useEffect(() => {
 }, [profile]);
 
 
-  const planInfoText = useMemo(() => {
-    if (!profile?.current_plan) return "No active plan";
+const planInfoText = useMemo(() => {
+  if (!profile?.current_plan) return "No active plan";
 
-    const planName = profile.current_plan.name || "Unnamed Plan";
-    const purchaseDate = profile.plan_purchase_date
-      ? new Date(profile.plan_purchase_date)
-      : null;
+  const planName = profile.current_plan.name || "Unnamed Plan";
 
-    const durationDays = profile.current_plan.duration_days || 0;
-    const extendedDays = profile.extended_days || 0;
-    const totalDays = durationDays + extendedDays;
+  // ✅ Decide which date to show
+  const purchaseDate = profile.plan_purchase_date
+    ? new Date(profile.plan_purchase_date)
+    : profile.retained_plan_date
+    ? new Date(profile.retained_plan_date)
+    : null;
 
-    if (!purchaseDate) return `${planName} (No purchase date)`;
+  // ✅ Label text: Purchased vs Extended On
+  const dateLabel = profile.plan_purchase_date
+    ? "Purchased"
+    : profile.retained_plan_date
+    ? "Extended on"
+    : "Purchased";
 
-    const expiryDate = new Date(
-      purchaseDate.getTime() + totalDays * 24 * 60 * 60 * 1000
-    );
+  const durationDays = profile.current_plan.duration_days || 0;
+  const extendedDays = profile.extended_days || 0;
+  const totalDays = durationDays + extendedDays;
 
-    const now = Date.now();
-    const diff = expiryDate.getTime() - now;
+  if (!purchaseDate)
+    return `${planName} (No ${dateLabel.toLowerCase()} date)`;
 
-    const expiryText = expiryDate.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+  const expiryDate = new Date(
+    purchaseDate.getTime() + totalDays * 24 * 60 * 60 * 1000
+  );
 
-    if (diff <= 0) {
-      return `${planName} (Expired on ${expiryText})`;
-    }
+  const now = Date.now();
+  const diff = expiryDate.getTime() - now;
 
-    const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const expiryText = expiryDate.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 
-    return `${planName} — Purchased: ${purchaseDate.toLocaleDateString(
-      "en-IN"
-    )} → Ends on ${expiryText} (${daysLeft} days left)`;
-  }, [profile]);
+  if (diff <= 0) {
+    return `${planName} (Expired on ${expiryText})`;
+  }
+
+  const daysLeft = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+  return `${planName} — ${dateLabel}: ${purchaseDate.toLocaleDateString(
+    "en-IN"
+  )} → Ends on ${expiryText} (${daysLeft} days left)`;
+}, [profile]);
+
 
   const visibleLeads = showAll ? leads : leads.slice(0, 3);
   const filteredLeads = useMemo(() => {

@@ -38,6 +38,7 @@ export interface MyProfile {
     total_leads: number;
   } | null;
   plan_purchase_date: string | null;
+  retained_plan_date: string | null;
   available_leads: number;
   created_by_admin: boolean;
   status: string;

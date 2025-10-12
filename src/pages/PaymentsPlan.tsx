@@ -118,6 +118,7 @@ export default function PaymentsPlan(): JSX.Element {
   // queuing/purchase state
   const [pendingPurchase, setPendingPurchase] = useState<boolean>(false);
   const [isInitiating, setIsInitiating] = useState<boolean>(false);
+const [profile, setProfile] = useState<MyProfile | null>(null);
 
   // find selected plan object (if any)
   const selectedPlanData = availablePlans.find((p) => p.id === selectedPlan);
@@ -151,6 +152,8 @@ export default function PaymentsPlan(): JSX.Element {
           console.log("🟢 duration_days:", durationDays);
           console.log("🟢 extended_days:", extendedDays);
           console.log("🟢 expiry date:", expiryTs ? new Date(expiryTs) : null);
+const p = await getMyProfile();
+setProfile(p);
 
           setCurrentPlan({
             name: plan.name,
@@ -171,6 +174,7 @@ export default function PaymentsPlan(): JSX.Element {
     };
 
     fetchProfile();
+    
   }, []);
 
   useEffect(() => {
@@ -320,6 +324,12 @@ export default function PaymentsPlan(): JSX.Element {
           name: "Wedmac India",
           description: payload!.plan,
           order_id: payload!.razorpay_order_id,
+           prefill: {
+    email: profile.email,
+    contact: profile.phone,
+  },
+    theme: { color: "#E6447A" },
+
           handler: async (response: RazorpaySuccess) => {
             try {
               await fetch(
@@ -346,10 +356,7 @@ export default function PaymentsPlan(): JSX.Element {
               );
             }
           },
-          prefill: {
      
-          },
-          theme: { color: "#E6447A" },
           modal: {
             ondismiss: () => {
               // called when user closes the popup (click cross)
