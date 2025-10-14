@@ -306,7 +306,7 @@ export default function UnlockedLeads() {
                       const bookingDate = lead.booking_date
                         ? new Date(lead.booking_date).toLocaleDateString()
                         : "-";
-                      const budget = lead.budget_range ?? "₹25000 - ₹30000";
+                      const budget = lead.budget_range ?? "-";
                       const location = lead.location ?? "-";
 
                       return (

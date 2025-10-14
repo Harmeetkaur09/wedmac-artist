@@ -202,7 +202,7 @@ const fetchLeads = async (reset = false) => {
 };
 useEffect(() => {
   fetchLeads(true);
-}, [limit]);
+}, []);
 
 
 
@@ -674,7 +674,7 @@ const visibleLeads = leads.slice(0, limit);
                             <div className="flex items-center gap-1">
                               <IndianRupee className="w-3 h-3" />
                               <span>
-                                {lead.budget_range?.max_value ?? "N/A"}
+                                {lead.budget_range?.min_value ?? "N/A"}
                               </span>
                             </div>
 
@@ -706,17 +706,25 @@ const visibleLeads = leads.slice(0, limit);
                         </div>
 
                         {/* Claim Button */}
-                     <div className="flex items-center gap-2 relative">
+    <div className="flex items-center gap-2 relative">
   {(() => {
     const planName = profile?.current_plan?.name?.toLowerCase() || "";
-    const canClaim =
+    const planPrice = profile?.current_plan?.price || 0; // 👈 current plan price
+    const leadMinBudget = Number(lead.budget_range?.min_value || 0);
+    const leadCity = (lead.location || "").toLowerCase().trim();
+
+    // ✅ Check 1: City allowed
+    const cityAllowed =
       planName.includes("premium") || planName.includes("pro")
         ? true
         : allowedCities.some(
-            (city) =>
-              city.toLowerCase().trim() ===
-              (lead.location || "").toLowerCase().trim()
+            (city) => city.toLowerCase().trim() === leadCity
           );
+
+    // ✅ Check 2: Budget allowed (plan price >= lead min_value)
+    const budgetAllowed = planPrice >= leadMinBudget;
+
+    const canClaim = cityAllowed && budgetAllowed;
 
     return canClaim ? (
       <Button
@@ -738,6 +746,7 @@ const visibleLeads = leads.slice(0, limit);
     );
   })()}
 </div>
+
 
                       </>
                     ) : (
@@ -793,16 +802,33 @@ const visibleLeads = leads.slice(0, limit);
       </Card>
 {hasMore && (
   <div className="text-center mt-4">
-    <Button
-      variant="outline"
-      onClick={async () => {
-        setLoadingMore(true);
-        setLimit((prev) => prev + 3); // ✅ increase by 3
-      }}
-      disabled={loadingMore}
-    >
-      {loadingMore ? "Loading..." : "Load More"}
-    </Button>
+<Button
+  variant="outline"
+  onClick={async () => {
+    setLoadingMore(true);
+    try {
+      const newLimit = limit + 3;
+      const token = localStorage.getItem("accessToken");
+      const params = new URLSearchParams();
+      params.append("limit", newLimit.toString());
+      const res = await fetch(`https://api.wedmacindia.com/api/leads/all-leads/?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setLeads(data.leads || []);
+      setHasMore((data.leads || []).length === newLimit);
+      setLimit(newLimit); // update limit only after fetch
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingMore(false); // ✅ stop button loading
+    }
+  }}
+  disabled={loadingMore}
+>
+  {loadingMore ? "Loading..." : "Load More"}
+</Button>
+
   </div>
 )}
 
