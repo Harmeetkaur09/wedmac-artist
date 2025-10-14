@@ -561,7 +561,7 @@ const SignUp = () => {
               <div className="space-y-4 mb-6">
                 <div className="flex items-center space-x-3">
                   <Phone className="w-5 h-5" />
-                  <span>+91 9669426549</span>
+                  <span>+91 9915380534</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Mail className="w-5 h-5" />
