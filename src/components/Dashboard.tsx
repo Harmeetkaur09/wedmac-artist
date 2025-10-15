@@ -722,7 +722,10 @@ const visibleLeads = leads.slice(0, limit);
           );
 
     // ✅ Check 2: Budget allowed (plan price >= lead min_value)
-    const budgetAllowed = planPrice >= leadMinBudget;
+ const budgetAllowed =
+  planName.includes("Premium") || planName.includes("Pro")
+    ? true
+    : planPrice >= leadMinBudget;
 
     const canClaim = cityAllowed && budgetAllowed;
 
