@@ -708,27 +708,29 @@ const visibleLeads = leads.slice(0, limit);
                         {/* Claim Button */}
     <div className="flex items-center gap-2 relative">
   {(() => {
-    const planName = profile?.current_plan?.name?.toLowerCase() || "";
-    const planPrice = profile?.current_plan?.price || 0; // 👈 current plan price
-    const leadMinBudget = Number(lead.budget_range?.min_value || 0);
-    const leadCity = (lead.location || "").toLowerCase().trim();
+const planName = profile?.current_plan?.name?.toLowerCase() || "";
+const leadMinBudget = Number(lead.budget_range?.min_value || 0);
+const leadCity = (lead.location || "").toLowerCase().trim();
 
-    // ✅ Check 1: City allowed
-    const cityAllowed =
-      planName.includes("premium") || planName.includes("pro")
-        ? true
-        : allowedCities.some(
-            (city) => city.toLowerCase().trim() === leadCity
-          );
-
-    // ✅ Check 2: Budget allowed (plan price >= lead min_value)
-const budgetAllowed =
+// ✅ City check (same as before)
+const cityAllowed =
   planName.includes("premium") || planName.includes("pro")
     ? true
-    : planPrice >= leadMinBudget;
+    : allowedCities.some(
+        (city) => city.toLowerCase().trim() === leadCity
+      );
 
+// ✅ Budget check (based on plan limits)
+let maxAllowedBudget = 0;
+if (planName.includes("trial")) maxAllowedBudget = 12000;
+else if (planName.includes("basic")) maxAllowedBudget = 15000;
+else if (planName.includes("standard")) maxAllowedBudget = 40000;
+else if (planName.includes("premium") || planName.includes("pro")) maxAllowedBudget = Infinity;
 
-    const canClaim = cityAllowed && budgetAllowed;
+const budgetAllowed = leadMinBudget <= maxAllowedBudget;
+
+// ✅ Final condition
+const canClaim = cityAllowed && budgetAllowed;
 
     return canClaim ? (
       <Button
