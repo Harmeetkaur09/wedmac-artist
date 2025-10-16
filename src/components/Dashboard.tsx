@@ -634,7 +634,7 @@ const visibleLeads = leads.slice(0, limit);
                 return (
                   <div
                     key={lead.id}
-                    className="relative block md:flex items-center justify-between p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors duration-200"
+                    className="relative block md:flex items-center justify-between p-4 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors duration-200"
                   >
                     {subscriptionValid ? (
                       // ✅ Subscription Active: Full Lead Details
@@ -769,10 +769,30 @@ const budgetAllowed =
                               <Calendar className="w-3 h-3" />
                               <span>Booking: {lead.booking_date}</span>
                             </div>
+                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Calendar className="w-3 h-3" />
+                              <span>
+                                Created:{" "}
+                                {new Date(lead.created_at).toLocaleDateString(
+                                  "en-IN",
+                                  {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  }
+                                )}
+                              </span>
+                            </div>
 
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
                               <MapPin className="w-3 h-3" />
                               <span>{lead.location}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm  text-muted-foreground">
+                              <PartyPopper className="w-3 h-3" />
+                              <span>{lead.makeup_types?.length
+    ? lead.makeup_types.map((m) => m.name).join(", ")
+    : "-"}</span>
                             </div>
                           </div>
 
