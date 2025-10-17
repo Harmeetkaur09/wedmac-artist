@@ -160,13 +160,11 @@ const Login = () => {
   return (
     <div className="min-h-screen ">
       {/* Header */}
-      <div className="bg-[#FF577F] fixed left-0 right-0 z-50 text-white text-center py-2 text-sm">
-        Get $20 Off Your First Purchase - Shop Now & Save!
-      </div>
+  
 
       {/* Main Header */}
       <header className="bg-white shadow-sm">
-        <nav className="fixed top-9 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm shadow-sm">
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm shadow-sm">
           <div className="max-w-7xl mx-auto px-4">
             <div className="flex items-center justify-between h-16">
               {/* Logo */}
