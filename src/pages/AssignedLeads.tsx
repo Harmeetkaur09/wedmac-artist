@@ -36,13 +36,14 @@ type ApiLead = {
   last_name?: string;
   phone?: string | null;
   email?: string | null;
+  makeup_types?: { id: number; name: string }[] | null;
   event_type?: string | null;
   requirements?: string | null;
   booking_date?: string | null;
   status?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
-  budget_range?: string | null;
+  budget_range?: { min_value: string; max_value: string } | null;
   location?: string | null;
   claimed_artists?:
     | { id: number; first_name: string; last_name: string }[]
@@ -383,7 +384,9 @@ export default function AssignedLeads() {
                           <TableCell>
                             <div className="space-y-1">
                               <div className="font-medium">
-                                {renderValue(lead.event_type)}
+                                {renderValue(lead.makeup_types?.length
+    ? lead.makeup_types.map((m) => m.name).join(", ")
+    : "-")}
                               </div>
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Calendar className="w-3 h-3" /> {bookingDate}
@@ -414,7 +417,7 @@ export default function AssignedLeads() {
                           {/* Budget */}
                           <TableCell>
                             <span className="font-semibold text-primary">
-                              {renderValue(lead.budget_range)}
+                              {renderValue(lead.budget_range.min_value)}
                             </span>
                           </TableCell>
 

@@ -672,7 +672,7 @@ useEffect(() => {
 
             </CardContent>
           </Card>
- <Card>
+ {/* <Card>
   <CardHeader>
     <CardTitle className="flex items-center gap-2">
       <Landmark />
@@ -683,7 +683,6 @@ useEffect(() => {
     <div className="space-y-2">
       <Label>Preferred Cities (select up to 5)</Label>
 
-      {/* Priority selection instruction */}
       <p className="text-xs text-gray-500 -mt-1">
         Please select cities in order of your priority — your top preference first.
       </p>
@@ -781,7 +780,7 @@ useEffect(() => {
       </div>
     </div>
   </CardContent>
-</Card>
+</Card> */}
 
           {/* Payment Methods */}
           <Card>
