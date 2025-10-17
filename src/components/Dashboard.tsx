@@ -273,27 +273,26 @@ useEffect(() => {
     loadData();
   }, []);
   // Allowed cities based on plan
-const [allowedCities, setAllowedCities] = useState<string[]>([]);
 
-useEffect(() => {
-  if (!profile) return;
+// useEffect(() => {
+//   if (!profile) return;
 
-  const planName = profile?.current_plan?.name?.toLowerCase() || "";
-  const locations = profile?.preferred_locations || [];
+//   const planName = profile?.current_plan?.name?.toLowerCase() || "";
+//   const locations = profile?.preferred_locations || [];
 
-  let limitedCities: string[] = [];
+//   let limitedCities: string[] = [];
 
-  if (planName.includes("basic")) {
-    limitedCities = locations.slice(0, 2);
-  } else if (planName.includes("standard")) {
-    limitedCities = locations.slice(0, 5);
-  } else if (planName.includes("premium") || planName.includes("pro")) {
-    // Premium & Pro: all cities allowed
-    limitedCities = locations;
-  }
+//   if (planName.includes("basic")) {
+//     limitedCities = locations.slice(0, 2);
+//   } else if (planName.includes("standard")) {
+//     limitedCities = locations.slice(0, 5);
+//   } else if (planName.includes("premium") || planName.includes("pro")) {
+//     // Premium & Pro: all cities allowed
+//     limitedCities = locations;
+//   }
 
-  setAllowedCities(limitedCities);
-}, [profile]);
+//   setAllowedCities(limitedCities);
+// }, [profile]);
 
 
 const planInfoText = useMemo(() => {
@@ -707,50 +706,39 @@ const visibleLeads = leads.slice(0, limit);
 
                         {/* Claim Button */}
     <div className="flex items-center gap-2 relative">
-  {(() => {
-const planName = profile?.current_plan?.name?.toLowerCase() || "";
-const leadMinBudget = Number(lead.budget_range?.min_value || 0);
-const leadCity = (lead.location || "").toLowerCase().trim();
+{(() => {
+  const planName = profile?.current_plan?.name?.toLowerCase() || "";
+  const leadMinBudget = Number(lead.budget_range?.min_value || 0);
 
-// ✅ City check (same as before)
-const cityAllowed =
-  planName.includes("premium") || planName.includes("pro")
-    ? true
-    : allowedCities.some(
-        (city) => city.toLowerCase().trim() === leadCity
-      );
+  // ✅ Only check budget based on plan
+  let maxAllowedBudget = 0;
+  if (planName.includes("trial")) maxAllowedBudget = 12000;
+  else if (planName.includes("basic")) maxAllowedBudget = 15000;
+  else if (planName.includes("standard")) maxAllowedBudget = 40000;
+  else if (planName.includes("premium") || planName.includes("pro")) maxAllowedBudget = Infinity;
 
-// ✅ Budget check (based on plan limits)
-let maxAllowedBudget = 0;
-if (planName.includes("trial")) maxAllowedBudget = 12000;
-else if (planName.includes("basic")) maxAllowedBudget = 15000;
-else if (planName.includes("standard")) maxAllowedBudget = 40000;
-else if (planName.includes("premium") || planName.includes("pro")) maxAllowedBudget = Infinity;
+  const budgetAllowed = leadMinBudget <= maxAllowedBudget;
 
-const budgetAllowed = leadMinBudget <= maxAllowedBudget;
+  return budgetAllowed ? (
+    <Button
+      size="sm"
+      onClick={() => claimLead(lead.id)}
+      disabled={claimingLeadId === lead.id}
+      className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
+    >
+      {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
+    </Button>
+  ) : (
+    <Button
+      size="sm"
+      onClick={() => navigate("/payments")}
+      className="px-3 py-1 bg-primary text-white rounded text-sm flex items-center gap-2 hover:bg-primary/80"
+    >
+      Upgrade Plan to Claim
+    </Button>
+  );
+})()}
 
-// ✅ Final condition
-const canClaim = cityAllowed && budgetAllowed;
-
-    return canClaim ? (
-      <Button
-        size="sm"
-        onClick={() => claimLead(lead.id)}
-        disabled={claimingLeadId === lead.id}
-        className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
-      >
-        {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
-      </Button>
-    ) : (
-      <Button
-        size="sm"
-        onClick={() => navigate("/payments")}
-        className="px-3 py-1 bg-primary text-white rounded text-sm flex items-center gap-2 hover:bg-primary/80"
-      >
-        Upgrade Plan to Claim
-      </Button>
-    );
-  })()}
 </div>
 
 
