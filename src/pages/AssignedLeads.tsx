@@ -219,7 +219,7 @@ export default function AssignedLeads() {
     <Layout title="Assigned Leads">
       <div className="space-y-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-primary">
@@ -240,30 +240,22 @@ export default function AssignedLeads() {
               <p className="text-sm text-muted-foreground">Booked</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-blue-600">
-                {
-                  leads.filter(
-                    (l) => (l.status ?? "").toLowerCase() === "contacted"
-                  ).length
-                }
-              </div>
-              <p className="text-sm text-muted-foreground">Contacted</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-yellow-600">
-                {
-                  leads.filter(
-                    (l) => (l.status ?? "").toLowerCase() === "pending"
-                  ).length
-                }
-              </div>
-              <p className="text-sm text-muted-foreground">Pending</p>
-            </CardContent>
-          </Card>
+    <Card>
+  <CardContent className="p-4">
+    <div className="text-2xl font-bold text-blue-600">
+      {
+        leads.filter((l) =>
+          l.claimed_artists?.some(
+            (a) => Number(a.id) === Number(currentArtistId)
+          )
+        ).length
+      }
+    </div>
+    <p className="text-sm text-muted-foreground">Claimed</p>
+  </CardContent>
+</Card>
+
+      
         </div>
 
         {/* Filters */}
@@ -371,10 +363,16 @@ export default function AssignedLeads() {
                           <TableCell>
                             <div className="space-y-1">
                               <div className="font-medium">{clientName}</div>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Phone className="w-3 h-3" />{" "}
-                                {lead.phone ?? "-"}
-                              </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <Phone className="w-3 h-3" />
+      {isAlreadyClaimedByMe(lead, currentArtistId) ? (
+        lead.phone ?? "-"
+      ) : (
+        <span className="text-gray-400 italic flex items-center gap-1">
+          <Lock className="w-3 h-3" /> Hidden
+        </span>
+      )}
+    </div>
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Mail className="w-3 h-3" /> {lead.email ?? "-"}
                               </div>
