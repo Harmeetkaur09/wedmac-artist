@@ -39,7 +39,7 @@ type ApiLead = {
   created_at?: string | null;
   updated_at?: string | null;
   service?: string | null;
-  budget_range?: string | null;
+  budget_range?: { min_value: string; max_value: string } | null;
   location?: string | null;
   assigned_to?: string | null;
   requested_artist?: string | null;
@@ -306,7 +306,7 @@ export default function UnlockedLeads() {
                       const bookingDate = lead.booking_date
                         ? new Date(lead.booking_date).toLocaleDateString()
                         : "-";
-                      const budget = lead.budget_range ?? "-";
+const budget = lead.budget_range?.min_value ?? "-";
                       const location = lead.location ?? "-";
 
                       return (
