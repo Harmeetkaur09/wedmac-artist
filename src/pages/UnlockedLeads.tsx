@@ -323,8 +323,8 @@ const budget = lead.budget_range?.min_value ?? "-";
                                 {email}
                               </div>
                               {lead.notes && (
-                                <div className="text-xs text-muted-foreground italic mt-1">
-                                  {lead.notes}
+                                <div className="text-xs text-muted-foreground break-all italic mt-1">
+                                  {lead.requirements}
                                 </div>
                               )}
                             </div>
