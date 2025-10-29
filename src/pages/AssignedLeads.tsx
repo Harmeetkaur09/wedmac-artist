@@ -374,9 +374,14 @@ export default function AssignedLeads() {
         </span>
       )}
     </div>
-                              <div className="flex items-center gap-2 break-all text-sm text-muted-foreground">
-                                <Mail className="w-3 h-3" /> {lead.requirements ?? "-"}
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Mail className="w-3 h-3" /> {lead.email ?? "-"}
                               </div>
+                                  {lead.requirements && (
+                                <div className="text-xs text-muted-foreground break-all italic mt-1">
+                                  {lead.requirements}
+                                </div>
+                              )}
                             </div>
                           </TableCell>
 
