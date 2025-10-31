@@ -53,39 +53,46 @@ export function AppSidebar() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [createdByAdmin, setCreatedByAdmin] = useState(false);
   const [hasActivePlan, setHasActivePlan] = useState(false); // 👈 new state
+const [hasCurrentPlan, setHasCurrentPlan] = useState(false);
 
-  useEffect(() => {
-    getMyProfile()
-      .then((profile) => {
-        const dob = profile?.gender;
-        const paymentStatus = profile?.payment_status;
-        const adminFlag = profile?.created_by_admin;
+useEffect(() => {
+  getMyProfile()
+    .then((profile) => {
+      const makeupTypes = profile?.type_of_makeup;
+      const isProfileComplete = Array.isArray(makeupTypes) && makeupTypes.length > 0;
+      setProfileComplete(isProfileComplete);
 
-        setCreatedByAdmin(!!adminFlag); 
-        setProfileComplete(!!dob);
-        setPaymentApproved(paymentStatus === "approved");
+      const paymentStatus = profile?.payment_status;
+      const adminFlag = profile?.created_by_admin;
 
-    const purchaseDate = profile?.plan_purchase_date ? new Date(profile.plan_purchase_date) : null;
-const durationDays = profile?.current_plan?.duration_days || 0;
-const extendedDays = profile?.extended_days || 0;
+      setCreatedByAdmin(!!adminFlag);
+      setPaymentApproved(paymentStatus === "approved");
 
-if (purchaseDate) {
-  const expiry = new Date(purchaseDate);
-  expiry.setDate(expiry.getDate() + durationDays + extendedDays);
-  setHasActivePlan(expiry > new Date());
-} else {
-  setHasActivePlan(false);
-}
+      // ✅ check for current plan
+      setHasCurrentPlan(!!profile?.current_plan);
 
-      })
-      .catch(() => {
-        setCreatedByAdmin(false);
-        setProfileComplete(false);
-        setPaymentApproved(false);
+      const purchaseDate = profile?.plan_purchase_date ? new Date(profile.plan_purchase_date) : null;
+      const durationDays = profile?.current_plan?.duration_days || 0;
+      const extendedDays = profile?.extended_days || 0;
+
+      if (purchaseDate) {
+        const expiry = new Date(purchaseDate);
+        expiry.setDate(expiry.getDate() + durationDays + extendedDays);
+        setHasActivePlan(expiry > new Date());
+      } else {
         setHasActivePlan(false);
-      })
-      .finally(() => setLoadingProfile(false));
-  }, []);
+      }
+    })
+    .catch(() => {
+      setCreatedByAdmin(false);
+      setProfileComplete(false);
+      setPaymentApproved(false);
+      setHasActivePlan(false);
+      setHasCurrentPlan(false);
+    })
+    .finally(() => setLoadingProfile(false));
+}, []);
+
 
 const handleClick = (
   e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
@@ -117,15 +124,16 @@ const handleClick = (
         return;
       }
 
-      if (!paymentApproved) {
-        e.preventDefault();
-        toast({
-          title: "Payment Required",
-          description: "Please complete your payment first.",
-          variant: "destructive",
-        });
-        return;
-      }
+   if (!paymentApproved && !hasCurrentPlan) {
+  e.preventDefault();
+  toast({
+    title: "Payment Required",
+    description: "Please complete your payment first.",
+    variant: "destructive",
+  });
+  return;
+}
+
     }
   }
 };
