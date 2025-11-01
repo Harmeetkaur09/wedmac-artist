@@ -422,7 +422,7 @@ export default function AssignedLeads() {
                           {/* Budget */}
                           <TableCell>
                             <span className="font-semibold text-primary">
-                              {renderValue(lead.budget_range.min_value)}
+                              {renderValue(lead.budget_range.min_value)}?? -{" "}
                             </span>
                           </TableCell>
 
