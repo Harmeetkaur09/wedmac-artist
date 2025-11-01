@@ -420,11 +420,15 @@ export default function AssignedLeads() {
                           <TableCell>{assignedDate}</TableCell>
 
                           {/* Budget */}
-                          <TableCell>
-                            <span className="font-semibold text-primary">
-                              {renderValue(lead.budget_range.min_value)}?? -{" "}
-                            </span>
-                          </TableCell>
+                       <TableCell>
+  <span className="font-semibold text-primary">
+    {lead?.budget_range?.min_value
+      ? renderValue(lead.budget_range.min_value)
+      : "-"}{" "}
+    -{" "}
+  </span>
+</TableCell>
+
 
                           {/* Status */}
 
