@@ -792,10 +792,10 @@ const visibleLeads = leads.slice(0, limit);
                     ) : (
                       // ❌ Subscription Inactive: Limited Details
 
-                      <div className="flex items-start justify-between gap-4 w-full">
+                      <div className="flex items-center justify-between gap-4 w-full">
                         {/* Left Side (details) */}
                         <div className="flex flex-col gap-2 ">
-                          <div className="flex items-center text-xl justify-between mb-4"> {/* increased gap from 3 → 4 */}
+                          <div className="flex items-center text-xl justify-between mb-4 md:mb-0"> {/* increased gap from 3 → 4 */}
 
                           {/* First row: Name, Booking, Location */}
                             <h3 className="font-medium text-lg text-foreground">
@@ -864,16 +864,17 @@ const visibleLeads = leads.slice(0, limit);
                         </div>
 
                         {/* Right Side (button) */}
-                        <div className="hidden md:flex items-center mt-4 md:mt-0">
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => navigate("/payments")}
-                            className="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/80"
-                          >
-                            Buy Plan to Claim
-                          </Button>
-                        </div>
+                     <div className="hidden md:flex items-center mt-4 md:mt-0">
+  <Button
+    variant="default"
+    size="sm"
+    onClick={() => navigate("/payments")}
+    className="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/80"
+  >
+    Buy Plan to Claim
+  </Button>
+</div>
+
                       </div>
                     )}
                   </div>
