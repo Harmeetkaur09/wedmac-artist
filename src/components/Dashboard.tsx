@@ -639,11 +639,47 @@ const visibleLeads = leads.slice(0, limit);
                       // ✅ Subscription Active: Full Lead Details
                       <>
                         <div className="space-y-2">
-                          <div className="flex items-center text-xl gap-3">
-                            <h3 className="font-medium text-foreground">
-                              {lead.first_name} {lead.last_name}
-                            </h3>
-                          </div>
+                          <div className="flex items-center text-xl justify-between"> {/* increased gap from 3 → 4 */}
+  <h3 className="font-medium text-foreground">
+    {lead.first_name} {lead.last_name}
+  </h3>
+
+  <div className="md:hidden shadow-md flex items-center gap-2 relative ml-2"> {/* added margin-left */}
+    {(() => {
+      const planName = profile?.current_plan?.name?.toLowerCase() || "";
+      const leadMinBudget = Number(lead.budget_range?.min_value || 0);
+
+      let maxAllowedBudget = 0;
+      if (planName.includes("trial")) maxAllowedBudget = 12000;
+      else if (planName.includes("basic")) maxAllowedBudget = 15000;
+      else if (planName.includes("standard")) maxAllowedBudget = 40000;
+      else if (planName.includes("premium") || planName.includes("pro"))
+        maxAllowedBudget = Infinity;
+
+      const budgetAllowed = leadMinBudget <= maxAllowedBudget;
+
+      return budgetAllowed ? (
+        <Button
+          size="sm"
+          onClick={() => claimLead(lead.id)}
+          disabled={claimingLeadId === lead.id}
+          className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
+        >
+          {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          onClick={() => navigate("/payments")}
+          className="px-3 py-1 bg-primary text-white rounded text-sm flex items-center gap-2 hover:bg-primary/80"
+        >
+          Upgrade Plan to Claim
+        </Button>
+      );
+    })()}
+  </div>
+</div>
+
 
                           <div className="block md:flex items-center gap-4 text-sm text-muted-foreground">
                          
@@ -651,8 +687,8 @@ const visibleLeads = leads.slice(0, limit);
                             {/* Booking Date */}
                             <div className="flex items-center  gap-6 md:gap-2 mb-1 md:mb-0">
                               <Calendar className="hidden md:block w-3 h-3" />
-                              <p className="text-black text-lg md:text-sm md:ml-0  ml-1">Booking:</p>
-                              <span className="text-black text-lg md:text-sm ml-2 md:ml-0">{new Date(lead.booking_date).toLocaleDateString(
+                              <p className="text-black text-lg md:text-sm md:ml-0 mr-[53px] md:mr-0 ml-1">Booking:</p>
+                              <span className="text-black text-lg md:text-sm  md:ml-0">{new Date(lead.booking_date).toLocaleDateString(
                                   "en-IN",
                                   {
                                     day: "2-digit",
@@ -665,8 +701,8 @@ const visibleLeads = leads.slice(0, limit);
                             {/* Created At */}
                             <div className="flex items-center gap-6 md:gap-2 mb-1 md:mb-0">
                               <Calendar className="hidden md:block w-3 h-3" />
-                              <p className="text-black text-lg md:text-sm md:ml-0  ml-1">Created:</p>
-                              <span className="text-black text-lg md:text-sm ml-2 md:ml-0">{new Date(lead.created_at).toLocaleDateString(
+                              <p className="text-black text-lg md:text-sm md:ml-0 mr-[53px] md:mr-0 ml-1">Created:</p>
+                              <span className="text-black text-lg md:text-sm md:ml-0">{new Date(lead.created_at).toLocaleDateString(
                                   "en-IN",
                                   {
                                     day: "2-digit",
@@ -679,22 +715,22 @@ const visibleLeads = leads.slice(0, limit);
 
                             <div className="flex items-center gap-6 md:gap-1 mb-1 md:mb-0">
                               <IndianRupee className="hidden md:block w-3 h-3" />
-                              <p className="text-black text-lg md:text-base md:hidden ml-1">Budget:</p>
-  <span className="text-black text-lg md:text-sm ml-2 md:ml-0">
+                              <p className="text-black text-lg md:text-base md:hidden mr-[53px] md:mr-0 ml-1">Budget:</p>
+  <span className="text-black text-lg md:text-sm md:ml-0">
                                     {lead.budget_range?.min_value ?? "N/A"}
                               </span>
                             </div>
 
                            <div className="flex items-center gap-6 mb-1 md:gap-1 md:mb-0">
-<MapPin className="hidden md:block w-3 h-3" />  <p className="text-black text-lg md:text-md md:hidden ml-1">Location:</p>
+<MapPin className="hidden md:block w-3 h-3" />  <p className="text-black text-lg md:text-md md:hidden mr-[45px] md:mr-0 ml-1">Location:</p>
   <span className="text-black text-lg md:text-sm  md:ml-0">{lead.location}</span>
 </div>
 
 
-                            <div className="flex items-center gap-6 mb-1 md:mb-0">
+                            <div className="flex items-center gap-6 md:gap-1 mb-1 md:mb-0">
                               <PartyPopper className="hidden md:block w-3 h-3" />
-                              <p className="text-black text-lg md:text-base md:hidden ml-1">Service:</p>
-                              <span className="text-black text-lg md:text-sm ml-2 md:ml-0">{lead.makeup_types?.length
+                              <p className="text-black text-lg md:text-base md:hidden ml-1 mr-[53px] md:mr-0">Service:</p>
+                              <span className="text-black text-lg md:text-sm  md:ml-0">{lead.makeup_types?.length
     ? lead.makeup_types.map((m) => m.name).join(", ")
     : "-"}</span>
                             </div>
@@ -702,7 +738,7 @@ const visibleLeads = leads.slice(0, limit);
 
                           <div className="flex  w-80 gap-6 text-sm text-muted-foreground ">
                             <p className="text-black text-lg md:text-base md:hidden ml-1">Requirements:</p>
-                            <span className="break-words text-black text-lg md:text-sm ml-2 md:ml-0 whitespace-normal min-w-0 mb-1 md:mb-0">
+                            <span className="break-words text-black text-lg md:text-sm  md:ml-0 whitespace-normal min-w-0 mb-1 md:mb-0">
                               {lead.requirements}
                             </span>
                           </div>
@@ -716,42 +752,41 @@ const visibleLeads = leads.slice(0, limit);
                         </div>
 
                         {/* Claim Button */}
-    <div className="flex items-center gap-2 md:mt-0 mt-4 relative">
-{(() => {
-  const planName = profile?.current_plan?.name?.toLowerCase() || "";
-  const leadMinBudget = Number(lead.budget_range?.min_value || 0);
+ 
+ <div className="hidden md:flex items-center gap-2 relative ml-2">
+    {(() => {
+      const planName = profile?.current_plan?.name?.toLowerCase() || "";
+      const leadMinBudget = Number(lead.budget_range?.min_value || 0);
 
-  // ✅ Only check budget based on plan
-  let maxAllowedBudget = 0;
-  if (planName.includes("trial")) maxAllowedBudget = 12000;
-  else if (planName.includes("basic")) maxAllowedBudget = 15000;
-  else if (planName.includes("standard")) maxAllowedBudget = 40000;
-  else if (planName.includes("premium") || planName.includes("pro")) maxAllowedBudget = Infinity;
+      let maxAllowedBudget = 0;
+      if (planName.includes("trial")) maxAllowedBudget = 12000;
+      else if (planName.includes("basic")) maxAllowedBudget = 15000;
+      else if (planName.includes("standard")) maxAllowedBudget = 40000;
+      else if (planName.includes("premium") || planName.includes("pro"))
+        maxAllowedBudget = Infinity;
 
-  const budgetAllowed = leadMinBudget <= maxAllowedBudget;
+      const budgetAllowed = leadMinBudget <= maxAllowedBudget;
 
-  return budgetAllowed ? (
-    <Button
-      size="sm"
-      onClick={() => claimLead(lead.id)}
-      disabled={claimingLeadId === lead.id}
-      className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
-    >
-      {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
-    </Button>
-  ) : (
-    <Button
-      size="sm"
-      onClick={() => navigate("/payments")}
-      className="px-3 py-1 bg-primary text-white rounded text-sm flex items-center gap-2 hover:bg-primary/80"
-    >
-      Upgrade Plan to Claim
-    </Button>
-  );
-})()}
-
-</div>
-
+      return budgetAllowed ? (
+        <Button
+          size="sm"
+          onClick={() => claimLead(lead.id)}
+          disabled={claimingLeadId === lead.id}
+          className="px-3 py-1 bg-white text-black border rounded text-sm flex items-center gap-2 hover:bg-primary/10 hover:text-primary"
+        >
+          {claimingLeadId === lead.id ? "Claiming..." : "Claim"}
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          onClick={() => navigate("/payments")}
+          className="px-3 py-1 bg-primary text-white rounded text-sm flex items-center gap-2 hover:bg-primary/80"
+        >
+          Upgrade Plan to Claim
+        </Button>
+      );
+    })()}
+  </div>
 
                       </>
                     ) : (
@@ -759,16 +794,29 @@ const visibleLeads = leads.slice(0, limit);
 
                       <div className="flex items-start justify-between gap-4 w-full">
                         {/* Left Side (details) */}
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2 ">
+                          <div className="flex items-center text-xl justify-between mb-4"> {/* increased gap from 3 → 4 */}
+
                           {/* First row: Name, Booking, Location */}
                             <h3 className="font-medium text-lg text-foreground">
                               {lead.first_name} {lead.last_name}
                             </h3>
+                             <div className="md:hidden flex items-center mt-4 md:mt-0">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => navigate("/payments")}
+                            className="px-3 py-1 bg-primary text-white rounded text-sm hover:bg-primary/80"
+                          >
+                            Buy Plan to Claim
+                          </Button>
+                        </div>
+                        </div>
                           <div className="flex flex-wrap items-center gap-4">
 
                             <div className="flex items-center gap-6 md:gap-2 mb-1 md:mb-0">
                               <Calendar className="hidden md:block w-3 h-3" />
-                              <p className="text-black text-lg md:text-sm md:ml-0  ml-1">Booking:</p>
+                              <p className="text-black text-lg md:text-sm md:ml-0  mr-[53px] md:mr-0 ml-1">Booking:</p>
                             <span className="text-black text-lg md:text-sm ml-2 md:ml-0"> {new Date(lead.booking_date).toLocaleDateString(
                                   "en-IN",
                                   {
@@ -780,7 +828,7 @@ const visibleLeads = leads.slice(0, limit);
                             </div>
                                     <div className="flex items-center gap-6 md:gap-2  mb-1 md:mb-0">
                               <Calendar className="hidden md:block w-3 h-3" />
-                              <p className="text-black text-lg md:text-sm md:ml-0  ml-1">Created:</p>
+                              <p className="text-black text-lg md:text-sm md:ml-0 mr-[53px] md:mr-0  ml-1">Created:</p>
                              <span className="text-black text-lg md:text-sm ml-2 md:ml-0">
                                 {new Date(lead.created_at).toLocaleDateString(
                                   "en-IN",
@@ -794,12 +842,12 @@ const visibleLeads = leads.slice(0, limit);
                             </div>
 
                                              <div className="flex items-center gap-6 mb-1 md:gap-1 md:mb-0">
-<MapPin className="hidden md:block w-3 h-3" />  <p className="text-black text-lg md:text-md md:hidden ml-1">Location:</p>
+<MapPin className="hidden md:block w-3 h-3" />  <p className="text-black text-lg md:text-md md:hidden mr-[53px] md:mr-0  ml-1">Location:</p>
   <span className="text-black text-lg md:text-sm  md:ml-0">{lead.location}</span>
 </div>
                            <div className="flex items-center gap-6 mb-1 md:mb-0">
                               <PartyPopper className="hidden md:block w-3 h-3" />
-                              <p className="text-black text-lg md:text-base md:hidden ml-1">Service:</p>
+                              <p className="text-black text-lg md:text-base md:hidden mr-[53px] md:mr-0  ml-1">Service:</p>
                               <span className="text-black text-lg md:text-sm ml-2 md:ml-0">{lead.makeup_types?.length
     ? lead.makeup_types.map((m) => m.name).join(", ")
     : "-"}</span>
@@ -816,7 +864,7 @@ const visibleLeads = leads.slice(0, limit);
                         </div>
 
                         {/* Right Side (button) */}
-                        <div className="flex items-center mt-4 md:mt-0">
+                        <div className="hidden md:flex items-center mt-4 md:mt-0">
                           <Button
                             variant="default"
                             size="sm"
