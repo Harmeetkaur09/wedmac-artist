@@ -633,26 +633,26 @@ const visibleLeads = leads.slice(0, limit);
                 return (
                   <div
                     key={lead.id}
-                    className="relative block md:flex items-center justify-between p-4 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors duration-200"
+                    className="relative block md:flex items-center justify-between p-4 bg-white shadow-md md:shadow-none md:bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors duration-200"
                   >
                     {subscriptionValid ? (
                       // ✅ Subscription Active: Full Lead Details
                       <>
                         <div className="space-y-2">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center text-xl gap-3">
                             <h3 className="font-medium text-foreground">
                               {lead.first_name} {lead.last_name}
                             </h3>
                           </div>
 
                           <div className="block md:flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>{lead.service}</span>
+                         
 
                             {/* Booking Date */}
-                            <div className="flex items-center gap-1 mb-1 md:mb-0">
-                              <Calendar className="w-3 h-3" />
-                              <strong >Booking:{" "}</strong>
-                              <span>  {new Date(lead.booking_date).toLocaleDateString(
+                            <div className="flex items-center  gap-6 md:gap-2 mb-1 md:mb-0">
+                              <Calendar className="hidden md:block w-3 h-3" />
+                              <p className="text-black text-lg md:text-sm md:ml-0  ml-1">Booking:</p>
+                              <span className="text-black text-lg md:text-sm ml-2 md:ml-0">{new Date(lead.booking_date).toLocaleDateString(
                                   "en-IN",
                                   {
                                     day: "2-digit",
@@ -663,11 +663,10 @@ const visibleLeads = leads.slice(0, limit);
                             </div>
 
                             {/* Created At */}
-                            <div className="flex items-center gap-1 mb-1 md:mb-0">
-                              <Calendar className="w-3 h-3" />
-                              <span>
-                               <strong>Created:{" "}</strong>
-                                {new Date(lead.created_at).toLocaleDateString(
+                            <div className="flex items-center gap-6 md:gap-2 mb-1 md:mb-0">
+                              <Calendar className="hidden md:block w-3 h-3" />
+                              <p className="text-black text-lg md:text-sm md:ml-0  ml-1">Created:</p>
+                              <span className="text-black text-lg md:text-sm ml-2 md:ml-0">{new Date(lead.created_at).toLocaleDateString(
                                   "en-IN",
                                   {
                                     day: "2-digit",
@@ -678,32 +677,32 @@ const visibleLeads = leads.slice(0, limit);
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-1 mb-1 md:mb-0">
-                              <IndianRupee className="w-3 h-3" />
-                              <strong className="md:hidden">Budget:{" "}</strong>
-                              <span>
-                                {lead.budget_range?.min_value ?? "N/A"}
+                            <div className="flex items-center gap-6 md:gap-1 mb-1 md:mb-0">
+                              <IndianRupee className="hidden md:block w-3 h-3" />
+                              <p className="text-black text-lg md:text-base md:hidden ml-1">Budget:</p>
+  <span className="text-black text-lg md:text-sm ml-2 md:ml-0">
+                                    {lead.budget_range?.min_value ?? "N/A"}
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-1 mb-1 md:mb-0">
-                              <MapPin className="w-3 h-3" />
-                               <strong className="md:hidden">Location:{" "}</strong>
-                              <span>{lead.location}</span>
-                            </div>
+                           <div className="flex items-center gap-6 mb-1 md:gap-1 md:mb-0">
+<MapPin className="hidden md:block w-3 h-3" />  <p className="text-black text-lg md:text-md md:hidden ml-1">Location:</p>
+  <span className="text-black text-lg md:text-sm  md:ml-0">{lead.location}</span>
+</div>
 
-                            <div className="flex items-center gap-1 mb-1 md:mb-0">
-                              <PartyPopper className="w-3 h-3" />
-                               <strong className="md:hidden">Service:{" "}</strong>
-                              <span>{lead.makeup_types?.length
+
+                            <div className="flex items-center gap-6 mb-1 md:mb-0">
+                              <PartyPopper className="hidden md:block w-3 h-3" />
+                              <p className="text-black text-lg md:text-base md:hidden ml-1">Service:</p>
+                              <span className="text-black text-lg md:text-sm ml-2 md:ml-0">{lead.makeup_types?.length
     ? lead.makeup_types.map((m) => m.name).join(", ")
     : "-"}</span>
                             </div>
                           </div>
 
-                          <div className="flex items-center w-80 gap-4 text-sm text-muted-foreground ">
-                            <strong className="md:hidden">Requirements:{" "}</strong>
-                            <span className="break-words whitespace-normal min-w-0 mb-1 md:mb-0">
+                          <div className="flex  w-80 gap-6 text-sm text-muted-foreground ">
+                            <p className="text-black text-lg md:text-base md:hidden ml-1">Requirements:</p>
+                            <span className="break-words text-black text-lg md:text-sm ml-2 md:ml-0 whitespace-normal min-w-0 mb-1 md:mb-0">
                               {lead.requirements}
                             </span>
                           </div>
@@ -717,7 +716,7 @@ const visibleLeads = leads.slice(0, limit);
                         </div>
 
                         {/* Claim Button */}
-    <div className="flex items-center gap-2 relative">
+    <div className="flex items-center gap-2 md:mt-0 mt-4 relative">
 {(() => {
   const planName = profile?.current_plan?.name?.toLowerCase() || "";
   const leadMinBudget = Number(lead.budget_range?.min_value || 0);
@@ -762,15 +761,15 @@ const visibleLeads = leads.slice(0, limit);
                         {/* Left Side (details) */}
                         <div className="flex flex-col gap-2">
                           {/* First row: Name, Booking, Location */}
-                          <div className="flex flex-wrap items-center gap-4">
-                            <h3 className="font-medium text-foreground">
+                            <h3 className="font-medium text-lg text-foreground">
                               {lead.first_name} {lead.last_name}
                             </h3>
+                          <div className="flex flex-wrap items-center gap-4">
 
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1 md:mb-0">
-                              <Calendar className="w-3 h-3" />
-                              <strong >Booking:{" "}</strong>
-                              <span> {new Date(lead.booking_date).toLocaleDateString(
+                            <div className="flex items-center gap-6 md:gap-2 mb-1 md:mb-0">
+                              <Calendar className="hidden md:block w-3 h-3" />
+                              <p className="text-black text-lg md:text-sm md:ml-0  ml-1">Booking:</p>
+                            <span className="text-black text-lg md:text-sm ml-2 md:ml-0"> {new Date(lead.booking_date).toLocaleDateString(
                                   "en-IN",
                                   {
                                     day: "2-digit",
@@ -779,10 +778,10 @@ const visibleLeads = leads.slice(0, limit);
                                   }
                                 )}</span>
                             </div>
-                                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1 md:mb-0">
-                              <Calendar className="w-3 h-3" />
-                              <span>
-                               <strong>Created:{" "}</strong>
+                                    <div className="flex items-center gap-6 md:gap-2  mb-1 md:mb-0">
+                              <Calendar className="hidden md:block w-3 h-3" />
+                              <p className="text-black text-lg md:text-sm md:ml-0  ml-1">Created:</p>
+                             <span className="text-black text-lg md:text-sm ml-2 md:ml-0">
                                 {new Date(lead.created_at).toLocaleDateString(
                                   "en-IN",
                                   {
@@ -794,32 +793,30 @@ const visibleLeads = leads.slice(0, limit);
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1 md:mb-0">
-                              <MapPin className="w-3 h-3" />
-                               <strong className="md:hidden">Location:{" "}</strong>
-                              <span>{lead.location}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-sm  text-muted-foreground mb-1 md:mb-0">
-                              <PartyPopper className="w-3 h-3" />
-                               <strong className="md:hidden">Service:{" "}</strong>
-                              <span>{lead.makeup_types?.length
+                                             <div className="flex items-center gap-6 mb-1 md:gap-1 md:mb-0">
+<MapPin className="hidden md:block w-3 h-3" />  <p className="text-black text-lg md:text-md md:hidden ml-1">Location:</p>
+  <span className="text-black text-lg md:text-sm  md:ml-0">{lead.location}</span>
+</div>
+                           <div className="flex items-center gap-6 mb-1 md:mb-0">
+                              <PartyPopper className="hidden md:block w-3 h-3" />
+                              <p className="text-black text-lg md:text-base md:hidden ml-1">Service:</p>
+                              <span className="text-black text-lg md:text-sm ml-2 md:ml-0">{lead.makeup_types?.length
     ? lead.makeup_types.map((m) => m.name).join(", ")
     : "-"}</span>
                             </div>
                           </div>
 
                           {/* Second row: Requirements */}
-                          <div className="text-sm text-muted-foreground max-w-md mb-2 md:mb-0">
-                            <strong className="md:hidden">Requirements:{" "}</strong>
-
-                            <span className="break-words whitespace-normal">
+                <div className="flex  w-80 gap-6 text-sm text-muted-foreground ">
+                            <p className="text-black text-lg md:text-base md:hidden ml-1">Requirements:</p>
+                            <span className="break-words text-black text-lg md:text-sm ml-2 md:ml-0 whitespace-normal min-w-0 mb-1 md:mb-0">
                               {lead.requirements}
                             </span>
                           </div>
                         </div>
 
                         {/* Right Side (button) */}
-                        <div className="flex items-center">
+                        <div className="flex items-center mt-4 md:mt-0">
                           <Button
                             variant="default"
                             size="sm"
