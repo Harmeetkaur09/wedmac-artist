@@ -767,7 +767,7 @@ const visibleLeads = leads.slice(0, limit);
                               {lead.first_name} {lead.last_name}
                             </h3>
 
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1 md:mb-0">
                               <Calendar className="w-3 h-3" />
                               <strong >Booking:{" "}</strong>
                               <span> {new Date(lead.booking_date).toLocaleDateString(
@@ -779,7 +779,7 @@ const visibleLeads = leads.slice(0, limit);
                                   }
                                 )}</span>
                             </div>
-                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1 md:mb-0">
                               <Calendar className="w-3 h-3" />
                               <span>
                                <strong>Created:{" "}</strong>
@@ -794,12 +794,12 @@ const visibleLeads = leads.slice(0, limit);
                               </span>
                             </div>
 
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground mb-1 md:mb-0">
                               <MapPin className="w-3 h-3" />
                                <strong className="md:hidden">Location:{" "}</strong>
                               <span>{lead.location}</span>
                             </div>
-                            <div className="flex items-center gap-1 text-sm  text-muted-foreground">
+                            <div className="flex items-center gap-1 text-sm  text-muted-foreground mb-1 md:mb-0">
                               <PartyPopper className="w-3 h-3" />
                                <strong className="md:hidden">Service:{" "}</strong>
                               <span>{lead.makeup_types?.length
@@ -809,7 +809,7 @@ const visibleLeads = leads.slice(0, limit);
                           </div>
 
                           {/* Second row: Requirements */}
-                          <div className="text-sm text-muted-foreground max-w-md">
+                          <div className="text-sm text-muted-foreground max-w-md mb-2 md:mb-0">
                             <strong className="md:hidden">Requirements:{" "}</strong>
 
                             <span className="break-words whitespace-normal">
