@@ -687,7 +687,7 @@ const visibleLeads = leads.slice(0, limit);
                             {/* Booking Date */}
                             <div className="flex items-center  gap-6 md:gap-2 mb-1 md:mb-0">
                               <Calendar className="hidden md:block w-3 h-3" />
-                              <p className="text-black text-lg md:text-sm md:ml-0 mr-[53px] md:mr-0 ml-1">Booking:</p>
+                              <p className="text-black text-lg md:text-sm md:ml-0 mr-[45px] md:mr-0 ml-1">Booking:</p>
                               <span className="text-black text-lg md:text-sm  md:ml-0">{new Date(lead.booking_date).toLocaleDateString(
                                   "en-IN",
                                   {
@@ -701,7 +701,7 @@ const visibleLeads = leads.slice(0, limit);
                             {/* Created At */}
                             <div className="flex items-center gap-6 md:gap-2 mb-1 md:mb-0">
                               <Calendar className="hidden md:block w-3 h-3" />
-                              <p className="text-black text-lg md:text-sm md:ml-0 mr-[53px] md:mr-0 ml-1">Created:</p>
+                              <p className="text-black text-lg md:text-sm md:ml-0 mr-[48px] md:mr-0 ml-1">Created:</p>
                               <span className="text-black text-lg md:text-sm md:ml-0">{new Date(lead.created_at).toLocaleDateString(
                                   "en-IN",
                                   {
@@ -816,7 +816,7 @@ const visibleLeads = leads.slice(0, limit);
 
                             <div className="flex items-center gap-6 md:gap-2 mb-1 md:mb-0">
                               <Calendar className="hidden md:block w-3 h-3" />
-                              <p className="text-black text-lg md:text-sm md:ml-0  mr-[53px] md:mr-0 ml-1">Booking:</p>
+                              <p className="text-black text-lg md:text-sm md:ml-0  mr-[45px] md:mr-0 ml-1">Booking:</p>
                             <span className="text-black text-lg md:text-sm ml-2 md:ml-0"> {new Date(lead.booking_date).toLocaleDateString(
                                   "en-IN",
                                   {
@@ -828,7 +828,7 @@ const visibleLeads = leads.slice(0, limit);
                             </div>
                                     <div className="flex items-center gap-6 md:gap-2  mb-1 md:mb-0">
                               <Calendar className="hidden md:block w-3 h-3" />
-                              <p className="text-black text-lg md:text-sm md:ml-0 mr-[53px] md:mr-0  ml-1">Created:</p>
+                              <p className="text-black text-lg md:text-sm md:ml-0 mr-[48px] md:mr-0  ml-1">Created:</p>
                              <span className="text-black text-lg md:text-sm ml-2 md:ml-0">
                                 {new Date(lead.created_at).toLocaleDateString(
                                   "en-IN",
