@@ -845,7 +845,7 @@ const visibleLeads = leads.slice(0, limit);
 <MapPin className="hidden md:block w-3 h-3" />  <p className="text-black text-lg md:text-md md:hidden mr-[53px] md:mr-0  ml-1">Location:</p>
   <span className="text-black text-lg md:text-sm  md:ml-0">{lead.location}</span>
 </div>
-                           <div className="flex items-center gap-6 mb-1 md:mb-0">
+                           <div className="flex items-center gap-6 mb-1 md:gap-1 md:mb-0">
                               <PartyPopper className="hidden md:block w-3 h-3" />
                               <p className="text-black text-lg md:text-base md:hidden mr-[53px] md:mr-0  ml-1">Service:</p>
                               <span className="text-black text-lg md:text-sm ml-2 md:ml-0">{lead.makeup_types?.length
