@@ -125,9 +125,24 @@ if (!Number.isFinite(days)) {
             raw: p,
           };
         });
+           const visiblePlans = uiPlans.filter((pl) => {
+          // try raw.price first, then raw.plan_price
+          const maybe = pl.raw?.price ?? pl.raw?.plan_price ?? null;
+          if (maybe == null) return true; // keep plans with no price info
+
+          const num = Number(
+            typeof maybe === "string" ? maybe.replace(/[^\d.-]/g, "") : maybe
+          );
+
+          // if parsing failed, keep the plan
+          if (!Number.isFinite(num)) return true;
+
+          // hide exact ₹69 plans (use === 69)
+          return num !== 69;
+        });
 
         // ✅ sort high → low by price
-        const sortedPlans = [...uiPlans].sort((a, b) => {
+             const sortedPlans = [...visiblePlans].sort((a, b) => {
           const priceA = Number(
             typeof a.raw?.price === "string"
               ? a.raw.price.replace(/[^\d.-]/g, "")
@@ -140,6 +155,7 @@ if (!Number.isFinite(days)) {
           );
           return priceB - priceA; // high to low
         });
+
 
         // ✅ popular flag
         if (sortedPlans.length > 0) {
