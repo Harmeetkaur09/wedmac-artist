@@ -320,8 +320,8 @@ if (profile.current_plan && !profile.plan_purchase_date) {
   const extendedDays = profile.extended_days || 0;
   const totalDays = durationDays + extendedDays;
 
-  // if (!purchaseDate)
-  //   return `${planName} (No ${dateLabel.toLowerCase()} date)`;
+  if (!purchaseDate)
+    return `${planName} (No ${dateLabel.toLowerCase()} date)`;
 
   const expiryDate = new Date(
     purchaseDate.getTime() + totalDays * 24 * 60 * 60 * 1000
