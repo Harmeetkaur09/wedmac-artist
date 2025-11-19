@@ -299,7 +299,9 @@ const planInfoText = useMemo(() => {
   if (!profile?.current_plan) return "No active plan";
 
   const planName = profile.current_plan.name || "Unnamed Plan";
-
+if (profile.current_plan && !profile.plan_purchase_date) {
+    return `${planName} (Expired)`;
+  }
   // ✅ Decide which date to show
   const purchaseDate = profile.plan_purchase_date
     ? new Date(profile.plan_purchase_date)
